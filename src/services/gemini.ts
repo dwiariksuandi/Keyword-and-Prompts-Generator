@@ -265,6 +265,83 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
   const ai = getAI(settings.apiKey);
   const template = promptTemplates.find(t => t.id === settings.templateId) || promptTemplates[0];
   
+  // If the array is very large, optimizing them one by one via LLM is too slow and hits token limits.
+  // Instead, we extract the core subjects from a sample, generate high-quality commercial modifiers,
+  // and programmatically reconstruct the prompts.
+  if (prompts.length > 30) {
+    // Take a small sample to understand the context
+    const sample = prompts.slice(0, 10);
+    
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3.1-pro-preview',
+      contents: `Analyze these sample prompts: ${JSON.stringify(sample)}.
+      
+      We need to optimize a massive batch of similar prompts for Adobe Stock (${contentType}).
+      To do this instantly, provide a set of highly commercial, premium modifiers that we can programmatically apply to the original subjects.
+      
+      Provide:
+      1. 15 premium lighting setups (e.g., "cinematic studio lighting, softbox", "golden hour natural sunlight")
+      2. 15 commercial moods/atmospheres (e.g., "authentic lifestyle, candid", "clean corporate, modern")
+      3. 10 high-end technical styles (e.g., "shot on 35mm lens, 8k resolution", "hyper-detailed digital illustration")
+      4. 5 commercial composition tags (e.g., "wide angle, copy space", "close up macro")
+      
+      Ensure all modifiers are tailored for ${contentType} and strictly avoid brands/text.
+      Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
+      config: {
+        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Provide highly commercial, premium modifiers.",
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            lightings: { type: Type.ARRAY, items: { type: Type.STRING } },
+            moods: { type: Type.ARRAY, items: { type: Type.STRING } },
+            styles: { type: Type.ARRAY, items: { type: Type.STRING } },
+            compositions: { type: Type.ARRAY, items: { type: Type.STRING } },
+          },
+          required: ["lightings", "moods", "styles", "compositions"]
+        }
+      }
+    });
+
+    let text = response.text;
+    if (!text) throw new Error('No response from Gemini');
+    text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
+    
+    try {
+      const modifiers = JSON.parse(text);
+      const optimizedPrompts: string[] = [];
+      const negativePrompt = settings.includeNegative ? ' --no text, watermark, deformed, blurry, logos' : '';
+      
+      // Programmatically optimize all prompts
+      for (const originalPrompt of prompts) {
+        // Extract a rough subject from the original prompt (first 50 chars or up to first comma)
+        let coreSubject = originalPrompt.split(',')[0].substring(0, 80).trim();
+        if (!coreSubject) coreSubject = "commercial subject";
+
+        const lighting = modifiers.lightings[Math.floor(Math.random() * modifiers.lightings.length)] || "professional lighting";
+        const mood = modifiers.moods[Math.floor(Math.random() * modifiers.moods.length)] || "commercial mood";
+        const style = modifiers.styles[Math.floor(Math.random() * modifiers.styles.length)] || "high quality";
+        const composition = modifiers.compositions[Math.floor(Math.random() * modifiers.compositions.length)] || "standard composition";
+        
+        let prompt = template.template
+          .replace(/{subject}/g, coreSubject)
+          .replace(/{details}/g, composition)
+          .replace(/{lighting}/g, lighting)
+          .replace(/{mood}/g, mood)
+          .replace(/{style}/g, style)
+          .replace(/{aspect}/g, "16:9"); // Default aspect for programmatic
+          
+        prompt += negativePrompt;
+        optimizedPrompts.push(prompt);
+      }
+      return optimizedPrompts;
+    } catch (e) {
+      console.error("Failed to parse JSON response:", text);
+      throw new Error("Failed to parse the response from the AI. Please try again.");
+    }
+  }
+
+  // Standard optimization for smaller arrays
   const response = await ai.models.generateContent({
     model: settings.model || 'gemini-3.1-pro-preview',
     contents: `Optimize the following list of image generation prompts to make them more detailed, commercial-grade, and highly targeted for the '${contentType}' category on microstock platforms like Adobe Stock.
