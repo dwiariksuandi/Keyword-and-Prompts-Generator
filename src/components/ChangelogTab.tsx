@@ -4,6 +4,18 @@ import { History, Star, Zap, ShieldCheck } from 'lucide-react';
 export default function ChangelogTab() {
   const versions = [
     {
+      version: "v1.2.2",
+      date: "March 2026",
+      title: "Deep Keyword Research & Real Data Simulation",
+      icon: <Star className="w-5 h-5 text-[#FF8A00]" />,
+      changes: [
+        "Overhauled the Keyword Research engine to simulate real-world Adobe Stock/Shutterstock search data.",
+        "Volume and Competition metrics are now highly realistic, focusing on actual market demand and existing asset counts.",
+        "AI is now strictly instructed to find 'Blue Ocean' niches (High Volume, Low Competition) and avoid generic categories.",
+        "Increased the number of long-tail keywords generated per niche (now 5-7 exact-match keywords)."
+      ]
+    },
+    {
       version: "v1.2.1",
       date: "March 2026",
       title: "Adobe Stock Optimization",

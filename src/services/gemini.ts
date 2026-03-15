@@ -90,23 +90,24 @@ export async function analyzeKeyword(keyword: string, contentType: string, setti
   const ai = getAI(settings.apiKey);
   const response = await ai.models.generateContent({
     model: settings.model || 'gemini-3.1-pro-preview',
-    contents: `Perform an in-depth, data-driven microstock market analysis for the keyword: '${keyword}' specifically for the content type: '${contentType}'.
+    contents: `Perform an exhaustive, data-driven microstock market analysis for the broad keyword: '${keyword}' targeting the asset type: '${contentType}'.
 
-Your task is to identify 3 to 5 highly specific, commercially viable niches or sub-categories related to this keyword and content type. Do not provide generic categories; focus on targeted concepts that actual buyers (agencies, designers, marketers) are searching for right now in the '${contentType}' category.
+Your objective is to uncover 4 to 6 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.
 
-For each niche, provide:
-1. categoryName: A highly specific and descriptive niche name.
-2. mainKeywords: 3-4 long-tail, high-converting keywords (e.g., instead of "business", use "sustainable corporate office teamwork").
-3. volumeLevel & volumeNumber: Realistic search volume estimates.
-4. competition & competitionScore: Realistic competition metrics (0-100).
-5. trend & trendPercent: Current market trajectory.
-6. difficultyScore: 0-100 (Higher score means it's harder to rank. Should correlate with high competition).
-7. opportunityScore: 0-100 (Higher score means better potential. Should be high if volume is good, competition is manageable, and trend is up).
-8. creativeAdvice: Actionable advice on what exactly to create (e.g., specific lighting, authentic casting, modern color palettes, or unique angles) to stand out in this specific niche for ${contentType}.
+For each niche, you MUST provide realistic, simulated market data:
+1. categoryName: A highly specific, commercial niche name (e.g., "Gen Z Sustainable Office Lifestyle" instead of "Business People").
+2. mainKeywords: 5-7 exact-match, long-tail keywords that buyers actually type into search bars.
+3. volumeLevel & volumeNumber: Simulated monthly search volume on major stock platforms. Make this a highly realistic number reflecting actual market demand (e.g., 12500, not just 100).
+4. competition & competitionScore: Simulated number of existing assets (0-100 score). 100 means millions of assets (oversaturated), 10 means very few assets (blue ocean).
+5. trend & trendPercent: Current market trajectory (e.g., +45% due to recent news/seasons).
+6. difficultyScore: 0-100. How hard is it for a new contributor to rank on page 1?
+7. opportunityScore: 0-100. The ultimate metric. High volume + Low competition = High Opportunity (80-100).
+8. creativeAdvice: Highly specific art direction. What exact visual elements, lighting, colors, or compositions are missing in the current market for this niche?
 
-Ensure all metrics are logically consistent. For example, a niche with 90/100 competition should NOT have a 90/100 opportunity score unless the volume is astronomically high. Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
+CRITICAL: Ensure mathematical and logical consistency. If competition is 95/100 (oversaturated), the opportunity score MUST be low (under 40) unless the volume is exceptionally massive and growing rapidly. Prioritize finding "Blue Ocean" niches (High Opportunity).
+Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
     config: {
-      systemInstruction: "You are a Senior Microstock Market Analyst and SEO Expert specializing in Adobe Stock, Shutterstock, and Getty Images. Your goal is to provide highly accurate, data-driven, and commercially valuable keyword analysis for stock contributors. Do not provide random or hallucinated metrics; ensure your estimates reflect real-world market dynamics, buyer search intent, and current visual trends.",
+      systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to simulate real-world keyword research tools. You must provide highly accurate, data-backed estimates for search volume and competition based on current market trends. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches.",
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.ARRAY,
