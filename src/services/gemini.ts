@@ -150,6 +150,77 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
   const ai = getAI(settings.apiKey);
   const template = promptTemplates.find(t => t.id === settings.templateId) || promptTemplates[0];
   
+  // For large counts, use a combinatorial approach to avoid LLM output token limits and guarantee uniqueness
+  if (count > 30) {
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3.1-pro-preview',
+      contents: `Generate a rich set of prompt components for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
+      
+      We need to programmatically generate ${count} unique combinations. Please provide:
+      1. 30 diverse subjects (e.g., "a young professional woman", "a modern office desk")
+      2. 30 specific details/actions (e.g., "typing on a laptop", "holding a coffee cup")
+      3. 15 lighting styles (e.g., "soft morning sunlight", "dramatic studio lighting")
+      4. 15 mood/atmosphere descriptions (e.g., "energetic and focused", "calm and serene")
+      5. 10 artistic styles/mediums (e.g., "photorealistic", "cinematic photography")
+      6. 5 aspect ratios (e.g., "16:9", "4:3", "3:2", "1:1", "9:16")
+      
+      Ensure all components are highly commercial, safe for microstock (no logos/brands), and perfectly suited for ${contentType}.
+      Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
+      config: {
+        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components.",
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            subjects: { type: Type.ARRAY, items: { type: Type.STRING } },
+            details: { type: Type.ARRAY, items: { type: Type.STRING } },
+            lightings: { type: Type.ARRAY, items: { type: Type.STRING } },
+            moods: { type: Type.ARRAY, items: { type: Type.STRING } },
+            styles: { type: Type.ARRAY, items: { type: Type.STRING } },
+            aspects: { type: Type.ARRAY, items: { type: Type.STRING } },
+          },
+          required: ["subjects", "details", "lightings", "moods", "styles", "aspects"]
+        }
+      }
+    });
+
+    let text = response.text;
+    if (!text) throw new Error('No response from Gemini');
+    text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
+    
+    try {
+      const components = JSON.parse(text);
+      const generatedPrompts: string[] = [];
+      const negativePrompt = settings.includeNegative ? ' --no text, watermark, deformed, blurry, logos' : '';
+      
+      // Generate combinations
+      for (let i = 0; i < count; i++) {
+        const subject = components.subjects[Math.floor(Math.random() * components.subjects.length)] || "subject";
+        const detail = components.details[Math.floor(Math.random() * components.details.length)] || "detail";
+        const lighting = components.lightings[Math.floor(Math.random() * components.lightings.length)] || "lighting";
+        const mood = components.moods[Math.floor(Math.random() * components.moods.length)] || "mood";
+        const style = components.styles[Math.floor(Math.random() * components.styles.length)] || "style";
+        const aspect = components.aspects[Math.floor(Math.random() * components.aspects.length)] || "16:9";
+        
+        let prompt = template.template
+          .replace(/{subject}/g, subject)
+          .replace(/{details}/g, detail)
+          .replace(/{lighting}/g, lighting)
+          .replace(/{mood}/g, mood)
+          .replace(/{style}/g, style)
+          .replace(/{aspect}/g, aspect);
+          
+        prompt += negativePrompt;
+        generatedPrompts.push(prompt);
+      }
+      return generatedPrompts;
+    } catch (e) {
+      console.error("Failed to parse JSON response:", text);
+      throw new Error("Failed to parse the response from the AI. Please try again.");
+    }
+  }
+
+  // Standard generation for smaller counts
   const response = await ai.models.generateContent({
     model: settings.model || 'gemini-3.1-pro-preview',
     contents: `Generate exactly ${count} highly detailed, commercial-grade image generation prompts for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}'.

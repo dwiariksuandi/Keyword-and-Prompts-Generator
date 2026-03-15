@@ -179,18 +179,10 @@ export default function App() {
     try {
       const actualCountToGenerate = Math.min(settings.promptCount, 1500); 
       const prompts = await generatePrompts(keyword, result.categoryName, actualCountToGenerate, settings, result.contentType);
-      
-      let finalPrompts = [...prompts];
-      if (finalPrompts.length < settings.promptCount) {
-          while(finalPrompts.length < settings.promptCount) {
-              finalPrompts = [...finalPrompts, ...prompts];
-          }
-          finalPrompts = finalPrompts.slice(0, settings.promptCount);
-      }
 
       setResults(prev => prev.map(r => r.id === id ? { 
         ...r, 
-        generatedPrompts: finalPrompts,
+        generatedPrompts: prompts,
         isGeneratingPrompts: false 
       } : r));
     } catch (error) {
