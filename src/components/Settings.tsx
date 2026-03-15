@@ -1,15 +1,12 @@
 import React from 'react';
-import { Key, Eye, EyeOff, Save, Check, Loader2, AlertCircle } from 'lucide-react';
+import { Key, Save, Check, AlertCircle } from 'lucide-react';
 import { AppSettings, PromptTemplate } from '../types';
 import { promptTemplates } from '../services/gemini';
 
 interface SettingsProps {
   settings: AppSettings;
   setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
-  onSaveApiKey: () => void | Promise<void>;
-  apiKeySaved: boolean;
-  isSavingKey?: boolean;
-  keyValidationMessage?: { type: 'success' | 'error', text: string } | null;
+  onEndSession: () => void;
   onSavePreferences?: () => void;
   prefsSaved?: boolean;
   prefsValidationMessage?: { type: 'success' | 'error', text: string } | null;
@@ -18,16 +15,11 @@ interface SettingsProps {
 export default function Settings({ 
   settings, 
   setSettings, 
-  onSaveApiKey, 
-  apiKeySaved, 
-  isSavingKey, 
-  keyValidationMessage,
+  onEndSession,
   onSavePreferences,
   prefsSaved,
   prefsValidationMessage
 }: SettingsProps) {
-  const [showApiKey, setShowApiKey] = React.useState(false);
-
   return (
     <div className="max-w-2xl mx-auto py-6">
       <div className="text-center mb-8">
@@ -43,57 +35,27 @@ export default function Settings({
               <Key className="w-5 h-5 text-[#00D8B6]" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">API Key</h2>
-              <p className="text-sm text-slate-400">Enter your Google Gemini API key</p>
+              <h2 className="text-lg font-semibold text-white">Active Session</h2>
+              <p className="text-sm text-slate-400">Your API key is active for this session only.</p>
             </div>
           </div>
 
           <div className="space-y-4">
-            <div className="relative">
-              <input
-                type={showApiKey ? "text" : "password"}
-                value={settings.apiKey}
-                onChange={(e) => setSettings({ ...settings, apiKey: e.target.value })}
-                placeholder="Enter your API key..."
-                className="w-full bg-[#0B1121] border border-slate-800 rounded-lg text-white px-4 py-3 pr-12 outline-none focus:border-[#00D8B6]"
-              />
-              <button
-                type="button"
-                onClick={() => setShowApiKey(!showApiKey)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-              >
-                {showApiKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-3 text-emerald-400">
+              <Check className="w-5 h-5" />
+              <span className="font-medium">API Key is connected</span>
             </div>
 
             <button
-              onClick={onSaveApiKey}
-              disabled={!settings.apiKey.trim() || isSavingKey}
-              className="w-full flex items-center justify-center gap-2 bg-[#00D8B6] hover:bg-[#00c2a3] text-slate-900 font-medium py-3 rounded-lg transition-colors disabled:opacity-50"
+              onClick={onEndSession}
+              className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium py-3 rounded-lg transition-colors border border-red-500/20"
             >
-              {isSavingKey ? (
-                <><Loader2 className="w-5 h-5 animate-spin" /> Validating...</>
-              ) : apiKeySaved ? (
-                <><Check className="w-5 h-5" /> Saved!</>
-              ) : (
-                <><Save className="w-5 h-5" /> Save API Key</>
-              )}
+              End Session & Remove Key
             </button>
-
-            {keyValidationMessage && (
-              <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
-                keyValidationMessage.type === 'success' 
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                  : 'bg-red-500/10 text-red-400 border border-red-500/20'
-              }`}>
-                {keyValidationMessage.type === 'success' ? (
-                  <Check className="w-4 h-4 shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                )}
-                <p>{keyValidationMessage.text}</p>
-              </div>
-            )}
+            
+            <p className="text-xs text-slate-500 mt-2">
+              <strong className="text-slate-400">Catatan Kuota:</strong> Limit/kuota API Gemini dihitung berdasarkan <strong>Project</strong> di Google Cloud, bukan per API Key. Jika Anda membuat API Key baru di Project yang sama, kuotanya akan tetap habis. Anda harus membuat Project baru di Google AI Studio untuk mendapatkan kuota yang baru.
+            </p>
           </div>
         </div>
 

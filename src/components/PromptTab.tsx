@@ -82,7 +82,7 @@ export default function PromptTab({
               </div>
             </div>
             <h3 className={`text-xl font-bold mb-2 ${isGeneratingAny ? 'text-[#00D8B6]' : 'text-[#FF8A00]'}`}>
-              {isGeneratingAny ? 'Generating Prompts...' : 'Upgrading Prompts...'}
+              {isGeneratingAny ? 'Generating Prompts...' : 'Optimizing Prompts...'}
             </h3>
             <p className="text-slate-400 text-center text-sm">
               Please wait while we process your request. This may take a few moments depending on the number of prompts.
@@ -149,7 +149,7 @@ export default function PromptTab({
                       className="flex items-center gap-2 border border-[#FF8A00] text-[#FF8A00] hover:bg-[#FF8A00]/10 px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50"
                     >
                       <Wand2 size={16} />
-                      <span>{category.isUpgrading ? 'Upgrading...' : 'Upgrade'}</span>
+                      <span>{category.isUpgrading ? 'Optimizing...' : 'Optimize Prompts'}</span>
                     </button>
                     <button 
                       onClick={() => handleDownload(category)}

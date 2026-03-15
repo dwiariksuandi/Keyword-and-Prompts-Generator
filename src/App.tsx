@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles } from 'lucide-react';
-import { analyzeKeyword, generatePrompts, validateApiKey, handleGeminiError } from './services/gemini';
+import { Sparkles, Key, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { analyzeKeyword, generatePrompts, optimizePrompts, validateApiKey, handleGeminiError } from './services/gemini';
 import { CategoryResult, AppSettings, HistoryItem } from './types';
 import Settings from './components/Settings';
 import TopTab from './components/TopTab';
@@ -13,6 +13,11 @@ import { ResultRow } from './components/ResultRow';
 type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt";
 
 export default function App() {
+  const [isSessionActive, setIsSessionActive] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState('');
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState<Tab>("top");
   const [selectedPromptCategoryId, setSelectedPromptCategoryId] = useState<string | null>(null);
   const [keyword, setKeyword] = useState('');
@@ -30,9 +35,6 @@ export default function App() {
     includeNegative: false,
     autoSave: true
   });
-  const [apiKeySaved, setApiKeySaved] = useState(false);
-  const [isSavingKey, setIsSavingKey] = useState(false);
-  const [keyValidationMessage, setKeyValidationMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   const [prefsSaved, setPrefsSaved] = useState(false);
   const [prefsValidationMessage, setPrefsValidationMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
@@ -43,12 +45,10 @@ export default function App() {
   const [filterCompetition, setFilterCompetition] = useState("all");
 
   useEffect(() => {
-    const savedKey = localStorage.getItem('gemini_api_key');
     const savedPrefs = localStorage.getItem('app_preferences');
     
     setSettings(s => {
-      const newSettings = { ...s };
-      if (savedKey) newSettings.apiKey = savedKey;
+      const newSettings = { ...s, apiKey: '' }; // Always reset API key on load
       if (savedPrefs) {
         try {
           const parsed = JSON.parse(savedPrefs);
@@ -64,27 +64,29 @@ export default function App() {
     });
   }, []);
 
-  const handleSaveApiKey = async () => {
-    if (settings.apiKey.trim()) {
-      setIsSavingKey(true);
-      setKeyValidationMessage(null);
-      
-      const validationResult = await validateApiKey(settings.apiKey);
-      setIsSavingKey(false);
+  const handleStartSession = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!tempApiKey.trim()) return;
+    
+    setIsValidating(true);
+    setValidationError(null);
+    
+    const validationResult = await validateApiKey(tempApiKey);
+    setIsValidating(false);
 
-      if (validationResult.isValid) {
-        localStorage.setItem('gemini_api_key', settings.apiKey);
-        setApiKeySaved(true);
-        setKeyValidationMessage({ type: 'success', text: 'API Key is valid and saved!' });
-        setTimeout(() => {
-          setApiKeySaved(false);
-          setKeyValidationMessage(null);
-        }, 3000);
-      } else {
-        setKeyValidationMessage({ type: 'error', text: validationResult.error || 'Invalid API Key. Please check and try again.' });
-        setTimeout(() => setKeyValidationMessage(null), 5000);
-      }
+    if (validationResult.isValid) {
+      setSettings(prev => ({ ...prev, apiKey: tempApiKey }));
+      setIsSessionActive(true);
+    } else {
+      setValidationError(validationResult.error || 'Invalid API Key. Please check and try again.');
     }
+  };
+
+  const handleEndSession = () => {
+    setSettings(prev => ({ ...prev, apiKey: '' }));
+    setTempApiKey('');
+    setIsSessionActive(false);
+    setActiveTab('top');
   };
 
   const handleSavePreferences = () => {
@@ -180,34 +182,26 @@ export default function App() {
     }
   };
 
-  const upgradePrompt = (originalPrompt: string): string => {
-    const qualityEnhancers = [
-      "masterpiece quality, ", "award-winning composition, ", "editorial excellence, ",
-      "museum-quality, ", "professional-grade, ", "critically acclaimed, "
-    ];
-    const technicalEnhancers = [
-      "sharp focus, intricate details, ", "8K UHD resolution, crystal clarity, ",
-      "hyper-realistic textures, ", "stunning visual fidelity, ", "meticulous craftsmanship, "
-    ];
-    
-    const randomQuality = qualityEnhancers[Math.floor(Math.random() * qualityEnhancers.length)];
-    const randomTechnical = technicalEnhancers[Math.floor(Math.random() * technicalEnhancers.length)];
-
-    return `${randomQuality}${originalPrompt}, ${randomTechnical}octane render, ray tracing`;
-  };
-
   const handleUpgradePrompts = async (categoryId: string) => {
+    const category = results.find(c => c.id === categoryId);
+    if (!category || category.generatedPrompts.length === 0) return;
+
     setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isUpgrading: true } : c));
     
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate processing
-    
-    setResults(prev => prev.map(c => {
-      if (c.id === categoryId && c.generatedPrompts.length > 0) {
-        const upgradedPrompts = c.generatedPrompts.map(prompt => upgradePrompt(prompt));
-        return { ...c, generatedPrompts: upgradedPrompts, isUpgrading: false };
-      }
-      return c;
-    }));
+    try {
+      const optimizedPrompts = await optimizePrompts(category.generatedPrompts, settings, category.contentType);
+      
+      setResults(prev => prev.map(c => {
+        if (c.id === categoryId) {
+          return { ...c, generatedPrompts: optimizedPrompts, isUpgrading: false };
+        }
+        return c;
+      }));
+    } catch (error) {
+      console.error("Prompt optimization failed:", error);
+      alert(handleGeminiError(error));
+      setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isUpgrading: false } : c));
+    }
   };
 
   const handleToggleStar = (id: string) => {
@@ -255,6 +249,53 @@ export default function App() {
     }
   }).filter(c => filterCompetition === "all" || c.competition === filterCompetition);
 
+  if (!isSessionActive) {
+    return (
+      <div className="min-h-screen bg-[#0B1121] flex items-center justify-center p-4 selection:bg-cyan-500/30">
+        <div className="max-w-md w-full bg-[#111827] border border-slate-800 rounded-2xl p-8 shadow-2xl">
+          <div className="w-12 h-12 bg-[#00D8B6]/20 rounded-xl flex items-center justify-center mb-6 mx-auto">
+            <Key className="w-6 h-6 text-[#00D8B6]" />
+          </div>
+          <h1 className="text-2xl font-bold text-white text-center mb-2">Welcome to Microstock Analyzer</h1>
+          <p className="text-slate-400 text-center mb-8 text-sm">
+            Please enter your Gemini API Key to start this session. The key will not be saved and will be cleared when you close or reload the app.
+          </p>
+          
+          <form onSubmit={handleStartSession} className="space-y-4">
+            <div>
+              <input
+                type="password"
+                value={tempApiKey}
+                onChange={(e) => setTempApiKey(e.target.value)}
+                placeholder="AIzaSy..."
+                className="w-full bg-[#0B1121] border border-slate-800 rounded-lg text-white px-4 py-3 outline-none focus:border-[#00D8B6] transition-colors"
+              />
+            </div>
+            
+            {validationError && (
+              <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <p>{validationError}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={!tempApiKey.trim() || isValidating}
+              className="w-full flex items-center justify-center gap-2 bg-[#00D8B6] hover:bg-[#00c2a3] text-slate-900 font-medium py-3 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {isValidating ? (
+                <><Loader2 className="w-5 h-5 animate-spin" /> Validating...</>
+              ) : (
+                <>Start Session <ArrowRight className="w-4 h-4" /></>
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0B1121] text-slate-300 font-sans selection:bg-cyan-500/30">
       <nav className="flex items-center justify-center p-6">
@@ -276,10 +317,7 @@ export default function App() {
           <Settings 
             settings={settings} 
             setSettings={setSettings} 
-            onSaveApiKey={handleSaveApiKey} 
-            apiKeySaved={apiKeySaved} 
-            isSavingKey={isSavingKey}
-            keyValidationMessage={keyValidationMessage}
+            onEndSession={handleEndSession}
             onSavePreferences={handleSavePreferences}
             prefsSaved={prefsSaved}
             prefsValidationMessage={prefsValidationMessage}

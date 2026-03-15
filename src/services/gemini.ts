@@ -35,7 +35,14 @@ export const promptTemplates: PromptTemplate[] = [
 ];
 
 const getAI = (apiKey?: string) => {
-  return new GoogleGenAI({ apiKey: apiKey || process.env.GEMINI_API_KEY });
+  const envApiKey = typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : (import.meta as any).env?.VITE_GEMINI_API_KEY;
+  const finalApiKey = apiKey?.trim() || envApiKey || '';
+  
+  if (!finalApiKey) {
+    throw new Error("API key is missing. Please enter your Gemini API key in the settings.");
+  }
+  
+  return new GoogleGenAI({ apiKey: finalApiKey });
 };
 
 export function handleGeminiError(error: any): string {
@@ -52,15 +59,15 @@ export function handleGeminiError(error: any): string {
     errorString = String(error);
   }
   
-  if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
-    return "You have exceeded your Gemini API quota. Please check your plan and billing details, or try again later.";
+  if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED') || errorString.includes('quota')) {
+    return "Kuota API Key Anda telah habis (RESOURCE_EXHAUSTED). Ingat: Kuota dihitung per Project, bukan per API Key. Silakan buat API Key baru di dalam PROJECT BARU di Google AI Studio.";
   }
   
   if (errorString.includes('API key not valid') || errorString.includes('API_KEY_INVALID')) {
     return "Your API key is invalid. Please check your settings and try again.";
   }
 
-  return "An unexpected error occurred while communicating with the AI. Please try again.";
+  return `An error occurred: ${errorString}`;
 }
 
 export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean; error?: string }> {
@@ -108,11 +115,11 @@ Ensure all metrics are logically consistent. For example, a niche with 90/100 co
           properties: {
             categoryName: { type: Type.STRING },
             mainKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-            volumeLevel: { type: Type.STRING, enum: ['High', 'Medium', 'Low'] },
+            volumeLevel: { type: Type.STRING, description: "High, Medium, or Low" },
             volumeNumber: { type: Type.INTEGER },
-            competition: { type: Type.STRING, enum: ['High', 'Medium', 'Low'] },
+            competition: { type: Type.STRING, description: "High, Medium, or Low" },
             competitionScore: { type: Type.INTEGER },
-            trend: { type: Type.STRING, enum: ['up', 'down', 'stable'] },
+            trend: { type: Type.STRING, description: "up, down, or stable" },
             trendPercent: { type: Type.INTEGER },
             difficultyScore: { type: Type.INTEGER },
             opportunityScore: { type: Type.INTEGER },
@@ -124,9 +131,18 @@ Ensure all metrics are logically consistent. For example, a niche with 90/100 co
     },
   });
 
-  const text = response.text;
+  let text = response.text;
   if (!text) throw new Error('No response from Gemini');
-  return JSON.parse(text);
+  
+  // Strip markdown formatting if present
+  text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse JSON response:", text);
+    throw new Error("Failed to parse the response from the AI. Please try again.");
+  }
 }
 
 export async function generatePrompts(keyword: string, categoryName: string, count: number, settings: AppSettings, contentType: string) {
@@ -157,7 +173,58 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
     },
   });
 
-  const text = response.text;
+  let text = response.text;
   if (!text) throw new Error('No response from Gemini');
-  return JSON.parse(text);
+  
+  // Strip markdown formatting if present
+  text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse JSON response:", text);
+    throw new Error("Failed to parse the response from the AI. Please try again.");
+  }
+}
+
+export async function optimizePrompts(prompts: string[], settings: AppSettings, contentType: string) {
+  const ai = getAI(settings.apiKey);
+  
+  const response = await ai.models.generateContent({
+    model: settings.model || 'gemini-3.1-pro-preview',
+    contents: `Optimize the following list of image generation prompts to make them more detailed, commercial-grade, and highly targeted for the '${contentType}' category on microstock platforms like Adobe Stock.
+
+Original Prompts:
+${JSON.stringify(prompts)}
+
+CRITICAL REQUIREMENTS FOR OPTIMIZATION:
+1. Enhance Technical Precision: Add specific lighting, camera angles, lens types, and aesthetic quality appropriate for a ${contentType}.
+2. Improve Commercial Utility: Ensure concepts are highly usable for designers and agencies. Add elements like 'copy space', 'authentic lifestyle', 'modern aesthetics', or 'clean backgrounds' where appropriate.
+3. Safe for Microstock: Ensure the optimized prompts naturally avoid requesting branded items, text, or recognizable logos.
+4. Maintain Original Intent: Keep the core subject and action of the original prompt, but elevate its quality and marketability.
+
+Respond strictly with a JSON array of strings, where each string is the optimized version of the corresponding original prompt. The output array must have exactly the same length as the input array.
+Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
+    config: {
+      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in optimizing and refining image generation prompts to produce flawless, authentic, and highly usable stock photography and illustrations.",
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+      },
+    },
+  });
+
+  let text = response.text;
+  if (!text) throw new Error('No response from Gemini');
+  
+  // Strip markdown formatting if present
+  text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse JSON response:", text);
+    throw new Error("Failed to parse the response from the AI. Please try again.");
+  }
 }
