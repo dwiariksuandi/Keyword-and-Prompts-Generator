@@ -5,31 +5,31 @@ export const promptTemplates: PromptTemplate[] = [
   {
     id: "midjourney",
     name: "Midjourney v6",
-    template: "{style} {subject}, {details}, {lighting}, {mood} atmosphere, professional quality, high detail. --ar {aspect} --style raw --v 6",
+    template: "{style} {subject}, {details}, {lighting}, {mood} atmosphere, professional quality, high detail, no text, no watermark, commercial photography. --ar {aspect} --style raw --v 6.0",
     description: "Optimized for Midjourney v6 with style raw"
   },
   {
     id: "dalle",
     name: "DALL-E 3",
-    template: "A {style} image of {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. High resolution, photorealistic details.",
+    template: "A {style} image of {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. High resolution, photorealistic details, commercial stock photography style, no text, no logos.",
     description: "Natural language prompts for DALL-E 3"
   },
   {
     id: "stable",
     name: "Stable Diffusion XL",
-    template: "{subject}, {style}, {details}, {lighting}, {mood}, masterpiece, best quality, highly detailed, 8k uhd",
+    template: "{subject}, {style}, {details}, {lighting}, {mood}, masterpiece, best quality, highly detailed, 8k uhd, commercial stock photo, clean background",
     description: "Tag-based prompts for SDXL"
   },
   {
     id: "stock",
     name: "Stock Photography",
-    template: "Professional stock photo: {subject}. {details}. Shot with {lighting}, conveying {mood}. Commercial use, editorial quality, diverse representation.",
+    template: "Professional stock photo: {subject}. {details}. Shot with {lighting}, conveying {mood}. Commercial use, editorial quality, diverse representation, authentic lifestyle, 8k resolution.",
     description: "Optimized for stock photography sites"
   },
   {
     id: "nanobanana",
     name: "Nano Banana Pro",
-    template: "Generate a stunning {style} visual of {subject}. Key elements: {details}. Lighting setup: {lighting}. Overall mood: {mood}. Ultra-high definition, cinematic composition, award-winning quality, trending on ArtStation, octane render, volumetric lighting, ray tracing.",
+    template: "Generate a stunning {style} visual of {subject}. Key elements: {details}. Lighting setup: {lighting}. Overall mood: {mood}. Ultra-high definition, cinematic composition, award-winning quality, commercial stock asset, no text.",
     description: "Advanced multimodal prompt for Nano Banana Pro AI"
   }
 ];
@@ -158,7 +158,9 @@ CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 2. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for a ${contentType}.
 3. Safe for Microstock: Ensure prompts naturally avoid requesting branded items, text, or recognizable logos.
 4. Variety: Provide a diverse mix of subjects, compositions, and moods within the requested niche.
-5. Template Alignment: Use this structure as your primary inspiration: "${template.template}".
+5. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure:
+"${template.template}"
+Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
 
 Respond strictly with a JSON array of strings, where each string is a complete, ready-to-use image generation prompt tailored for a ${contentType}.
 Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
@@ -189,6 +191,7 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
 
 export async function optimizePrompts(prompts: string[], settings: AppSettings, contentType: string) {
   const ai = getAI(settings.apiKey);
+  const template = promptTemplates.find(t => t.id === settings.templateId) || promptTemplates[0];
   
   const response = await ai.models.generateContent({
     model: settings.model || 'gemini-3.1-pro-preview',
@@ -197,11 +200,14 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
 Original Prompts:
 ${JSON.stringify(prompts)}
 
-CRITICAL REQUIREMENTS FOR OPTIMIZATION:
+CRITICAL REQUIREMENTS FOR OPTIMIZATION (ADOBE STOCK):
 1. Enhance Technical Precision: Add specific lighting, camera angles, lens types, and aesthetic quality appropriate for a ${contentType}.
 2. Improve Commercial Utility: Ensure concepts are highly usable for designers and agencies. Add elements like 'copy space', 'authentic lifestyle', 'modern aesthetics', or 'clean backgrounds' where appropriate.
 3. Safe for Microstock: Ensure the optimized prompts naturally avoid requesting branded items, text, or recognizable logos.
 4. Maintain Original Intent: Keep the core subject and action of the original prompt, but elevate its quality and marketability.
+5. STRICT Template Alignment: You MUST strictly format each optimized prompt using this exact template structure:
+"${template.template}"
+Replace the bracketed placeholders with your optimized content. Do not add conversational text.
 
 Respond strictly with a JSON array of strings, where each string is the optimized version of the corresponding original prompt. The output array must have exactly the same length as the input array.
 Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.

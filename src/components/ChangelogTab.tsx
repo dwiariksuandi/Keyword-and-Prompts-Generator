@@ -4,6 +4,17 @@ import { History, Star, Zap, ShieldCheck } from 'lucide-react';
 export default function ChangelogTab() {
   const versions = [
     {
+      version: "v1.2.1",
+      date: "March 2026",
+      title: "Adobe Stock Optimization",
+      icon: <Star className="w-5 h-5 text-[#FF8A00]" />,
+      changes: [
+        "Strictly enforced Prompt Templates to ensure AI follows the selected structure.",
+        "Optimized all built-in templates specifically for Adobe Stock (added 'no text', 'commercial photography', etc.).",
+        "Ensured AI Model selection is strictly applied to all generation and optimization processes."
+      ]
+    },
+    {
       version: "v1.2.0",
       date: "March 2026",
       title: "Optimization & Auto-Save",
