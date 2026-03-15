@@ -251,43 +251,61 @@ export default function App() {
 
   if (!isSessionActive) {
     return (
-      <div className="min-h-screen bg-[#0B1121] flex items-center justify-center p-4 selection:bg-cyan-500/30">
-        <div className="max-w-md w-full bg-[#111827] border border-slate-800 rounded-2xl p-8 shadow-2xl">
-          <div className="w-12 h-12 bg-[#00D8B6]/20 rounded-xl flex items-center justify-center mb-6 mx-auto">
-            <Key className="w-6 h-6 text-[#00D8B6]" />
+      <div className="min-h-screen bg-[#0B1121] flex items-center justify-center p-4 selection:bg-cyan-500/30 relative overflow-hidden">
+        {/* Background Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#00D8B6]/10 blur-[120px] rounded-full pointer-events-none" />
+        
+        <div className="max-w-md w-full bg-[#111827]/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl relative z-10">
+          <div className="w-16 h-16 bg-gradient-to-br from-[#00D8B6]/20 to-cyan-500/20 border border-[#00D8B6]/30 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-[0_0_30px_rgba(0,216,182,0.15)]">
+            <Sparkles className="w-8 h-8 text-[#00D8B6]" />
           </div>
-          <h1 className="text-2xl font-bold text-white text-center mb-2">Welcome to Microstock Analyzer</h1>
-          <p className="text-slate-400 text-center mb-8 text-sm">
-            Please enter your Gemini API Key to start this session. The key will not be saved and will be cleared when you close or reload the app.
+          
+          <h1 className="text-2xl sm:text-3xl font-bold text-white text-center mb-3 tracking-tight">Microstock Analyzer</h1>
+          <p className="text-slate-400 text-center mb-8 text-sm leading-relaxed">
+            Masukkan <strong>Gemini API Key</strong> Anda untuk memulai sesi. Demi keamanan, API Key tidak akan disimpan dan otomatis terhapus saat aplikasi dimuat ulang.
           </p>
           
-          <form onSubmit={handleStartSession} className="space-y-4">
-            <div>
-              <input
-                type="password"
-                value={tempApiKey}
-                onChange={(e) => setTempApiKey(e.target.value)}
-                placeholder="AIzaSy..."
-                className="w-full bg-[#0B1121] border border-slate-800 rounded-lg text-white px-4 py-3 outline-none focus:border-[#00D8B6] transition-colors"
-              />
+          <form onSubmit={handleStartSession} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">API Key</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Key className="w-5 h-5 text-slate-500" />
+                </div>
+                <input
+                  type="password"
+                  value={tempApiKey}
+                  onChange={(e) => setTempApiKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full bg-[#0B1121] border border-slate-700 rounded-xl text-white pl-11 pr-4 py-3.5 outline-none focus:border-[#00D8B6] focus:ring-1 focus:ring-[#00D8B6] transition-all placeholder:text-slate-600"
+                />
+              </div>
+              <div className="text-xs text-slate-500 ml-1 mt-2 space-y-1">
+                <p>
+                  Belum punya? <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-[#00D8B6] hover:underline">Dapatkan di Google AI Studio</a>.
+                </p>
+                <p className="text-amber-500/80 font-medium">
+                  Penting: Buat API Key di "New Project" agar kuota fresh.
+                </p>
+              </div>
             </div>
             
             {validationError && (
-              <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <p>{validationError}</p>
+              <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">{validationError}</p>
               </div>
             )}
 
             <button
               type="submit"
               disabled={!tempApiKey.trim() || isValidating}
-              className="w-full flex items-center justify-center gap-2 bg-[#00D8B6] hover:bg-[#00c2a3] text-slate-900 font-medium py-3 rounded-lg transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#00D8B6] to-cyan-500 hover:from-[#00c2a3] hover:to-cyan-600 text-slate-900 font-bold py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,216,182,0.2)] hover:shadow-[0_0_25px_rgba(0,216,182,0.3)]"
             >
               {isValidating ? (
-                <><Loader2 className="w-5 h-5 animate-spin" /> Validating...</>
+                <><Loader2 className="w-5 h-5 animate-spin" /> Memvalidasi API Key...</>
               ) : (
-                <>Start Session <ArrowRight className="w-4 h-4" /></>
+                <>Mulai Sesi <ArrowRight className="w-5 h-5" /></>
               )}
             </button>
           </form>
