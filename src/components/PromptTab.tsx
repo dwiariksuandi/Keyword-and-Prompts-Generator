@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Copy, ArrowLeft, Wand2, Sparkles } from 'lucide-react';
+import { Download, Copy, ArrowLeft, Wand2, Sparkles, RefreshCw } from 'lucide-react';
 import { CategoryResult } from '../types';
 
 interface PromptTabProps {
@@ -143,6 +143,14 @@ export default function PromptTab({
                   </button>
                 ) : (
                   <>
+                    <button 
+                      onClick={() => onGenerate(category.id)}
+                      disabled={category.isGeneratingPrompts}
+                      className="flex items-center gap-2 border border-[#00D8B6] text-[#00D8B6] hover:bg-[#00D8B6]/10 px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50"
+                    >
+                      <RefreshCw size={16} className={category.isGeneratingPrompts ? "animate-spin" : ""} />
+                      <span>{category.isGeneratingPrompts ? 'Regenerating...' : 'Regenerate'}</span>
+                    </button>
                     <button 
                       onClick={() => onUpgrade(category.id)}
                       disabled={category.isUpgrading}
