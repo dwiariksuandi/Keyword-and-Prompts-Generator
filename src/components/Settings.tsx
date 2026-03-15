@@ -150,8 +150,8 @@ export default function Settings({
             <div className="pt-4 border-t border-slate-800/50 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium text-white">Auto-save Results</h3>
-                  <p className="text-xs text-slate-400">Save generated prompts automatically</p>
+                  <h3 className="text-sm font-medium text-white">Auto-save History & Results</h3>
+                  <p className="text-xs text-slate-400">Save your analysis history automatically</p>
                 </div>
                 <button
                   onClick={() => setSettings({ ...settings, autoSave: !settings.autoSave })}

@@ -8,9 +8,10 @@ import AnalysisTab from './components/AnalysisTab';
 import ResultsTab from './components/ResultsTab';
 import DonateTab from './components/DonateTab';
 import PromptTab from './components/PromptTab';
+import ChangelogTab from './components/ChangelogTab';
 import { ResultRow } from './components/ResultRow';
 
-type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt";
+type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog";
 
 export default function App() {
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -40,7 +41,6 @@ export default function App() {
   const [prefsValidationMessage, setPrefsValidationMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   // Filters and Sort
-  const [promptsCount, setPromptsCount] = useState(100);
   const [sortBy, setSortBy] = useState("opportunity");
   const [filterCompetition, setFilterCompetition] = useState("all");
 
@@ -53,16 +53,34 @@ export default function App() {
         try {
           const parsed = JSON.parse(savedPrefs);
           Object.assign(newSettings, parsed);
-          if (parsed.promptCount) {
-            setPromptsCount(parsed.promptCount);
-          }
         } catch (e) {
           console.error("Failed to parse saved preferences");
         }
       }
       return newSettings;
     });
+
+    // Load saved history and results
+    try {
+      const savedHistory = localStorage.getItem('app_history');
+      const savedResults = localStorage.getItem('app_results');
+      if (savedHistory) setHistory(JSON.parse(savedHistory));
+      if (savedResults) setResults(JSON.parse(savedResults));
+    } catch (e) {
+      console.error("Failed to load saved history/results");
+    }
   }, []);
+
+  // Auto-save history and results when they change, if autoSave is enabled
+  useEffect(() => {
+    if (settings.autoSave) {
+      localStorage.setItem('app_history', JSON.stringify(history));
+      localStorage.setItem('app_results', JSON.stringify(results));
+    } else {
+      localStorage.removeItem('app_history');
+      localStorage.removeItem('app_results');
+    }
+  }, [history, results, settings.autoSave]);
 
   const handleStartSession = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -159,15 +177,15 @@ export default function App() {
     setResults(prev => prev.map(r => r.id === id ? { ...r, isGeneratingPrompts: true } : r));
     
     try {
-      const actualCountToGenerate = Math.min(promptsCount, 1500); 
+      const actualCountToGenerate = Math.min(settings.promptCount, 1500); 
       const prompts = await generatePrompts(keyword, result.categoryName, actualCountToGenerate, settings, result.contentType);
       
       let finalPrompts = [...prompts];
-      if (finalPrompts.length < promptsCount) {
-          while(finalPrompts.length < promptsCount) {
+      if (finalPrompts.length < settings.promptCount) {
+          while(finalPrompts.length < settings.promptCount) {
               finalPrompts = [...finalPrompts, ...prompts];
           }
-          finalPrompts = finalPrompts.slice(0, promptsCount);
+          finalPrompts = finalPrompts.slice(0, settings.promptCount);
       }
 
       setResults(prev => prev.map(r => r.id === id ? { 
@@ -326,6 +344,7 @@ export default function App() {
           <button onClick={() => setActiveTab('results')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'results' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>RESULTS</button>
           <button onClick={() => { setActiveTab('prompt'); setSelectedPromptCategoryId(null); }} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'prompt' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>PROMPT</button>
           <button onClick={() => setActiveTab('settings')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'settings' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>SETTINGS</button>
+          <button onClick={() => setActiveTab('changelog')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'changelog' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>CHANGELOG</button>
           <button onClick={() => setActiveTab('donate')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'donate' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>DONATE</button>
         </div>
       </nav>
@@ -412,6 +431,10 @@ export default function App() {
           <DonateTab />
         )}
 
+        {activeTab === 'changelog' && (
+          <ChangelogTab />
+        )}
+
         {activeTab === 'prompt' && (
           <PromptTab 
             results={results} 
@@ -419,8 +442,8 @@ export default function App() {
             onBack={() => setActiveTab('top')} 
             onGenerate={handleGeneratePrompts}
             onUpgrade={handleUpgradePrompts}
-            promptsCount={promptsCount}
-            setPromptsCount={setPromptsCount}
+            promptsCount={settings.promptCount}
+            setPromptsCount={(count) => setSettings(s => ({ ...s, promptCount: typeof count === 'function' ? count(s.promptCount) : count }))}
           />
         )}
       </main>

@@ -204,7 +204,8 @@ CRITICAL REQUIREMENTS FOR OPTIMIZATION:
 4. Maintain Original Intent: Keep the core subject and action of the original prompt, but elevate its quality and marketability.
 
 Respond strictly with a JSON array of strings, where each string is the optimized version of the corresponding original prompt. The output array must have exactly the same length as the input array.
-Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
+Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
+${settings.includeNegative ? 'Append a strong negative prompt at the end of each optimized prompt (e.g., "--no text, watermark, deformed, blurry, logos").' : ''}`,
     config: {
       systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in optimizing and refining image generation prompts to produce flawless, authentic, and highly usable stock photography and illustrations.",
       responseMimeType: 'application/json',
