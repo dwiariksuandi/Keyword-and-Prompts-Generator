@@ -216,14 +216,14 @@ export function handleGeminiError(error: any): string {
   }
   
   if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED') || errorString.includes('quota')) {
-    return "Kuota API Key Anda telah habis (RESOURCE_EXHAUSTED). Ingat: Kuota dihitung per Project, bukan per API Key. Silakan buat API Key baru di dalam PROJECT BARU di Google AI Studio.";
+    return "Error 429 (RESOURCE_EXHAUSTED). Ini terjadi karena salah satu dari 2 hal:\n\n1. Limit Per Menit (Sering Terjadi): Akun gratis dibatasi 15 request/menit. Solusi: Tunggu 1 menit dan coba lagi.\n2. Kuota Harian Habis: Solusi: Gunakan API Key dari Project Google Cloud yang BARU.\n\nJika Anda baru saja mengganti API Key dan tetap error, kemungkinan besar itu adalah Limit Per Menit (tunggu 1 menit).";
   }
   
   if (errorString.includes('API key not valid') || errorString.includes('API_KEY_INVALID')) {
-    return "Your API key is invalid. Please check your settings and try again.";
+    return "API Key tidak valid. Pastikan Anda menyalin API Key dengan benar tanpa spasi tambahan.";
   }
 
-  return `An error occurred: ${errorString}`;
+  return `Terjadi kesalahan: ${errorString}`;
 }
 
 function extractJSON(text: string) {
@@ -598,5 +598,113 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
   } catch (e) {
     console.error("Failed to parse JSON response:", text);
     throw new Error("Failed to parse the response from the AI. Please try again.");
+  }
+}
+
+export async function generateAllPromptsBatch(
+  keyword: string, 
+  categories: any[], 
+  totalCount: number, 
+  settings: AppSettings, 
+  contentType: string
+): Promise<Map<string, string[]>> {
+  const ai = getAI(settings.apiKey);
+  const currentTemplateId = typeof settings.templateId === 'string' 
+    ? settings.templateId 
+    : (settings.templateId?.[contentType] || 'nanobanana-photo');
+  const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
+  
+  const countPerCategory = Math.max(1, Math.floor(totalCount / categories.length));
+  const itemsNeeded = Math.max(5, Math.ceil(Math.sqrt(countPerCategory) * 1.5));
+
+  const categoryNames = categories.map(c => c.categoryName).join("', '");
+
+  try {
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3.1-pro-preview',
+      contents: `Generate rich prompt components for multiple niches based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
+      
+      The niches are: '${categoryNames}'.
+      
+      For EACH niche, provide:
+      1. ${itemsNeeded} highly distinct subjects.
+      2. ${itemsNeeded} specific and varied details/actions/camera angles.
+      3. ${itemsNeeded} distinct lighting styles.
+      4. ${itemsNeeded} mood/atmosphere descriptions.
+      5. ${itemsNeeded} artistic styles/mediums.
+      6. 5 aspect ratios (e.g., "16:9", "4:3", "1:1").
+      
+      CRITICAL ADOBE STOCK RULES:
+      - NO SIMILAR CONTENT: Components must be vastly different.
+      - GENERATIVE AI COMPLIANCE: NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands.
+      Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
+      config: {
+        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor.",
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            categories: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  categoryName: { type: Type.STRING },
+                  subjects: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  details: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  lightings: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  moods: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  styles: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  aspects: { type: Type.ARRAY, items: { type: Type.STRING } },
+                },
+                required: ["categoryName", "subjects", "details", "lightings", "moods", "styles", "aspects"]
+              }
+            }
+          },
+          required: ["categories"]
+        }
+      }
+    });
+
+    let text = response.text;
+    if (!text) throw new Error('No response from Gemini');
+    
+    const data = extractJSON(text);
+    const negativePrompt = settings.includeNegative ? ' --no text, watermark, deformed, blurry, logos' : '';
+    
+    const resultsMap = new Map<string, string[]>();
+    
+    for (const catData of data.categories) {
+      const generatedPrompts = new Set<string>();
+      let attempts = 0;
+      const maxAttempts = countPerCategory * 5;
+      
+      while (generatedPrompts.size < countPerCategory && attempts < maxAttempts) {
+        const subject = catData.subjects[Math.floor(Math.random() * catData.subjects.length)] || "subject";
+        const detail = catData.details[Math.floor(Math.random() * catData.details.length)] || "detail";
+        const lighting = catData.lightings[Math.floor(Math.random() * catData.lightings.length)] || "lighting";
+        const mood = catData.moods[Math.floor(Math.random() * catData.moods.length)] || "mood";
+        const style = catData.styles[Math.floor(Math.random() * catData.styles.length)] || "style";
+        const aspect = catData.aspects[Math.floor(Math.random() * catData.aspects.length)] || "16:9";
+        
+        let prompt = template.template
+          .replace(/{subject}/g, subject)
+          .replace(/{details}/g, detail)
+          .replace(/{lighting}/g, lighting)
+          .replace(/{mood}/g, mood)
+          .replace(/{style}/g, style)
+          .replace(/{aspect}/g, aspect);
+          
+        prompt += negativePrompt;
+        generatedPrompts.add(prompt);
+        attempts++;
+      }
+      resultsMap.set(catData.categoryName, Array.from(generatedPrompts));
+    }
+    
+    return resultsMap;
+  } catch (error) {
+    console.error("Batch generation failed:", error);
+    throw new Error(handleGeminiError(error));
   }
 }
