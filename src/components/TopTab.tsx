@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap, Upload, Image as ImageIcon, Film, X, Link as LinkIcon, Loader2 } from 'lucide-react';
-import { CategoryResult, AppSettings, ReferenceFile } from '../types';
+import { CategoryResult, AppSettings, ReferenceFile, AestheticAnalysis } from '../types';
 
 interface TopTabProps {
   keyword: string;
@@ -19,6 +19,10 @@ interface TopTabProps {
   setReferenceFile: React.Dispatch<React.SetStateAction<ReferenceFile | null>>;
   referenceUrl: string;
   setReferenceUrl: React.Dispatch<React.SetStateAction<string>>;
+  onAnalyzeAesthetic: () => void;
+  isAnalyzingAesthetic: boolean;
+  aestheticAnalysis: AestheticAnalysis | null;
+  setAestheticAnalysis: React.Dispatch<React.SetStateAction<AestheticAnalysis | null>>;
 }
 
 const suggestionKeywords = [
@@ -70,7 +74,8 @@ export default function TopTab({
   keyword, setKeyword, contentType, setContentType, onAnalyze, onQuickGenerate, isAnalyzing, results,
   sortBy, setSortBy, filterCompetition, setFilterCompetition,
   referenceFile, setReferenceFile,
-  referenceUrl, setReferenceUrl
+  referenceUrl, setReferenceUrl,
+  onAnalyzeAesthetic, isAnalyzingAesthetic, aestheticAnalysis, setAestheticAnalysis
 }: TopTabProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -216,24 +221,80 @@ export default function TopTab({
                   <span>Upload Image or Video</span>
                 </button>
               ) : (
-                <div className="relative bg-slate-800/50 border border-[#00D8B6]/30 rounded-xl p-2 flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-slate-900 overflow-hidden flex items-center justify-center border border-slate-700 shrink-0">
-                    {referenceFile.mimeType.startsWith('image/') ? (
-                      <img src={referenceFile.previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <Film size={24} className="text-slate-500" />
-                    )}
+                <div className="space-y-2">
+                  <div className="relative bg-slate-800/50 border border-[#00D8B6]/30 rounded-xl p-2 flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-lg bg-slate-900 overflow-hidden flex items-center justify-center border border-slate-700 shrink-0">
+                      {referenceFile.mimeType.startsWith('image/') ? (
+                        <img src={referenceFile.previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <Film size={24} className="text-slate-500" />
+                      )}
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-xs font-semibold text-slate-200 truncate">{referenceFile.name}</span>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-tighter">{referenceFile.mimeType.split('/')[1]} • Ready</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {contentType === 'AI Art & Creativity' && referenceFile.mimeType.startsWith('image/') && (
+                        <button 
+                          onClick={onAnalyzeAesthetic}
+                          disabled={isAnalyzingAesthetic}
+                          className="p-2 text-[#00D8B6] hover:bg-[#00D8B6]/10 rounded-lg transition-all"
+                          title="Analyze Aesthetic"
+                        >
+                          {isAnalyzingAesthetic ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => { removeFile(); setAestheticAnalysis(null); }}
+                        className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-xs font-semibold text-slate-200 truncate">{referenceFile.name}</span>
-                    <span className="text-[10px] text-slate-500 uppercase tracking-tighter">{referenceFile.mimeType.split('/')[1]} • Ready</span>
-                  </div>
-                  <button 
-                    onClick={removeFile}
-                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-                  >
-                    <X size={16} />
-                  </button>
+
+                  {aestheticAnalysis && (
+                    <div className="bg-[#00D8B6]/5 border border-[#00D8B6]/20 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-bold text-[#00D8B6] uppercase tracking-wider flex items-center gap-2">
+                          <Sparkles size={14} /> Aesthetic DNA Analysis
+                        </h3>
+                        <button onClick={() => setAestheticAnalysis(null)} className="text-slate-500 hover:text-white">
+                          <X size={14} />
+                        </button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <span className="text-[10px] text-slate-500 uppercase">Style</span>
+                          <p className="text-xs text-slate-300">{aestheticAnalysis.artisticStyle}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-[10px] text-slate-500 uppercase">Mood</span>
+                          <p className="text-xs text-slate-300">{aestheticAnalysis.mood}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[10px] text-slate-500 uppercase">Color Palette</span>
+                        <div className="flex flex-wrap gap-1">
+                          {aestheticAnalysis.colorPalette.map((color, i) => (
+                            <span key={i} className="px-2 py-0.5 bg-slate-800 rounded text-[10px] text-slate-400 border border-slate-700">{color}</span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[10px] text-slate-500 uppercase">Suggestions</span>
+                        <ul className="list-disc list-inside space-y-1">
+                          {aestheticAnalysis.suggestions.map((suggestion, i) => (
+                            <li key={i} className="text-[10px] text-slate-400 leading-relaxed">{suggestion}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

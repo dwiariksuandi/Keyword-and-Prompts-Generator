@@ -13,6 +13,19 @@ export interface PromptScore {
   specificity: number;
   adherence: number;
   feedback: string;
+  keywordFeedback?: string;
+  clarityFeedback?: string;
+  specificityFeedback?: string;
+  adherenceFeedback?: string;
+}
+
+export interface AestheticAnalysis {
+  colorPalette: string[];
+  lighting: string;
+  mood: string;
+  artisticStyle: string;
+  composition: string;
+  suggestions: string[];
 }
 
 export interface CategoryResult {
@@ -63,4 +76,5 @@ export interface AppSettings {
   language: string;
   includeNegative: boolean;
   autoSave: boolean;
+  variationLevel: 'Low' | 'Medium' | 'High';
 }

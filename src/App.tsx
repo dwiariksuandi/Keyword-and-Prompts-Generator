@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, scorePrompts } from './services/gemini';
-import { CategoryResult, AppSettings, HistoryItem, ReferenceFile } from './types';
+import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, scorePrompts, analyzeAestheticReference } from './services/gemini';
+import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis } from './types';
 import Settings from './components/Settings';
 import TopTab from './components/TopTab';
 import AnalysisTab from './components/AnalysisTab';
@@ -27,6 +27,8 @@ export default function App() {
   const [referenceFile, setReferenceFile] = useState<ReferenceFile | null>(null);
   const [referenceUrl, setReferenceUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAnalyzingAesthetic, setIsAnalyzingAesthetic] = useState(false);
+  const [aestheticAnalysis, setAestheticAnalysis] = useState<AestheticAnalysis | null>(null);
   const [results, setResults] = useState<CategoryResult[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   
@@ -45,7 +47,8 @@ export default function App() {
     promptCount: 100,
     language: 'en',
     includeNegative: false,
-    autoSave: true
+    autoSave: true,
+    variationLevel: 'Medium'
   });
 
   const [prefsSaved, setPrefsSaved] = useState(false);
@@ -140,6 +143,20 @@ export default function App() {
       localStorage.removeItem('app_results');
     }
   }, [history, results, settings.autoSave]);
+
+  const handleAnalyzeAesthetic = async () => {
+    if (!referenceFile || contentType !== 'AI Art & Creativity') return;
+    setIsAnalyzingAesthetic(true);
+    try {
+      const analysis = await analyzeAestheticReference(referenceFile, settings);
+      setAestheticAnalysis(analysis);
+    } catch (error) {
+      console.error("Aesthetic analysis failed:", error);
+      setToast({ show: true, message: 'Gagal menganalisis estetika gambar.' });
+    } finally {
+      setIsAnalyzingAesthetic(false);
+    }
+  };
 
   const handleStartSession = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -592,7 +609,7 @@ export default function App() {
           <button onClick={() => setActiveTab('results')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'results' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>RESULTS</button>
           <button onClick={() => { setActiveTab('prompt'); setSelectedPromptCategoryId(null); }} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'prompt' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>PROMPT</button>
           <button onClick={() => setActiveTab('settings')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'settings' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>SETTINGS</button>
-          <button onClick={() => setActiveTab('changelog')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'changelog' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>CHANGELOG</button>
+          <button onClick={() => setActiveTab('changelog')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'changelog' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>v1.3.0</button>
           <button onClick={() => setActiveTab('donate')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'donate' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>DONATE</button>
         </div>
       </nav>
@@ -618,7 +635,11 @@ export default function App() {
               setContentType={setContentType}
               onAnalyze={handleAnalyze}
               onQuickGenerate={handleQuickGenerate}
+              onAnalyzeAesthetic={handleAnalyzeAesthetic}
               isAnalyzing={isAnalyzing}
+              isAnalyzingAesthetic={isAnalyzingAesthetic}
+              aestheticAnalysis={aestheticAnalysis}
+              setAestheticAnalysis={setAestheticAnalysis}
               results={results}
               sortBy={sortBy}
               setSortBy={setSortBy}

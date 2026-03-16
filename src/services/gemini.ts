@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from '@google/genai';
-import { AppSettings, PromptTemplate, ReferenceFile, PromptScore } from '../types';
+import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis } from '../types';
 
 export const promptTemplates: PromptTemplate[] = [
   // --- PHOTO ---
@@ -299,13 +299,81 @@ function getContentTypeInstructions(contentType: string): string {
     case 'Background':
       return "Focus on background elements: textures, abstract patterns, gradients, bokeh, minimalistic spaces, and copy space. Emphasize usability as a backdrop for text or other design elements.";
     case 'Video':
-      return "Focus on cinematic elements: camera movement (e.g., pan, tilt, tracking shot), frame rate, resolution (e.g., 4K, 8K), lighting, motion blur, and dynamic action. Emphasize storytelling and high-end stock footage standards.";
+      return "Focus on cinematic elements: specific camera movements (e.g., slow-motion tracking shot, dynamic drone footage, handheld camera effect, stabilized gimbal shot, crane shot, dolly zoom), frame rate (e.g., 24fps, 60fps, 120fps), resolution (e.g., 4K, 8K), cinematic lighting, motion blur, and dynamic action. Emphasize storytelling, professional cinematography, and high-end stock footage standards.";
     case '3D Render':
       return "Focus on 3D elements: rendering engines (e.g., Octane, Unreal Engine), materials (e.g., glass, metal, matte), lighting (e.g., volumetric, HDRI), isometric views, and hyper-realism or stylized 3D. Emphasize modern 3D design trends.";
     case 'AI Art & Creativity':
       return "Focus on conceptual and surreal elements: abstract forms, generative patterns, dreamlike atmospheres, high-concept creativity, and unique digital aesthetics. Emphasize artistic innovation, emotional impact, and commercial utility for creative editorial or advertising projects.";
     default:
       return "Focus on high-quality, commercially viable visual elements appropriate for this asset type.";
+  }
+}
+
+function getVariationInstructions(level: 'Low' | 'Medium' | 'High'): string {
+  switch (level) {
+    case 'Low':
+      return "VARIATION LEVEL: LOW. Focus on a cohesive set of prompts that explore a specific theme with subtle variations. The prompts should feel like a consistent series or collection.";
+    case 'High':
+      return "VARIATION LEVEL: HIGH. MAXIMUM VARIATION REQUIRED. Each prompt must explore a completely different concept, environment, lighting, and composition within the niche. Force the AI to think outside the box and avoid any repetition of ideas. This is critical to avoid 'similar content' rejection.";
+    default:
+      return "VARIATION LEVEL: MEDIUM. Standard professional variation. Ensure a healthy mix of different subjects, angles, and lighting while staying relevant to the core theme.";
+  }
+}
+
+export async function analyzeAestheticReference(referenceFile: ReferenceFile, settings: AppSettings): Promise<AestheticAnalysis> {
+  const ai = getAI(settings.apiKey);
+  
+  const promptText = `Analyze the provided image reference and extract its "Aesthetic DNA" for the 'AI Art & Creativity' category. 
+  Focus on identifying the core visual elements that define its unique style and suggest how to incorporate them into high-quality image generation prompts.
+
+  Provide your analysis in the following JSON format:
+  {
+    "colorPalette": ["color1", "color2", ...],
+    "lighting": "description of lighting",
+    "mood": "description of mood/atmosphere",
+    "artisticStyle": "description of the artistic style/medium",
+    "composition": "description of the composition and framing",
+    "suggestions": ["suggestion 1", "suggestion 2", ...]
+  }
+
+  Suggestions should be specific to the 'AI Art & Creativity' category, focusing on surrealism, abstract concepts, and innovative digital aesthetics.`;
+
+  const response = await ai.models.generateContent({
+    model: settings.model,
+    contents: [
+      { text: promptText },
+      {
+        inlineData: {
+          data: referenceFile.data,
+          mimeType: referenceFile.mimeType
+        }
+      }
+    ],
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          colorPalette: { type: Type.ARRAY, items: { type: Type.STRING } },
+          lighting: { type: Type.STRING },
+          mood: { type: Type.STRING },
+          artisticStyle: { type: Type.STRING },
+          composition: { type: Type.STRING },
+          suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
+        },
+        required: ["colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
+      }
+    }
+  });
+
+  const text = response.text;
+  if (!text) throw new Error('No response from Gemini');
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse Aesthetic Analysis JSON:", text);
+    throw new Error("Failed to analyze the aesthetic of the reference. Please try again.");
   }
 }
 
@@ -445,13 +513,17 @@ export async function scorePrompts(prompts: string[], settings: AppSettings, con
     - clarity: (0-100)
     - specificity: (0-100)
     - adherence: (0-100)
-    - feedback: (Short, actionable advice to improve this specific prompt for Adobe Stock).`;
+    - feedback: (A concise summary of the evaluation)
+    - keywordFeedback: (Specific suggestions for keyword usage and density)
+    - clarityFeedback: (Specific suggestions for improving clarity and subject definition)
+    - specificityFeedback: (Specific suggestions for adding technical details like lighting, composition, and textures)
+    - adherenceFeedback: (Specific suggestions for improving Adobe Stock commercial utility and AI compliance)`;
 
     const response = await ai.models.generateContent({
       model: settings.model || 'gemini-3-flash-preview',
       contents: promptText,
       config: {
-        systemInstruction: "You are an expert Adobe Stock Quality Reviewer and AI Prompt Auditor. Your job is to provide harsh but fair evaluations of image prompts to ensure they meet the highest commercial and technical standards of Adobe Stock.",
+        systemInstruction: "You are an expert Adobe Stock Quality Reviewer and AI Prompt Auditor. Your job is to provide harsh but fair evaluations of image prompts to ensure they meet the highest commercial and technical standards of Adobe Stock. Provide detailed, actionable feedback for each evaluation criterion.",
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.ARRAY,
@@ -464,9 +536,13 @@ export async function scorePrompts(prompts: string[], settings: AppSettings, con
               clarity: { type: Type.INTEGER },
               specificity: { type: Type.INTEGER },
               adherence: { type: Type.INTEGER },
-              feedback: { type: Type.STRING }
+              feedback: { type: Type.STRING },
+              keywordFeedback: { type: Type.STRING },
+              clarityFeedback: { type: Type.STRING },
+              specificityFeedback: { type: Type.STRING },
+              adherenceFeedback: { type: Type.STRING }
             },
-            required: ["prompt", "score", "density", "clarity", "specificity", "adherence", "feedback"]
+            required: ["prompt", "score", "density", "clarity", "specificity", "adherence", "feedback", "keywordFeedback", "clarityFeedback", "specificityFeedback", "adherenceFeedback"]
           }
         }
       }
@@ -526,6 +602,8 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       - NO TEXT/TYPOGRAPHY: Absolutely no text, words, letters, signatures, or watermarks should be mentioned or implied in the components. The output must be purely visual.
       - GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms (e.g., "generic modern luxury car" instead of "Tesla").
       - QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
+      ${contentType === 'Video' ? `- SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques in the 'details/actions' section. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'.` : ''}
+      - ${getVariationInstructions(settings.variationLevel)}
       - Ensure all components are perfectly suited for ${contentType} and optimized for the ${template.name} platform.
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
@@ -621,6 +699,7 @@ TASK: Apply the aesthetic DNA from the file to the subject matter of '${category
 ADOBE STOCK SAFETY: Do not make a literal copy of the reference. Ensure the generated prompts describe unique compositions and subjects to avoid 'Similar Content' rejection.` : ''}
 
 ${contentType === 'AI Art & Creativity' ? `SPECIAL AI ART INSTRUCTION: For this category, prioritize surrealism, abstract concepts, and innovative digital aesthetics. If a reference is provided, deeply analyze its 'Aesthetic Soul'—not just the subject, but the emotional resonance, the texture of the light, and the complexity of the forms. Incorporate these into the prompts to create something that feels like a creative evolution of the reference.` : ''}
+${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'. Specify frame rates like '60fps' for slow motion or '24fps' for a cinematic look. Ensure the action described is dynamic and visually engaging.` : ''}
 
 CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 1. ALGORITHM OPTIMIZATION & Commercial Utility: Ensure concepts are highly usable for designers and agencies. You MUST include concepts with 'copy space', 'authentic lifestyle', 'diverse representation', 'modern aesthetics', or 'clean backgrounds' where appropriate.
@@ -630,7 +709,8 @@ CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
 5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
 6. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks. The image must be clean and free of any literal text.
-7. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
+7. ${getVariationInstructions(settings.variationLevel)}
+8. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
 "${template.template}"
 Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
 
@@ -703,6 +783,7 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
   ADOBE STOCK SAFETY: Ensure high variety in compositions to avoid 'Similar Content' rejections. Each prompt must be a distinct creative work.` : ''}
 
 ${contentType === 'AI Art & Creativity' ? `SPECIAL AI ART INSTRUCTION: For this category, prioritize surrealism, abstract concepts, and innovative digital aesthetics. If a reference is provided, deeply analyze its 'Aesthetic Soul'—not just the subject, but the emotional resonance, the texture of the light, and the complexity of the forms. Incorporate these into the prompts to create something that feels like a creative evolution of the reference.` : ''}
+${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'. Specify frame rates like '60fps' for slow motion or '24fps' for a cinematic look. Ensure the action described is dynamic and visually engaging.` : ''}
 
   CRITICAL REQUIREMENTS FOR ADOBE STOCK:
   1. ALGORITHM OPTIMIZATION & Commercial Utility: Ensure concepts are highly usable for designers and agencies. You MUST include concepts with 'copy space', 'authentic lifestyle', 'diverse representation', 'modern aesthetics', or 'clean backgrounds' where appropriate.
@@ -712,7 +793,8 @@ ${contentType === 'AI Art & Creativity' ? `SPECIAL AI ART INSTRUCTION: For this 
   4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only (e.g., "generic modern smartphone").
   5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
   6. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks.
-  7. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
+  7. ${getVariationInstructions(settings.variationLevel)}
+  8. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
   "${template.template}"
   Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
 

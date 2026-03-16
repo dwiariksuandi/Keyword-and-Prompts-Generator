@@ -4,6 +4,19 @@ import { History, Star, Zap, ShieldCheck } from 'lucide-react';
 export default function ChangelogTab() {
   const versions = [
     {
+      version: "v1.3.0",
+      date: "March 2026",
+      title: "Aesthetic Analysis & Granular Feedback",
+      icon: <Zap className="w-5 h-5 text-[#00D8B6]" />,
+      changes: [
+        "Introduced 'Aesthetic DNA Analysis' for AI Art & Creativity, extracting style, mood, and color palette from references.",
+        "Enhanced prompt scoring with granular feedback on Keyword Usage, Clarity, Specificity, and Adobe Stock Compliance.",
+        "Added 'Variation Level' setting (Low, Medium, High) to control prompt diversity and avoid 'Similar Content' rejections.",
+        "Optimized Video content generation with specific cinematic camera movements and technical specifications (fps, resolution).",
+        "Improved prompt generation logic to ensure higher variety in compositions and camera angles across all categories."
+      ]
+    },
+    {
       version: "v1.2.2",
       date: "March 2026",
       title: "Deep Keyword Research & Real Data Simulation",

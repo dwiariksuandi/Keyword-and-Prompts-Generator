@@ -262,11 +262,38 @@ export default function PromptTab({
                               </div>
                             </div>
                           </div>
-                          <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-800/50">
-                            <p className="text-[11px] text-slate-400 italic leading-relaxed">
-                              <span className="text-[#00D8B6] font-bold not-italic mr-1">Feedback:</span>
+                          <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800/50 space-y-3">
+                            <p className="text-[11px] text-slate-300 italic leading-relaxed">
+                              <span className="text-[#00D8B6] font-bold not-italic mr-1">Summary:</span>
                               {category.promptScores[index].feedback}
                             </p>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                              {category.promptScores[index].keywordFeedback && (
+                                <div className="space-y-1">
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Keyword Usage</span>
+                                  <p className="text-[10px] text-slate-400 leading-relaxed">{category.promptScores[index].keywordFeedback}</p>
+                                </div>
+                              )}
+                              {category.promptScores[index].clarityFeedback && (
+                                <div className="space-y-1">
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Clarity & Subject</span>
+                                  <p className="text-[10px] text-slate-400 leading-relaxed">{category.promptScores[index].clarityFeedback}</p>
+                                </div>
+                              )}
+                              {category.promptScores[index].specificityFeedback && (
+                                <div className="space-y-1">
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Technical Specificity</span>
+                                  <p className="text-[10px] text-slate-400 leading-relaxed">{category.promptScores[index].specificityFeedback}</p>
+                                </div>
+                              )}
+                              {category.promptScores[index].adherenceFeedback && (
+                                <div className="space-y-1">
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Adobe Stock Compliance</span>
+                                  <p className="text-[10px] text-slate-400 leading-relaxed">{category.promptScores[index].adherenceFeedback}</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}

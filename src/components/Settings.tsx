@@ -209,6 +209,30 @@ export default function Settings({
               </div>
             </div>
 
+            <div>
+              <label className="text-sm text-slate-400 mb-2 block">Variation Level</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: "Low", name: "Low", desc: "Similar" },
+                  { id: "Medium", name: "Medium", desc: "Standard" },
+                  { id: "High", name: "High", desc: "Maximum" },
+                ].map((level) => (
+                  <button
+                    key={level.id}
+                    onClick={() => setSettings({ ...settings, variationLevel: level.id as any })}
+                    className={`p-3 rounded-lg border text-center transition-all ${
+                      settings.variationLevel === level.id
+                        ? "border-[#00D8B6] bg-[#00D8B6]/10 text-[#00D8B6]"
+                        : "border-slate-800 bg-[#0B1121] text-slate-400 hover:text-white hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="font-medium">{level.name}</div>
+                    <div className="text-[10px] opacity-60">{level.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="pt-4 border-t border-slate-800/50 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
