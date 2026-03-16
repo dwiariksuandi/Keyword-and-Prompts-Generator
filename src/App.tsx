@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, scorePrompts, analyzeAestheticReference } from './services/gemini';
+import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic } from './services/gemini';
 import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis } from './types';
 import Settings from './components/Settings';
 import TopTab from './components/TopTab';
@@ -150,14 +150,19 @@ export default function App() {
   }, [history, results, settings.autoSave]);
 
   const handleAnalyzeAesthetic = async () => {
-    if (!referenceFile) return;
+    if (!referenceFile && !referenceUrl) return;
     setIsAnalyzingAesthetic(true);
     try {
-      const analysis = await analyzeAestheticReference(referenceFile, settings, contentType);
+      let analysis: AestheticAnalysis;
+      if (referenceFile) {
+        analysis = await analyzeAestheticReference(referenceFile, settings, contentType);
+      } else {
+        analysis = await analyzeUrlAesthetic(referenceUrl, settings, contentType);
+      }
       setAestheticAnalysis(analysis);
     } catch (error) {
       console.error("Aesthetic analysis failed:", error);
-      setToast({ show: true, message: 'Gagal menganalisis estetika gambar.' });
+      setToast({ show: true, message: 'Gagal menganalisis estetika.' });
     } finally {
       setIsAnalyzingAesthetic(false);
     }

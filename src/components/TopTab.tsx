@@ -339,12 +339,12 @@ export default function TopTab({
                         
                         <div className="grid grid-cols-2 gap-8">
                           <div className="space-y-2">
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Artistic Style</span>
-                            <p className="text-sm text-slate-200 font-light leading-relaxed">{aestheticAnalysis.artisticStyle}</p>
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Content Type</span>
+                            <p className="text-sm text-accent font-bold leading-relaxed">{aestheticAnalysis.detectedContentType || 'Analyzing...'}</p>
                           </div>
                           <div className="space-y-2">
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Atmosphere</span>
-                            <p className="text-sm text-slate-200 font-light leading-relaxed">{aestheticAnalysis.mood}</p>
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Artistic Style</span>
+                            <p className="text-sm text-slate-200 font-light leading-relaxed">{aestheticAnalysis.artisticStyle}</p>
                           </div>
                         </div>
 
@@ -396,8 +396,30 @@ export default function TopTab({
                   value={referenceUrl}
                   onChange={(e) => setReferenceUrl(e.target.value)}
                   placeholder="Inject research URL for context..."
-                  className="w-full h-20 bg-white/5 border border-white/10 rounded-3xl pl-16 pr-6 py-4 text-sm text-white outline-none focus:border-accent/40 focus:ring-0 transition-all placeholder:text-slate-600 font-light tracking-wide shadow-inner"
+                  className="w-full h-20 bg-white/5 border border-white/10 rounded-3xl pl-16 pr-24 py-4 text-sm text-white outline-none focus:border-accent/40 focus:ring-0 transition-all placeholder:text-slate-600 font-light tracking-wide shadow-inner"
                 />
+                {referenceUrl && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <motion.button 
+                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(0,255,255,0.1)' }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={onAnalyzeAesthetic}
+                      disabled={isAnalyzingAesthetic}
+                      className="p-3 text-accent hover:bg-accent/10 rounded-2xl transition-all border border-transparent hover:border-accent/30"
+                      title="Analyze URL Aesthetic"
+                    >
+                      {isAnalyzingAesthetic ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                    </motion.button>
+                    <motion.button 
+                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,0,0,0.1)' }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => { setReferenceUrl(''); setAestheticAnalysis(null); }}
+                      className="p-3 text-slate-500 hover:text-rose-400 rounded-2xl transition-all border border-transparent hover:border-rose-400/30"
+                    >
+                      <X size={18} />
+                    </motion.button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

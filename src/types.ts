@@ -26,6 +26,7 @@ export interface AestheticAnalysis {
   artisticStyle: string;
   composition: string;
   suggestions: string[];
+  detectedContentType?: string;
 }
 
 export interface CategoryResult {

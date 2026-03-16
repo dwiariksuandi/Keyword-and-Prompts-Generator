@@ -383,8 +383,11 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
   const promptText = `Analyze the provided image reference and extract its "Aesthetic DNA" optimized for the '${contentType}' category. 
   Focus on identifying the core visual elements that define its unique style and suggest how to incorporate them into high-quality image generation prompts for Adobe Stock.
 
+  CRITICAL: Also identify the specific content type or niche of this asset (e.g., "Niche Background", "Video Background", "Photo Landscape", "Technology", "Lifestyle", "Abstract Art", etc.).
+
   Provide your analysis in the following JSON format:
   {
+    "detectedContentType": "specific content type identified",
     "colorPalette": ["color1", "color2", ...],
     "lighting": "description of lighting",
     "mood": "description of mood/atmosphere",
@@ -397,7 +400,7 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
 
   try {
     const response = await ai.models.generateContent({
-      model: settings.model,
+      model: settings.model || 'gemini-3-flash-preview',
       contents: [
         { text: promptText },
         {
@@ -412,6 +415,7 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
         responseSchema: {
           type: Type.OBJECT,
           properties: {
+            detectedContentType: { type: Type.STRING },
             colorPalette: { type: Type.ARRAY, items: { type: Type.STRING } },
             lighting: { type: Type.STRING },
             mood: { type: Type.STRING },
@@ -419,7 +423,7 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
             composition: { type: Type.STRING },
             suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
           },
-          required: ["colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
+          required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
         }
       }
     });
@@ -432,6 +436,66 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
     console.error("Aesthetic analysis failed:", error);
     if (error instanceof Error && error.message.includes('JSON')) {
        throw new Error("Gagal memproses data estetika. Silakan coba lagi.");
+    }
+    throw new Error(handleGeminiError(error));
+  }
+}
+
+export async function analyzeUrlAesthetic(url: string, settings: AppSettings, contentType: string): Promise<AestheticAnalysis> {
+  const ai = getAI(settings.apiKey);
+  
+  const promptText = `Analyze the content and visual style of this URL: ${url}
+  You MUST use the urlContext tool to fetch and deeply analyze the content.
+  
+  Extract its "Aesthetic DNA" optimized for the '${contentType}' category. 
+  Focus on identifying the core visual elements that define its unique style and suggest how to incorporate them into high-quality image generation prompts for Adobe Stock.
+
+  CRITICAL: Also identify the specific content type or niche of this asset (e.g., "Niche Background", "Video Background", "Photo Landscape", "Technology", "Lifestyle", "Abstract Art", etc.).
+
+  Provide your analysis in the following JSON format:
+  {
+    "detectedContentType": "specific content type identified",
+    "colorPalette": ["color1", "color2", ...],
+    "lighting": "description of lighting",
+    "mood": "description of mood/atmosphere",
+    "artisticStyle": "description of the artistic style/medium",
+    "composition": "description of the composition and framing",
+    "suggestions": ["suggestion 1", "suggestion 2", ...]
+  }
+
+  Suggestions should be specific to the '${contentType}' category, focusing on commercial utility, technical precision, and high-end aesthetic standards.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3-flash-preview',
+      contents: [{ text: promptText }],
+      config: {
+        tools: [{ urlContext: {} }],
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            detectedContentType: { type: Type.STRING },
+            colorPalette: { type: Type.ARRAY, items: { type: Type.STRING } },
+            lighting: { type: Type.STRING },
+            mood: { type: Type.STRING },
+            artisticStyle: { type: Type.STRING },
+            composition: { type: Type.STRING },
+            suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
+        }
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error('No response from Gemini');
+    
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("URL Aesthetic analysis failed:", error);
+    if (error instanceof Error && error.message.includes('JSON')) {
+       throw new Error("Gagal memproses data estetika URL. Silakan coba lagi.");
     }
     throw new Error(handleGeminiError(error));
   }
@@ -465,10 +529,11 @@ ${keyword ? `The broad keyword context is: '${keyword}'.` : 'No specific keyword
 ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
 You MUST use the urlContext tool to fetch and deeply analyze the content of this URL. 
 This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for this analysis.
-1. Extract the core visual themes, color palettes, lighting styles, subject matter, and underlying concepts from the URL.
-2. The generated niches MUST be directly derived from, or highly complementary to, the specific content found in this URL. Do not deviate into unrelated topics.
-3. Identify the target audience and commercial purpose of the content in the URL.
-4. Use Google Search to cross-reference these extracted themes with current market demand on Adobe Stock to find profitable angles based on the URL's core concept.` : ''}
+1. Identify the specific content type or niche of the asset in the URL (e.g., "Niche Background", "Video Background", "Photo Landscape", "Technology", "Lifestyle", "Abstract Art", etc.).
+2. Extract the core visual themes, color palettes, lighting styles, subject matter, and underlying concepts from the URL.
+3. The generated niches MUST be directly derived from, or highly complementary to, the specific content found in this URL. Do not deviate into unrelated topics.
+4. Identify the target audience and commercial purpose of the content in the URL.
+5. Use Google Search to cross-reference these extracted themes with current market demand on Adobe Stock to find profitable angles based on the URL's core concept.` : ''}
 ${!keyword && !referenceUrl && referenceFile ? 'Please derive the niche opportunities primarily from the visual content of the provided reference.' : ''}
 
 Your objective is to uncover 4 to 6 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.
@@ -634,8 +699,9 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
       You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. 
       This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
-      Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter).
-      The niche '${categoryName}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the URL into a highly commercial stock asset.` : ''}
+      1. Identify the specific content type or niche of the asset in the URL (e.g., "Niche Background", "Video Background", "Photo Landscape", "Technology", "Lifestyle", "Abstract Art", etc.).
+      2. Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter).
+      The niche '${categoryName}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA and content type from the URL into a highly commercial stock asset.` : ''}
       ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference.
       This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
       Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter).
@@ -827,9 +893,10 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
   ${keyword ? `The core theme/keyword is: '${keyword}'.` : ''}
   ${referenceUrl ? `CRITICAL AESTHETIC REFERENCE (URL): ${referenceUrl}
   You MUST use the urlContext tool to analyze this URL. 
-  LOGIC: Use this URL as the source for AESTHETIC DNA (lighting, color palette, mood, artistic style, and composition).
+  LOGIC: First, identify the specific content type or niche of the asset in the URL (e.g., "Niche Background", "Video Background", "Photo Landscape", "Technology", "Lifestyle", "Abstract Art", etc.).
+  Then, use this URL as the source for AESTHETIC DNA (lighting, color palette, mood, artistic style, and composition).
   The keyword '${keyword || 'subject'}' is the PRIMARY SUBJECT. 
-  TASK: Apply the aesthetic DNA from the URL to the subject matter. 
+  TASK: Apply the aesthetic DNA and the identified content type characteristics from the URL to the subject matter. 
   ADOBE STOCK SAFETY: Do not replicate the specific content from the URL. Create original scenes that capture the 'vibe' without infringing on IP.` : ''}
   ${referenceFile ? `CRITICAL AESTHETIC REFERENCE (FILE): Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'}.
   LOGIC: Use this file as the source for AESTHETIC DNA (lighting, color palette, mood, artistic style, and composition).
@@ -916,7 +983,8 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
       You MUST use the urlContext tool to deeply analyze the visual style from this URL. 
       This URL is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
-      Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.` : ''}
+      1. Identify the specific content type or niche of the asset in the URL (e.g., "Niche Background", "Video Background", "Photo Landscape", "Technology", "Lifestyle", "Abstract Art", etc.).
+      2. Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.` : ''}
       ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided reference file.
       This reference file is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
       Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.` : ''}
@@ -1014,8 +1082,9 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
   ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
   You MUST use the urlContext tool to deeply analyze the visual style from this URL. 
   This URL is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
-  Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.
-  Ensure the upgraded prompts reflect the high-end technical qualities found in this URL.` : ''}
+  1. Identify the specific content type or niche of the asset in the URL (e.g., "Niche Background", "Video Background", "Photo Landscape", "Technology", "Lifestyle", "Abstract Art", etc.).
+  2. Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.
+  Ensure the upgraded prompts reflect the high-end technical qualities and content type characteristics found in this URL.` : ''}
   ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided reference file.
   This reference file is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
   Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.
