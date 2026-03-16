@@ -268,7 +268,12 @@ export async function analyzeKeyword(keyword: string, contentType: string, setti
 CRITICAL: You MUST use Google Search to find REAL, CURRENT data, trends, and search volumes for Adobe Stock and the microstock industry. Do not rely solely on your internal knowledge; ground your analysis in actual, up-to-date market realities to avoid bias.
 
 ${keyword ? `The broad keyword context is: '${keyword}'.` : 'No specific keyword was provided.'}
-${referenceUrl ? `I have provided a reference URL: ${referenceUrl}. Please analyze the content, trends, and visual themes from this link to identify similar or complementary niche opportunities.` : ''}
+${referenceUrl ? `CRITICAL REFERENCE URL: ${referenceUrl}
+You MUST use the urlContext tool to fetch and deeply analyze the content of this URL. 
+1. Extract the core visual themes, color palettes, lighting styles, subject matter, and underlying concepts.
+2. Identify the target audience and commercial purpose of the content.
+3. Use Google Search to cross-reference these extracted themes with current market demand on Adobe Stock.
+4. Identify highly profitable, underserved niche opportunities inspired by the aesthetic and concepts of this URL.` : ''}
 ${!keyword && !referenceUrl && referenceFile ? 'Please derive the niche opportunities primarily from the visual content of the provided reference.' : ''}
 
 Your objective is to uncover 4 to 6 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.
@@ -307,7 +312,7 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     model: settings.model || 'gemini-3-flash-preview',
     contents: { parts },
     config: {
-      systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to provide highly accurate, data-backed estimates for search volume and competition based on REAL, current market trends using Google Search. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches.",
+      systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to provide highly accurate, data-backed estimates for search volume and competition based on REAL, current market trends using Google Search. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA.",
       tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
       responseMimeType: 'application/json',
       responseSchema: {
@@ -360,7 +365,8 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       
       CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated components reflect REAL market demand and current design trends.
 
-      ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration for the components.` : ''}
+      ${referenceUrl ? `CRITICAL REFERENCE URL: ${referenceUrl}
+      You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. Extract its "Visual DNA" (lighting, color palette, mood, composition) and apply it to the generated components to ensure they match the aesthetic quality of the reference.` : ''}
       ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" (lighting, color palette, aesthetic) and apply it to the components.` : ''}
 
       We need to programmatically generate ${count} unique combinations. Please provide:
@@ -393,7 +399,7 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. Use real-world data to inform your aesthetic choices.",
+        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. Use real-world data to inform your aesthetic choices. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA.",
         tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
@@ -456,7 +462,8 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
 
 CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated prompts reflect REAL market demand and current design trends.
 
-${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration.` : ''}
+${referenceUrl ? `CRITICAL REFERENCE URL: ${referenceUrl}
+You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. Extract its "Visual DNA" (lighting, color palette, mood, composition) and apply it to the generated prompts to ensure they match the aesthetic quality of the reference.` : ''}
 ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" and apply it to these prompts.` : ''}
 
 CRITICAL REQUIREMENTS FOR ADOBE STOCK:
@@ -488,7 +495,7 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
     model: settings.model || 'gemini-3-flash-preview',
     contents: { parts: partsSmall },
     config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. You understand lighting, composition, camera settings, and market trends perfectly based on real data.",
+      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. You understand lighting, composition, camera settings, and market trends perfectly based on real data. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA.",
       tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
       responseMimeType: 'application/json',
       responseSchema: {
@@ -524,7 +531,8 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
   CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this asset type. Ensure your generated prompts reflect REAL market demand and current design trends.
 
   ${keyword ? `The core theme/keyword is: '${keyword}'.` : ''}
-  ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration. Extract the "Visual DNA" (lighting, color palette, mood) and apply it to new, distinct scenarios.` : ''}
+  ${referenceUrl ? `CRITICAL REFERENCE URL: ${referenceUrl}
+  You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. Extract the "Visual DNA" (lighting, color palette, mood, composition) and apply it to new, distinct scenarios. DO NOT make literal copies; instead, create new scenes inspired by this aesthetic.` : ''}
   ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" and apply it to these prompts. DO NOT make literal copies; instead, create new scenes inspired by this aesthetic.` : ''}
 
   CRITICAL REQUIREMENTS FOR ADOBE STOCK:
@@ -557,7 +565,7 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
     model: settings.model || 'gemini-3-flash-preview',
     contents: { parts },
     config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references and real-world market data. You excel at extracting aesthetic essence and applying it to new, commercially viable concepts.",
+      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references and real-world market data. You excel at extracting aesthetic essence and applying it to new, commercially viable concepts. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA.",
       tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
       responseMimeType: 'application/json',
       responseSchema: {
@@ -598,7 +606,8 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
 
       ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
-      ${referenceUrl ? `Use the visual style from this URL as a technical quality benchmark: ${referenceUrl}` : ''}
+      ${referenceUrl ? `CRITICAL REFERENCE URL: ${referenceUrl}
+      You MUST use the urlContext tool to deeply analyze the visual style from this URL. Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.` : ''}
       ${referenceFile ? `Use the visual style from the provided reference as a technical quality benchmark.` : ''}
 
       Provide a set of "Technical Enhancement Layers" that can be applied to preserve the original subject:
@@ -627,7 +636,7 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer. Your task is to provide technical enhancement layers that improve prompt quality without altering the original visual subject or intent. Base your enhancements on real-world commercial photography standards.",
+        systemInstruction: "You are an elite AI Image Prompt Engineer. Your task is to provide technical enhancement layers that improve prompt quality without altering the original visual subject or intent. Base your enhancements on real-world commercial photography standards. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA.",
         tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
