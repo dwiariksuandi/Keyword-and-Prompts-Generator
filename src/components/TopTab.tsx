@@ -144,7 +144,7 @@ export default function TopTab({
         <motion.h1 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-5xl sm:text-6xl font-display font-bold text-white mb-6 tracking-tighter leading-tight max-w-4xl mx-auto"
+          className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-white mb-4 tracking-tighter leading-tight max-w-4xl mx-auto"
         >
           Analyze Trends, Dominate the <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-blue-500">Market</span>.
         </motion.h1>
@@ -152,7 +152,7 @@ export default function TopTab({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-slate-400 text-lg font-light max-w-2xl mx-auto leading-relaxed"
+          className="text-slate-400 text-base sm:text-lg font-light max-w-2xl mx-auto leading-relaxed"
         >
           Powered by <span className="text-white font-medium">Gemini 3.1 Pro</span> for high-precision microstock data synthesis and neural prompt engineering.
         </motion.p>
@@ -167,13 +167,13 @@ export default function TopTab({
         <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-accent/50 to-transparent opacity-40" />
         
         {/* Header/Content Type Selection */}
-        <div className="px-10 py-8 border-b border-white/5 bg-white/5">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-8">
+        <div className="px-6 py-6 sm:px-10 sm:py-8 border-b border-white/5 bg-white/5">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-6 sm:gap-8">
             <div className="flex items-center gap-3 shrink-0">
-              <Globe size={16} className="text-accent" />
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Content Sector</span>
+              <Globe size={14} className="text-accent" />
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em]">Content Sector</span>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               {[
                 { id: 'Photo', label: 'PHOTO', icon: ImageIcon },
                 { id: 'Illustration', label: 'ILLUSTRATION', icon: Palette },
@@ -185,12 +185,12 @@ export default function TopTab({
               ].map(type => (
                 <motion.button
                   key={type.id}
-                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setContentType(type.id)}
-                  className={`flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl text-[8px] sm:text-[9px] font-bold tracking-[0.15em] sm:tracking-[0.2em] transition-all duration-500 border ${
+                  className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-[9px] sm:text-[10px] font-bold tracking-[0.1em] sm:tracking-[0.15em] transition-all duration-300 border ${
                     contentType === type.id 
-                      ? 'bg-white text-black border-white shadow-[0_0_25px_rgba(255,255,255,0.15)]' 
+                      ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.1)]' 
                       : 'bg-white/5 text-slate-400 border-white/5 hover:text-white hover:bg-white/10 hover:border-white/20'
                   }`}
                 >
@@ -203,11 +203,11 @@ export default function TopTab({
         </div>
 
         {/* Main Input Area */}
-        <div className="p-10 space-y-10 relative">
+        <div className="p-6 sm:p-10 space-y-8 sm:space-y-10 relative">
           <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-accent/20 to-blue-500/20 rounded-[2.5rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-accent/20 to-blue-500/20 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
             <textarea 
-              className="relative w-full h-48 bg-black/40 border border-white/10 rounded-[2rem] p-8 text-white placeholder-slate-600 resize-none outline-none focus:border-accent/40 focus:ring-0 transition-all font-light text-xl leading-relaxed shadow-inner"
+              className="relative w-full h-40 sm:h-48 bg-black/40 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-8 text-white placeholder-slate-600 resize-none outline-none focus:border-accent/40 focus:ring-0 transition-all font-light text-lg sm:text-xl leading-relaxed shadow-inner"
               placeholder="Describe your creative concept or enter neural keywords..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
@@ -250,12 +250,12 @@ export default function TopTab({
           </div>
 
           {/* Reference Tools Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10">
             {/* File Upload */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3 ml-4">
+              <div className="flex items-center gap-3 ml-2 sm:ml-4">
                 <Activity size={14} className="text-accent" />
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Visual DNA Analysis</label>
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em]">Visual DNA Analysis</label>
               </div>
               <input 
                 type="file" 
@@ -267,55 +267,55 @@ export default function TopTab({
               
               {!referenceFile ? (
                 <motion.button 
-                  whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.08)' }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.01, backgroundColor: 'rgba(255,255,255,0.08)' }}
+                  whileTap={{ scale: 0.99 }}
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full h-16 sm:h-20 flex items-center justify-center gap-4 text-[10px] font-bold text-slate-400 hover:text-white hover:border-white/30 transition-all bg-white/5 border border-dashed border-white/10 rounded-3xl px-8 uppercase tracking-[0.2em]"
+                  className="w-full h-14 sm:h-16 flex items-center justify-center gap-4 text-[9px] font-bold text-slate-400 hover:text-white hover:border-white/30 transition-all bg-white/5 border border-dashed border-white/10 rounded-2xl px-6 uppercase tracking-[0.2em]"
                 >
-                  <Upload size={20} className="text-accent" />
+                  <Upload size={18} className="text-accent" />
                   <span>Upload Reference Asset</span>
                 </motion.button>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <motion.div 
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="relative bg-white/5 border border-accent/30 rounded-3xl p-4 flex items-center gap-5 group"
+                    className="relative bg-white/5 border border-accent/30 rounded-2xl p-3 sm:p-4 flex items-center gap-4 group"
                   >
-                    <div className="w-16 h-16 rounded-2xl bg-black/40 overflow-hidden flex items-center justify-center border border-white/10 shrink-0 shadow-lg">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-black/40 overflow-hidden flex items-center justify-center border border-white/10 shrink-0 shadow-lg">
                       {referenceFile.mimeType.startsWith('image/') ? (
                         <img src={referenceFile.previewUrl} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <Film size={28} className="text-slate-500" />
+                        <Film size={24} className="text-slate-500" />
                       )}
                     </div>
                     <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-sm font-bold text-white truncate">{referenceFile.name}</span>
-                      <span className="text-[10px] text-slate-500 uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                      <span className="text-xs font-bold text-white truncate">{referenceFile.name}</span>
+                      <span className="text-[9px] text-slate-500 uppercase tracking-[0.2em] mt-1 flex items-center gap-2">
+                        <div className="w-1 h-1 rounded-full bg-accent animate-pulse" />
                         {referenceFile.mimeType.split('/')[1]} • Neural Ready
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2">
                       {referenceFile.mimeType.startsWith('image/') && (
                         <motion.button 
                           whileHover={{ scale: 1.1, backgroundColor: 'rgba(0,255,255,0.1)' }}
                           whileTap={{ scale: 0.9 }}
                           onClick={onAnalyzeAesthetic}
                           disabled={isAnalyzingAesthetic}
-                          className="p-3 text-accent hover:bg-accent/10 rounded-2xl transition-all border border-transparent hover:border-accent/30"
+                          className="p-2 text-accent hover:bg-accent/10 rounded-xl transition-all border border-transparent hover:border-accent/30"
                           title="Analyze Aesthetic"
                         >
-                          {isAnalyzingAesthetic ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                          {isAnalyzingAesthetic ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                         </motion.button>
                       )}
                       <motion.button 
                         whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,0,0,0.1)' }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => { removeFile(); setAestheticAnalysis(null); }}
-                        className="p-3 text-slate-500 hover:text-rose-400 rounded-2xl transition-all border border-transparent hover:border-rose-400/30"
+                        className="p-2 text-slate-500 hover:text-rose-400 rounded-xl transition-all border border-transparent hover:border-rose-400/30"
                       >
-                        <X size={18} />
+                        <X size={16} />
                       </motion.button>
                     </div>
                   </motion.div>
@@ -326,50 +326,50 @@ export default function TopTab({
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="bg-accent/5 border border-accent/20 rounded-3xl p-8 space-y-6 overflow-hidden"
+                        className="bg-accent/5 border border-accent/20 rounded-2xl p-6 space-y-4 overflow-hidden"
                       >
                         <div className="flex items-center justify-between">
-                          <h3 className="text-[10px] font-bold text-accent uppercase tracking-[0.3em] flex items-center gap-3">
-                            <Terminal size={16} /> Aesthetic DNA Decoded
+                          <h3 className="text-[9px] font-bold text-accent uppercase tracking-[0.3em] flex items-center gap-2">
+                            <Terminal size={14} /> Aesthetic DNA Decoded
                           </h3>
                           <button onClick={() => setAestheticAnalysis(null)} className="text-slate-500 hover:text-white transition-colors">
-                            <X size={16} />
+                            <X size={14} />
                           </button>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-8">
-                          <div className="space-y-2">
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Content Type</span>
-                            <p className="text-sm text-accent font-bold leading-relaxed">{aestheticAnalysis.detectedContentType || 'Analyzing...'}</p>
+                        <div className="grid grid-cols-2 gap-6">
+                          <div className="space-y-1">
+                            <span className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">Content Type</span>
+                            <p className="text-xs text-accent font-bold leading-relaxed">{aestheticAnalysis.detectedContentType || 'Analyzing...'}</p>
                           </div>
-                          <div className="space-y-2">
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Artistic Style</span>
-                            <p className="text-sm text-slate-200 font-light leading-relaxed">{aestheticAnalysis.artisticStyle}</p>
+                          <div className="space-y-1">
+                            <span className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">Artistic Style</span>
+                            <p className="text-xs text-slate-200 font-light leading-relaxed">{aestheticAnalysis.artisticStyle}</p>
                           </div>
                         </div>
 
-                        <div className="space-y-3">
-                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Chromatic Profile</span>
-                          <div className="flex flex-wrap gap-2">
+                        <div className="space-y-2">
+                          <span className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">Chromatic Profile</span>
+                          <div className="flex flex-wrap gap-1.5">
                             {aestheticAnalysis.colorPalette.map((color, i) => (
-                              <span key={i} className="px-3 py-1.5 bg-white/5 rounded-xl text-[10px] text-slate-400 border border-white/10 font-mono uppercase tracking-wider">{color}</span>
+                              <span key={i} className="px-2 py-1 bg-white/5 rounded-lg text-[9px] text-slate-400 border border-white/10 font-mono uppercase tracking-wider">{color}</span>
                             ))}
                           </div>
                         </div>
 
-                        <div className="space-y-3">
-                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Strategic Neural Insights</span>
-                          <div className="space-y-2">
+                        <div className="space-y-2">
+                          <span className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">Strategic Neural Insights</span>
+                          <div className="space-y-1.5">
                             {aestheticAnalysis.suggestions.map((suggestion, i) => (
                               <motion.button 
                                 key={i} 
-                                whileHover={{ x: 4, backgroundColor: 'rgba(0,255,255,0.05)' }}
+                                whileHover={{ x: 2, backgroundColor: 'rgba(0,255,255,0.05)' }}
                                 whileTap={{ scale: 0.99 }}
                                 onClick={() => setKeyword(prev => prev ? `${prev}, ${suggestion}` : suggestion)}
-                                className="w-full text-left p-3 rounded-xl border border-white/5 hover:border-accent/30 transition-all flex items-start gap-3 group"
+                                className="w-full text-left p-2.5 rounded-xl border border-white/5 hover:border-accent/30 transition-all flex items-start gap-2.5 group"
                               >
-                                <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0 shadow-[0_0_8px_rgba(0,255,255,0.5)]" />
-                                <span className="text-[11px] text-slate-400 group-hover:text-slate-200 font-light leading-relaxed">{suggestion}</span>
+                                <div className="w-1 h-1 rounded-full bg-accent mt-1.5 shrink-0 shadow-[0_0_8px_rgba(0,255,255,0.5)]" />
+                                <span className="text-[10px] text-slate-400 group-hover:text-slate-200 font-light leading-relaxed">{suggestion}</span>
                               </motion.button>
                             ))}
                           </div>
@@ -383,40 +383,40 @@ export default function TopTab({
 
             {/* URL Reference */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3 ml-4">
+              <div className="flex items-center gap-3 ml-2 sm:ml-4">
                 <Database size={14} className="text-accent" />
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Market Source Protocol</label>
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em]">Market Source Protocol</label>
               </div>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-                  <LinkIcon size={18} className="text-slate-500 group-focus-within:text-accent transition-colors" />
+                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                  <LinkIcon size={16} className="text-slate-500 group-focus-within:text-accent transition-colors" />
                 </div>
                 <input 
                   type="url"
                   value={referenceUrl}
                   onChange={(e) => setReferenceUrl(e.target.value)}
                   placeholder="Inject research URL for context..."
-                  className="w-full h-16 sm:h-20 bg-white/5 border border-white/10 rounded-3xl pl-16 pr-24 py-4 text-sm text-white outline-none focus:border-accent/40 focus:ring-0 transition-all placeholder:text-slate-600 font-light tracking-wide shadow-inner"
+                  className="w-full h-14 sm:h-16 bg-white/5 border border-white/10 rounded-2xl pl-14 pr-20 py-3 text-sm text-white outline-none focus:border-accent/40 focus:ring-0 transition-all placeholder:text-slate-600 font-light tracking-wide shadow-inner"
                 />
                 {referenceUrl && (
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                     <motion.button 
                       whileHover={{ scale: 1.1, backgroundColor: 'rgba(0,255,255,0.1)' }}
                       whileTap={{ scale: 0.9 }}
                       onClick={onAnalyzeAesthetic}
                       disabled={isAnalyzingAesthetic}
-                      className="p-3 text-accent hover:bg-accent/10 rounded-2xl transition-all border border-transparent hover:border-accent/30"
+                      className="p-2 text-accent hover:bg-accent/10 rounded-xl transition-all border border-transparent hover:border-accent/30"
                       title="Analyze URL Aesthetic"
                     >
-                      {isAnalyzingAesthetic ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                      {isAnalyzingAesthetic ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                     </motion.button>
                     <motion.button 
                       whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,0,0,0.1)' }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => { setReferenceUrl(''); setAestheticAnalysis(null); }}
-                      className="p-3 text-slate-500 hover:text-rose-400 rounded-2xl transition-all border border-transparent hover:border-rose-400/30"
+                      className="p-2 text-slate-500 hover:text-rose-400 rounded-xl transition-all border border-transparent hover:border-rose-400/30"
                     >
-                      <X size={18} />
+                      <X size={16} />
                     </motion.button>
                   </div>
                 )}
@@ -425,38 +425,38 @@ export default function TopTab({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-6 flex flex-col sm:flex-row justify-end gap-6">
+          <div className="pt-4 flex flex-col sm:flex-row justify-end gap-4">
             <motion.button 
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.01, y: -1 }}
+              whileTap={{ scale: 0.99 }}
               onClick={onQuickGenerate}
               disabled={isAnalyzing || (!keyword.trim() && !referenceFile && !referenceUrl.trim())}
-              className="w-full sm:w-auto flex items-center justify-center gap-4 bg-white/5 hover:bg-white/10 text-white px-10 py-5 rounded-[1.5rem] text-[10px] font-bold uppercase tracking-[0.3em] transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 shadow-xl"
+              className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-2xl text-[9px] font-bold uppercase tracking-[0.3em] transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 shadow-xl"
             >
               {isAnalyzing ? (
-                <Loader2 size={18} className="animate-spin" />
+                <Loader2 size={16} className="animate-spin" />
               ) : (
                 <>
-                  <Zap size={18} className="text-accent" />
+                  <Zap size={16} className="text-accent" />
                   <span>Quick Synthesis</span>
                 </>
               )}
             </motion.button>
             <motion.button 
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.01, y: -1 }}
+              whileTap={{ scale: 0.99 }}
               onClick={onAnalyze}
               disabled={isAnalyzing || (!keyword.trim() && !referenceFile && !referenceUrl.trim())}
-              className="w-full sm:w-auto flex items-center justify-center gap-4 bg-white text-black px-12 py-5 rounded-[1.5rem] text-[10px] font-bold uppercase tracking-[0.3em] transition-all disabled:opacity-50 disabled:cursor-not-allowed futuristic-glow hover:bg-slate-200 shadow-2xl shadow-white/10"
+              className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white text-black px-10 py-4 rounded-2xl text-[9px] font-bold uppercase tracking-[0.3em] transition-all disabled:opacity-50 disabled:cursor-not-allowed futuristic-glow hover:bg-slate-200 shadow-2xl shadow-white/10"
             >
               {isAnalyzing ? (
                 <>
-                  <Loader2 size={18} className="animate-spin" />
+                  <Loader2 size={16} className="animate-spin" />
                   <span>Processing Neural Data...</span>
                 </>
               ) : (
                 <>
-                  <Search size={18} />
+                  <Search size={16} />
                   <span>Initialize Deep Analysis</span>
                 </>
               )}

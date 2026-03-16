@@ -162,7 +162,8 @@ export default function App() {
       setAestheticAnalysis(analysis);
     } catch (error) {
       console.error("Aesthetic analysis failed:", error);
-      setToast({ show: true, message: 'Gagal menganalisis estetika.' });
+      const errorMessage = error instanceof Error ? error.message : 'Gagal menganalisis estetika.';
+      setToast({ show: true, message: errorMessage });
     } finally {
       setIsAnalyzingAesthetic(false);
     }

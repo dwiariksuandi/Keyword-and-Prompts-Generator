@@ -78,13 +78,13 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 mt-16"
+        className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-10 mt-12 sm:mt-16"
       >
         <div className="text-center lg:text-left space-y-2">
-          <h1 className="text-5xl font-bold text-white tracking-tighter font-display">
+          <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tighter font-display">
             Market <span className="text-accent">Intelligence</span>
           </h1>
-          <p className="text-slate-400 max-w-2xl font-light text-lg">
+          <p className="text-slate-400 max-w-2xl font-light text-base sm:text-lg">
             Synthesized data streams from global search trends and competitive neural landscapes.
           </p>
         </div>
@@ -93,18 +93,18 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
           whileTap={{ scale: 0.98 }}
           onClick={onGenerateAll}
           disabled={isGeneratingAll}
-          className="flex items-center gap-4 bg-accent hover:bg-accent/90 text-slate-900 font-bold px-10 py-5 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-accent/20 border border-accent/20 uppercase tracking-widest text-xs"
+          className="flex items-center justify-center gap-4 bg-accent hover:bg-accent/90 text-slate-900 font-bold px-8 sm:px-10 py-4 sm:py-5 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-accent/20 border border-accent/20 uppercase tracking-widest text-[10px] sm:text-xs"
         >
           {isGeneratingAll ? (
-            <><Activity className="w-5 h-5 animate-spin" /> Synchronizing...</>
+            <><Activity className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> Synchronizing...</>
           ) : (
-            <><Sparkles className="w-5 h-5" /> Execute Full Insight</>
+            <><Sparkles className="w-4 h-4 sm:w-5 sm:h-5" /> Execute Full Insight</>
           )}
         </motion.button>
       </motion.div>
       
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
         {[
           { label: 'Neural Sectors', value: results.length, icon: Globe, color: 'accent' },
           { label: 'Data Points', value: totalKeywords, icon: Database, color: 'purple' },
@@ -116,16 +116,16 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="glass-panel p-8 group relative overflow-hidden hover:border-accent/30 transition-all duration-500"
+            className="glass-panel p-6 sm:p-8 group relative overflow-hidden hover:border-accent/30 transition-all duration-500"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-[80px] rounded-full -mr-16 -mt-16 group-hover:bg-accent/10 transition-all duration-700" />
-            <div className="flex items-center gap-5 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-accent/50 group-hover:bg-accent/5 transition-all duration-500">
-                <stat.icon className="w-7 h-7 text-slate-400 group-hover:text-accent transition-colors" />
+            <div className="flex items-center gap-4 sm:gap-5 mb-4 sm:mb-6">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-accent/50 group-hover:bg-accent/5 transition-all duration-500">
+                <stat.icon className="w-6 h-6 sm:w-7 sm:h-7 text-slate-400 group-hover:text-accent transition-colors" />
               </div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">{stat.label}</span>
+              <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">{stat.label}</span>
             </div>
-            <p className="text-5xl font-bold text-white font-mono tracking-tighter">{stat.value}</p>
+            <p className="text-4xl sm:text-5xl font-bold text-white font-mono tracking-tighter">{stat.value}</p>
           </motion.div>
         ))}
       </div>
@@ -145,39 +145,50 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
               {/* Decorative side bar */}
               <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-accent/0 via-accent/40 to-accent/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
               
-              <div className="p-10 sm:p-12">
-                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-12 mb-12">
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-6">
-                      <h3 className="text-4xl font-bold text-white tracking-tight font-display group-hover:text-accent transition-colors duration-500">{category.categoryName}</h3>
+              <div className="p-8 sm:p-12">
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-8 sm:gap-12 mb-10 sm:mb-12">
+                  <div className="space-y-4 sm:space-y-6">
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                      <h3 className="text-3xl sm:text-4xl font-bold text-white tracking-tight font-display group-hover:text-accent transition-colors duration-500">{category.categoryName}</h3>
                       <motion.button
-                        whileHover={{ scale: 1.2, rotate: 15 }}
-                        whileTap={{ scale: 0.8 }}
+                        whileHover={{ scale: 1.1, rotate: 15 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => onToggleStar(category.id)}
-                        className={`p-3 rounded-2xl transition-all duration-500 ${category.isStarred ? "text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 shadow-lg shadow-yellow-400/10" : "text-slate-600 hover:text-white hover:bg-white/5 border border-transparent"}`}
+                        className={`p-2 sm:p-3 rounded-2xl transition-all duration-500 ${category.isStarred ? "text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 shadow-lg shadow-yellow-400/10" : "text-slate-600 hover:text-white hover:bg-white/5 border border-transparent"}`}
                       >
-                        <Star className={`w-7 h-7 ${category.isStarred ? "fill-current" : ""}`} />
+                        <Star className={`w-5 h-5 sm:w-7 sm:h-7 ${category.isStarred ? "fill-current" : ""}`} />
                       </motion.button>
                     </div>
-                    <div className="flex flex-wrap items-center gap-5">
-                      <span className={`px-5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] border ${getCompetitionColor(category.competition)}`}>
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-5">
+                      <span className={`px-4 sm:px-5 py-1.5 sm:py-2 rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] border ${getCompetitionColor(category.competition)}`}>
                         {category.competition} Competition
                       </span>
-                      <div className="flex items-center gap-3 bg-white/5 px-5 py-2 rounded-xl border border-white/10">
+                      <div className="flex items-center gap-2 sm:gap-3 bg-white/5 px-4 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-white/10">
                         {getTrendIcon(category.trend)}
-                        <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${category.trend === "up" ? "text-emerald-400" : category.trend === "down" ? "text-rose-400" : "text-slate-400"}`}>
+                        <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] ${category.trend === "up" ? "text-emerald-400" : category.trend === "down" ? "text-rose-400" : "text-slate-400"}`}>
                           {category.trendPercent}% Trend
                         </span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex flex-col items-center lg:items-end">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] mb-4">Opportunity Index</span>
-                    <div className="flex items-center gap-8">
-                      <span className={`text-7xl font-black font-mono tracking-tighter ${getScoreColor(category.opportunityScore)}`}>{category.opportunityScore}</span>
-                      <div className={`w-20 h-20 rounded-full border-4 border-white/5 relative flex items-center justify-center ${getScoreGlow(category.opportunityScore)}`}>
+                  <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-start gap-4">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] lg:mb-4">Opportunity Index</span>
+                    <div className="flex items-center gap-4 sm:gap-8">
+                      <span className={`text-5xl sm:text-7xl font-black font-mono tracking-tighter ${getScoreColor(category.opportunityScore)}`}>{category.opportunityScore}</span>
+                      <div className={`w-14 h-14 sm:w-20 sm:h-20 rounded-full border-4 border-white/5 relative flex items-center justify-center ${getScoreGlow(category.opportunityScore)}`}>
                         <svg className="w-full h-full -rotate-90">
+                          <circle
+                            cx="28"
+                            cy="28"
+                            r="24"
+                            fill="transparent"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            strokeDasharray={150.8}
+                            strokeDashoffset={150.8 - (150.8 * category.opportunityScore) / 100}
+                            className={`${getScoreColor(category.opportunityScore)} transition-all duration-1000 sm:hidden`}
+                          />
                           <circle
                             cx="40"
                             cy="40"
@@ -187,7 +198,7 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                             strokeWidth="4"
                             strokeDasharray={226.2}
                             strokeDashoffset={226.2 - (226.2 * category.opportunityScore) / 100}
-                            className={`${getScoreColor(category.opportunityScore)} transition-all duration-1000`}
+                            className={`${getScoreColor(category.opportunityScore)} transition-all duration-1000 hidden sm:block`}
                           />
                         </svg>
                         <div className="absolute inset-0 bg-current opacity-5 rounded-full" />
@@ -197,18 +208,18 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                 </div>
                 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12 mb-10 sm:mb-12">
                   {[
                     { label: 'Search Volume', value: category.volumeNumber.toLocaleString(), progress: Math.min(100, (category.volumeNumber / 50000) * 100), color: 'accent' },
                     { label: 'Difficulty', value: `${category.difficultyScore}/100`, progress: category.difficultyScore, color: 'rose-500' },
                     { label: 'Competition', value: `${category.competitionScore}/100`, progress: category.competitionScore, color: 'orange-500' }
                   ].map((metric, i) => (
-                    <div key={i} className="space-y-4">
+                    <div key={i} className="space-y-3 sm:space-y-4">
                       <div className="flex justify-between items-end">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{metric.label}</p>
-                        <span className={`text-2xl font-bold font-mono tracking-tight ${i === 0 ? 'text-white' : getScoreColor(100 - metric.progress)}`}>{metric.value}</span>
+                        <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{metric.label}</p>
+                        <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight ${i === 0 ? 'text-white' : getScoreColor(100 - metric.progress)}`}>{metric.value}</span>
                       </div>
-                      <div className="h-2.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                      <div className="h-2 sm:h-2.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
                         <motion.div 
                           initial={{ width: 0 }}
                           whileInView={{ width: `${metric.progress}%` }}
@@ -222,15 +233,15 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                 </div>
                 
                 {/* Keywords & Advice */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                  <div className="space-y-5">
-                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Neural Vectors</h4>
-                    <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10">
+                  <div className="space-y-4 sm:space-y-5">
+                    <h4 className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Neural Vectors</h4>
+                    <div className="flex flex-wrap gap-2 sm:gap-3">
                       {category.mainKeywords.map((keyword, idx) => (
                         <motion.span
                           key={idx}
                           whileHover={{ scale: 1.05, borderColor: 'var(--color-accent)', backgroundColor: 'rgba(0, 216, 182, 0.05)' }}
-                          className="bg-white/5 text-slate-200 text-xs px-6 py-3 rounded-2xl border border-white/10 transition-all cursor-default font-light tracking-wide"
+                          className="bg-white/5 text-slate-200 text-[11px] sm:text-xs px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-white/10 transition-all cursor-default font-light tracking-wide"
                         >
                           {keyword}
                         </motion.span>
@@ -238,12 +249,12 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                     </div>
                   </div>
 
-                  <div className="bg-accent/5 rounded-3xl p-8 border border-accent/10 relative overflow-hidden group/advice">
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-accent/20 group-hover/advice:bg-accent transition-all duration-500" />
-                    <h4 className="text-[10px] font-bold text-accent uppercase tracking-[0.3em] mb-4 flex items-center gap-3">
-                      <Sparkles size={16} /> Strategic Directive
+                  <div className="bg-accent/5 rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-accent/10 relative overflow-hidden group/advice">
+                    <div className="absolute top-0 left-0 w-1 sm:w-1.5 h-full bg-accent/20 group-hover/advice:bg-accent transition-all duration-500" />
+                    <h4 className="text-[9px] sm:text-[10px] font-bold text-accent uppercase tracking-[0.3em] mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
+                      <Sparkles size={14} sm:size={16} /> Strategic Directive
                     </h4>
-                    <p className="text-lg text-slate-300 leading-relaxed italic font-light">
+                    <p className="text-base sm:text-lg text-slate-300 leading-relaxed italic font-light">
                       "{category.creativeAdvice}"
                     </p>
                   </div>

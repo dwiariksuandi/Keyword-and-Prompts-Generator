@@ -425,18 +425,25 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
           },
           required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
         },
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
 
     const text = response.text;
     if (!text) throw new Error('No response from Gemini');
     
-    return JSON.parse(text);
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const cleanJson = jsonMatch ? jsonMatch[0] : text;
+      return JSON.parse(cleanJson);
+    } catch (e) {
+      console.error("JSON Parse failed for aesthetic reference:", text);
+      throw new Error("Gagal memproses data estetika. Format respons tidak valid.");
+    }
   } catch (error) {
     console.error("Aesthetic analysis failed:", error);
-    if (error instanceof Error && error.message.includes('JSON')) {
-       throw new Error("Gagal memproses data estetika. Silakan coba lagi.");
+    if (error instanceof Error && error.message.includes('Gagal memproses')) {
+      throw error;
     }
     throw new Error(handleGeminiError(error));
   }
@@ -446,7 +453,11 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
   const ai = getAI(settings.apiKey);
   
   const promptText = `Analyze the content and visual style of this URL: ${url}
-  You MUST use the urlContext tool to fetch and deeply analyze the content.
+  
+  INSTRUCTIONS:
+  1. Use the urlContext tool to fetch and deeply analyze the content of the page.
+  2. If urlContext fails or is blocked, use the googleSearch tool to find information about this specific Adobe Stock asset or similar assets.
+  3. If both tools fail, analyze the URL path itself (it often contains descriptive keywords) and use your extensive knowledge of Adobe Stock's visual trends to provide a professional aesthetic analysis.
   
   Extract its "Aesthetic DNA" optimized for the '${contentType}' category. 
   Focus on identifying the core visual elements that define its unique style and suggest how to incorporate them into high-quality image generation prompts for Adobe Stock.
@@ -471,7 +482,7 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
       model: settings.model || 'gemini-3-flash-preview',
       contents: [{ text: promptText }],
       config: {
-        tools: [{ urlContext: {} }],
+        tools: [{ urlContext: {} }, { googleSearch: {} }],
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -486,18 +497,25 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
           },
           required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
         },
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
 
     const text = response.text;
     if (!text) throw new Error('No response from Gemini');
     
-    return JSON.parse(text);
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const cleanJson = jsonMatch ? jsonMatch[0] : text;
+      return JSON.parse(cleanJson);
+    } catch (e) {
+      console.error("JSON Parse failed for URL aesthetic:", text);
+      throw new Error("Gagal memproses data estetika URL. Format respons tidak valid.");
+    }
   } catch (error) {
     console.error("URL Aesthetic analysis failed:", error);
-    if (error instanceof Error && error.message.includes('JSON')) {
-       throw new Error("Gagal memproses data estetika URL. Silakan coba lagi.");
+    if (error instanceof Error && error.message.includes('Gagal memproses')) {
+      throw error;
     }
     throw new Error(handleGeminiError(error));
   }

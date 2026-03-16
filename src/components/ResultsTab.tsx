@@ -102,16 +102,16 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mt-16 space-y-2"
+        className="text-center mt-12 sm:mt-16 space-y-2"
       >
-        <h1 className="text-5xl font-bold text-white tracking-tighter font-display">
+        <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tighter font-display">
           Generated <span className="text-accent">Assets</span>
         </h1>
-        <p className="text-slate-400 font-light text-lg">Repository of synthesized prompts and market temporal logs.</p>
+        <p className="text-slate-400 font-light text-base sm:text-lg">Repository of synthesized prompts and market temporal logs.</p>
       </motion.div>
       
       {/* Results Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
         {[
           { label: 'Neural Prompts', value: totalPromptsGenerated, icon: FileText, color: 'accent' },
           { label: 'Temporal Log', value: history.length, icon: Clock, color: 'purple' },
@@ -122,16 +122,16 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="glass-panel p-8 group relative overflow-hidden hover:border-accent/30 transition-all duration-500"
+            className="glass-panel p-6 sm:p-8 group relative overflow-hidden hover:border-accent/30 transition-all duration-500"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-[80px] rounded-full -mr-16 -mt-16 group-hover:bg-accent/10 transition-all duration-700" />
-            <div className="flex items-center gap-5 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-accent/50 group-hover:bg-accent/5 transition-all duration-500">
-                <stat.icon className="w-7 h-7 text-slate-400 group-hover:text-accent transition-colors" />
+            <div className="flex items-center gap-4 sm:gap-5 mb-4 sm:mb-6">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-accent/50 group-hover:bg-accent/5 transition-all duration-500">
+                <stat.icon className="w-6 h-6 sm:w-7 sm:h-7 text-slate-400 group-hover:text-accent transition-colors" />
               </div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">{stat.label}</span>
+              <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">{stat.label}</span>
             </div>
-            <p className="text-5xl font-bold text-white font-mono tracking-tighter">{stat.value}</p>
+            <p className="text-4xl sm:text-5xl font-bold text-white font-mono tracking-tighter">{stat.value}</p>
           </motion.div>
         ))}
       </div>
@@ -156,7 +156,7 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
       )}
       
       {/* Generated Prompts List */}
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         <AnimatePresence>
           {categoriesWithPrompts.map((category, index) => (
             <motion.div 
@@ -167,21 +167,21 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
               className="glass-panel overflow-hidden group hover:border-accent/30 transition-all duration-500"
             >
               <div 
-                className="flex flex-col sm:flex-row items-center justify-between p-8 cursor-pointer hover:bg-white/5 transition-colors gap-8"
+                className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-6 sm:p-8 cursor-pointer hover:bg-white/5 transition-colors gap-6 sm:gap-8"
                 onClick={() => toggleExpand(category.id)}
               >
-                <div className="flex flex-wrap items-center gap-6">
-                  <span className="text-2xl font-bold text-white font-display tracking-tight group-hover:text-accent transition-colors">{category.categoryName}</span>
-                  <span className="bg-white/5 text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-xl border border-white/10">
+                <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                  <span className="text-xl sm:text-2xl font-bold text-white font-display tracking-tight group-hover:text-accent transition-colors">{category.categoryName}</span>
+                  <span className="bg-white/5 text-slate-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] px-3 sm:px-4 py-1 sm:py-1.5 rounded-xl border border-white/10">
                     {category.generatedPrompts.length} PROMPTS
                   </span>
                   {category.metadata && (
-                    <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-xl flex items-center border border-emerald-500/20">
+                    <span className="bg-emerald-500/10 text-emerald-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] px-3 sm:px-4 py-1 sm:py-1.5 rounded-xl flex items-center border border-emerald-500/20">
                       <Check className="w-3 h-3 mr-2" /> Metadata Valid
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full lg:w-auto">
                   {!category.metadata ? (
                     <motion.button
                       whileHover={{ scale: 1.02 }}
@@ -191,12 +191,12 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
                         onGenerateMetadata(category.id);
                       }}
                       disabled={category.isGeneratingMetadata}
-                      className="flex items-center px-6 py-3 bg-accent/10 hover:bg-accent/20 text-accent rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-50 border border-accent/20"
+                      className="flex-1 lg:flex-none flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 bg-accent/10 hover:bg-accent/20 text-accent rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-50 border border-accent/20"
                     >
                       {category.isGeneratingMetadata ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2 animate-spin" />
                       ) : (
-                        <FileSpreadsheet className="w-4 h-4 mr-2" />
+                        <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                       )}
                       {category.isGeneratingMetadata ? 'Synthesizing...' : 'Generate Metadata'}
                     </motion.button>
@@ -208,14 +208,14 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
                         e.stopPropagation();
                         handleDownloadCSV(category);
                       }}
-                      className="flex items-center px-6 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all border border-emerald-500/20"
+                      className="flex-1 lg:flex-none flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all border border-emerald-500/20"
                     >
-                      <Download className="w-4 h-4 mr-2" />
+                      <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                       Download CSV
                     </motion.button>
                   )}
-                  <div className="w-px h-10 bg-white/10 mx-2 hidden sm:block"></div>
-                  <div className="flex items-center gap-3">
+                  <div className="w-px h-8 sm:h-10 bg-white/10 mx-1 sm:mx-2 hidden lg:block"></div>
+                  <div className="flex items-center gap-2 sm:gap-3 ml-auto lg:ml-0">
                     <motion.button
                       whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.05)' }}
                       whileTap={{ scale: 0.9 }}
@@ -223,13 +223,13 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
                         e.stopPropagation();
                         handleCopyAllPrompts(category);
                       }}
-                      className="p-3 text-slate-500 hover:text-white rounded-2xl transition-all border border-transparent hover:border-white/10"
+                      className="p-2 sm:p-3 text-slate-500 hover:text-white rounded-xl sm:rounded-2xl transition-all border border-transparent hover:border-white/10"
                       title="Copy All"
                     >
                       {copiedId === `all-${category.id}` ? (
-                        <Check className="w-5 h-5 text-emerald-400" />
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
                       ) : (
-                        <Copy className="w-5 h-5" />
+                        <Copy className="w-4 h-4 sm:w-5 sm:h-5" />
                       )}
                     </motion.button>
                     <motion.button
@@ -239,16 +239,16 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
                         e.stopPropagation();
                         handleDownloadPrompts(category);
                       }}
-                      className="p-3 text-slate-500 hover:text-white rounded-2xl transition-all border border-transparent hover:border-white/10"
+                      className="p-2 sm:p-3 text-slate-500 hover:text-white rounded-xl sm:rounded-2xl transition-all border border-transparent hover:border-white/10"
                       title="Download"
                     >
-                      <Download className="w-5 h-5" />
+                      <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                     </motion.button>
-                    <div className="p-3 text-slate-500 group-hover:text-accent transition-colors">
+                    <div className="p-2 sm:p-3 text-slate-500 group-hover:text-accent transition-colors">
                       {expandedCategories.has(category.id) ? (
-                        <ChevronUp className="w-6 h-6" />
+                        <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6" />
                       ) : (
-                        <ChevronDown className="w-6 h-6" />
+                        <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6" />
                       )}
                     </div>
                   </div>

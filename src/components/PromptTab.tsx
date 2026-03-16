@@ -113,29 +113,29 @@ export default function PromptTab({
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-6 sm:gap-8 mb-10 sm:mb-12"
       >
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6">
           <motion.button 
             whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.1)' }}
             whileTap={{ scale: 0.9 }}
             onClick={onBack}
-            className="p-4 glass-panel text-slate-300 transition-all border border-white/10"
+            className="p-3 sm:p-4 glass-panel text-slate-300 transition-all border border-white/10"
             title="Go Back"
           >
-            <ArrowLeft size={24} />
+            <ArrowLeft size={20} sm:size={24} />
           </motion.button>
           <div>
-            <h1 className="text-4xl font-bold text-white tracking-tight font-display">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight font-display">
               Prompt <span className="text-accent">Studio</span>
             </h1>
-            <p className="text-slate-500">Neural synthesis of high-conversion visual descriptors.</p>
+            <p className="text-sm sm:text-base text-slate-500">Neural synthesis of high-conversion visual descriptors.</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-6 glass-panel p-3 pl-6">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Density</span>
-          <div className="flex items-center bg-slate-800/50 rounded-xl px-4 py-2 border border-slate-700/50">
+        <div className="flex items-center gap-4 sm:gap-6 glass-panel p-2 sm:p-3 pl-4 sm:pl-6">
+          <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Density</span>
+          <div className="flex items-center bg-slate-800/50 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border border-slate-700/50">
             <input 
               type="number" 
               value={promptsCount || ''}
@@ -144,7 +144,7 @@ export default function PromptTab({
                 if (promptsCount < 1) setPromptsCount(1);
                 if (promptsCount > 1500) setPromptsCount(1500);
               }}
-              className="bg-transparent text-white w-14 outline-none text-sm font-bold text-center font-mono"
+              className="bg-transparent text-white w-12 sm:w-14 outline-none text-xs sm:text-sm font-bold text-center font-mono"
               min="1"
               max="1500"
             />
@@ -162,29 +162,29 @@ export default function PromptTab({
               transition={{ delay: catIdx * 0.1 }}
               className="glass-panel overflow-hidden group"
             >
-              <div className="p-8 sm:p-10 border-b border-white/5 bg-white/[0.02]">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                  <div className="space-y-5">
-                    <h2 className="text-3xl font-bold text-accent tracking-tight font-display">{category.categoryName}</h2>
-                    <div className="flex flex-wrap gap-3">
+              <div className="p-6 sm:p-10 border-b border-white/5 bg-white/[0.02]">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-8">
+                  <div className="space-y-4 sm:space-y-5">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-accent tracking-tight font-display">{category.categoryName}</h2>
+                    <div className="flex flex-wrap gap-2 sm:gap-3">
                       {category.mainKeywords.map((kw, i) => (
-                        <span key={i} className="bg-slate-800/40 text-slate-400 text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-lg border border-slate-700/30">
+                        <span key={i} className="bg-slate-800/40 text-slate-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg border border-slate-700/30">
                           {kw}
                         </span>
                       ))}
                     </div>
                   </div>
                   
-                  <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                     {category.generatedPrompts.length === 0 ? (
                       <motion.button 
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => onGenerate(category.id)}
                         disabled={category.isGeneratingPrompts}
-                        className="w-full sm:w-auto flex items-center justify-center gap-3 bg-accent hover:bg-accent/90 text-slate-900 px-8 py-4 rounded-2xl font-bold transition-all disabled:opacity-50 futuristic-glow"
+                        className="w-full sm:w-auto flex items-center justify-center gap-3 bg-accent hover:bg-accent/90 text-slate-900 px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold transition-all disabled:opacity-50 futuristic-glow text-xs sm:text-sm"
                       >
-                        <Sparkles size={20} />
+                        <Sparkles size={18} sm:size={20} />
                         <span>Initiate Synthesis</span>
                       </motion.button>
                     ) : (
@@ -194,9 +194,9 @@ export default function PromptTab({
                           whileTap={{ scale: 0.95 }}
                           onClick={() => onGenerate(category.id)}
                           disabled={category.isGeneratingPrompts}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-3 bg-slate-800/50 hover:bg-slate-800 text-slate-200 px-6 py-4 rounded-2xl font-bold border border-slate-700/50 transition-all disabled:opacity-50"
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 bg-slate-800/50 hover:bg-slate-800 text-slate-200 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold border border-slate-700/50 transition-all disabled:opacity-50 text-xs sm:text-sm"
                         >
-                          <RefreshCw size={18} className={category.isGeneratingPrompts ? "animate-spin" : ""} />
+                          <RefreshCw size={16} sm:size={18} className={category.isGeneratingPrompts ? "animate-spin" : ""} />
                           <span>Regenerate</span>
                         </motion.button>
                         <motion.button 
@@ -204,28 +204,28 @@ export default function PromptTab({
                           whileTap={{ scale: 0.95 }}
                           onClick={() => onUpgrade(category.id)}
                           disabled={category.isUpgrading}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 px-6 py-4 rounded-2xl font-bold border border-orange-500/30 transition-all disabled:opacity-50"
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold border border-orange-500/30 transition-all disabled:opacity-50 text-xs sm:text-sm"
                         >
-                          <Wand2 size={18} />
+                          <Wand2 size={16} sm:size={18} />
                           <span>Optimize</span>
                         </motion.button>
-                        <div className="w-px h-10 bg-slate-800 hidden sm:block mx-2" />
+                        <div className="w-px h-8 sm:h-10 bg-slate-800 hidden sm:block mx-1 sm:mx-2" />
                         <motion.button 
                           whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.1)' }}
                           whileTap={{ scale: 0.9 }}
                           onClick={() => handleDownload(category)}
-                          className="p-4 bg-slate-800/50 hover:bg-slate-800 text-slate-300 rounded-2xl border border-slate-700/50 transition-all"
+                          className="p-3 sm:p-4 bg-slate-800/50 hover:bg-slate-800 text-slate-300 rounded-xl sm:rounded-2xl border border-slate-700/50 transition-all"
                           title="Export TXT"
                         >
-                          <Download size={20} />
+                          <Download size={18} sm:size={20} />
                         </motion.button>
                         <motion.button 
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => handleCopyAll(category)}
-                          className="flex items-center gap-3 bg-accent hover:bg-accent/90 text-slate-900 px-8 py-4 rounded-2xl font-bold transition-all futuristic-glow"
+                          className="w-full sm:w-auto flex items-center justify-center gap-2 sm:gap-3 bg-accent hover:bg-accent/90 text-slate-900 px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold transition-all futuristic-glow text-xs sm:text-sm"
                         >
-                          <Copy size={20} />
+                          <Copy size={18} sm:size={20} />
                           <span>Copy All</span>
                         </motion.button>
                       </>
@@ -234,41 +234,41 @@ export default function PromptTab({
                 </div>
               </div>
               
-              <div className="p-8 sm:p-10">
+              <div className="p-6 sm:p-10">
                 {category.generatedPrompts.length === 0 ? (
-                  <div className="text-center py-24 bg-black/20 rounded-3xl border border-dashed border-slate-800/50">
-                    <div className="w-20 h-20 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-slate-700/30">
-                      <Sparkles className="text-slate-600" size={40} />
+                  <div className="text-center py-16 sm:py-24 bg-black/20 rounded-2xl sm:rounded-3xl border border-dashed border-slate-800/50">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800/30 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-slate-700/30">
+                      <Sparkles className="text-slate-600" size={32} sm:size={40} />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-300 mb-2 font-display">Awaiting Synthesis</h3>
-                    <p className="text-slate-500 text-sm font-light">Execute the command above to generate unique visual descriptors.</p>
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-300 mb-2 font-display">Awaiting Synthesis</h3>
+                    <p className="text-slate-500 text-xs sm:text-sm font-light px-4">Execute the command above to generate unique visual descriptors.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-6">
+                  <div className="grid grid-cols-1 gap-4 sm:gap-6">
                     {category.generatedPrompts.map((prompt, index) => (
                       <motion.div 
                         key={index}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className="bg-slate-900/40 border border-white/5 rounded-2xl p-6 flex flex-col gap-6 group/item hover:border-accent/30 hover:bg-white/[0.02] transition-all duration-300"
+                        className="bg-slate-900/40 border border-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 group/item hover:border-accent/30 hover:bg-white/[0.02] transition-all duration-300"
                       >
-                        <div className="flex gap-6">
-                          <div className="flex-shrink-0 w-12 h-12 bg-black/40 rounded-xl flex items-center justify-center text-accent font-mono font-bold text-lg border border-white/5 group-hover/item:border-accent/20 transition-all">
+                        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                          <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-black/40 rounded-lg sm:rounded-xl flex items-center justify-center text-accent font-mono font-bold text-base sm:text-lg border border-white/5 group-hover/item:border-accent/20 transition-all">
                             {index + 1}
                           </div>
-                          <div className="flex-grow pt-1">
-                            <p className="text-slate-300 text-base leading-relaxed font-light">{prompt}</p>
+                          <div className="flex-grow pt-0 sm:pt-1">
+                            <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-light">{prompt}</p>
                           </div>
-                          <div className="flex-shrink-0 opacity-100 transition-all">
+                          <div className="flex-shrink-0 flex justify-end">
                             <motion.button 
                               whileHover={{ scale: 1.1, backgroundColor: 'var(--color-accent)', color: '#000' }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => handleCopy(prompt)}
-                              className="p-3 sm:p-4 bg-black/40 rounded-2xl text-slate-400 transition-all border border-white/5 hover:border-accent/30"
+                              className="p-2.5 sm:p-4 bg-black/40 rounded-xl sm:rounded-2xl text-slate-400 transition-all border border-white/5 hover:border-accent/30"
                               title="Copy Prompt"
                             >
-                              <Copy size={18} />
+                              <Copy size={16} sm:size={18} />
                             </motion.button>
                           </div>
                         </div>
