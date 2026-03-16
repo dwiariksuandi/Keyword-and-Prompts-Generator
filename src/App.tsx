@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeKeyword, generatePrompts, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError } from './services/gemini';
+import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError } from './services/gemini';
 import { CategoryResult, AppSettings, HistoryItem, ReferenceFile } from './types';
 import Settings from './components/Settings';
 import TopTab from './components/TopTab';
@@ -25,6 +25,7 @@ export default function App() {
   const [keyword, setKeyword] = useState('');
   const [contentType, setContentType] = useState('Photo');
   const [referenceFile, setReferenceFile] = useState<ReferenceFile | null>(null);
+  const [referenceUrl, setReferenceUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<CategoryResult[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -185,10 +186,10 @@ export default function App() {
   };
 
   const handleAnalyze = async () => {
-    if (!keyword.trim()) return;
+    if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) return;
     setIsAnalyzing(true);
     try {
-      const data = await analyzeKeyword(keyword, contentType, settings, referenceFile || undefined);
+      const data = await analyzeKeyword(keyword, contentType, settings, referenceFile || undefined, referenceUrl || undefined);
       const formattedResults: CategoryResult[] = data.map((item: any) => ({
         id: Math.random().toString(36).substring(7),
         categoryName: item.categoryName,
@@ -212,7 +213,7 @@ export default function App() {
       
       setHistory(prev => [{
         id: Date.now().toString(),
-        query: keyword,
+        query: keyword || (referenceUrl ? `URL: ${referenceUrl}` : `Visual Analysis (${referenceFile?.name || 'File'})`),
         contentType: contentType,
         timestamp: new Date().toISOString(),
         categoryCount: formattedResults.length,
@@ -231,6 +232,64 @@ export default function App() {
     }
   };
 
+  const handleQuickGenerate = async () => {
+    if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) return;
+    setIsAnalyzing(true);
+    try {
+      const actualCountToGenerate = Math.min(settings.promptCount, 1500);
+      const prompts = await generatePromptsDirectly(
+        actualCountToGenerate, 
+        settings, 
+        contentType, 
+        keyword || undefined, 
+        referenceFile || undefined, 
+        referenceUrl || undefined
+      );
+
+      const quickResult: CategoryResult = {
+        id: 'quick-' + Math.random().toString(36).substring(7),
+        categoryName: keyword || (referenceFile ? referenceFile.name : 'Quick Generation'),
+        contentType: contentType,
+        mainKeywords: keyword ? [keyword] : [],
+        volumeLevel: 'Medium',
+        volumeNumber: 0,
+        competition: 'Medium',
+        competitionScore: 0,
+        trend: 'stable',
+        trendPercent: 0,
+        difficultyScore: 0,
+        opportunityScore: 100,
+        creativeAdvice: 'Directly generated from reference.',
+        generatedPrompts: prompts,
+        isGeneratingPrompts: false,
+        isUpgrading: false,
+        isStarred: true,
+      };
+
+      setResults(prev => [quickResult, ...prev]);
+      setActiveTab('prompt');
+      
+      setHistory(prev => [{
+        id: Date.now().toString(),
+        query: `Quick: ${keyword || (referenceUrl ? referenceUrl : referenceFile?.name)}`,
+        contentType: contentType,
+        timestamp: new Date().toISOString(),
+        categoryCount: 1,
+        promptCount: prompts.length
+      }, ...prev.slice(0, 9)]);
+
+    } catch (error) {
+      console.error("Quick generation failed:", error);
+      setErrorModal({
+        show: true,
+        title: 'Gagal Generate Prompt',
+        message: handleGeminiError(error)
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleGeneratePrompts = async (id: string) => {
     const result = results.find(r => r.id === id);
     if (!result) return;
@@ -239,7 +298,15 @@ export default function App() {
     
     try {
       const actualCountToGenerate = Math.min(settings.promptCount, 1500); 
-      const prompts = await generatePrompts(keyword, result.categoryName, actualCountToGenerate, settings, result.contentType);
+      const prompts = await generatePrompts(
+        keyword, 
+        result.categoryName, 
+        actualCountToGenerate, 
+        settings, 
+        result.contentType,
+        referenceFile || undefined,
+        referenceUrl || undefined
+      );
 
       setResults(prev => prev.map(r => r.id === id ? { 
         ...r, 
@@ -439,6 +506,7 @@ export default function App() {
               contentType={contentType}
               setContentType={setContentType}
               onAnalyze={handleAnalyze}
+              onQuickGenerate={handleQuickGenerate}
               isAnalyzing={isAnalyzing}
               results={results}
               sortBy={sortBy}
@@ -447,6 +515,8 @@ export default function App() {
               setFilterCompetition={setFilterCompetition}
               referenceFile={referenceFile}
               setReferenceFile={setReferenceFile}
+              referenceUrl={referenceUrl}
+              setReferenceUrl={setReferenceUrl}
             />
 
             {results.length > 0 && (

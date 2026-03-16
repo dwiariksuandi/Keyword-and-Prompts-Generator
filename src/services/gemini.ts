@@ -260,14 +260,18 @@ export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean
   }
 }
 
-export async function analyzeKeyword(keyword: string, contentType: string, settings: AppSettings, referenceFile?: ReferenceFile) {
+export async function analyzeKeyword(keyword: string, contentType: string, settings: AppSettings, referenceFile?: ReferenceFile, referenceUrl?: string) {
   const ai = getAI(settings.apiKey);
   
-  const promptText = `Perform an exhaustive, data-driven microstock market analysis for the broad keyword: '${keyword}' targeting the asset type: '${contentType}'.
+  const promptText = `Perform an exhaustive, data-driven microstock market analysis targeting the asset type: '${contentType}'.
+
+${keyword ? `The broad keyword context is: '${keyword}'.` : 'No specific keyword was provided.'}
+${referenceUrl ? `I have provided a reference URL: ${referenceUrl}. Please analyze the content, trends, and visual themes from this link to identify similar or complementary niche opportunities.` : ''}
+${!keyword && !referenceUrl && referenceFile ? 'Please derive the niche opportunities primarily from the visual content of the provided reference.' : ''}
 
 Your objective is to uncover 4 to 6 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.
 
-${referenceFile ? `I have also provided an ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference. Please analyze the visual style, composition, subject matter, and mood of this reference. Use it to identify niche opportunities that are visually similar, complementary, or inspired by this specific style, but remain underserved in the current market.` : ''}
+${referenceFile ? `I have provided an ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference. Please analyze the visual style, composition, subject matter, and mood of this reference. Use it to identify niche opportunities that are visually similar, complementary, or inspired by this specific style, but remain underserved in the current market.` : ''}
 
 CRITICAL ADOBE STOCK RULES:
 - GENERATIVE AI COMPLIANCE: The niches MUST NOT rely on trademarked/copyrighted elements, specific brands, recognizable characters, or real known restricted places/buildings. Focus on generic, commercially safe concepts (e.g., "generic modern smartphone" instead of "iPhone").
@@ -298,10 +302,11 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
   }
 
   const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-2.5-flash',
+    model: settings.model || 'gemini-3-flash-preview',
     contents: { parts },
     config: {
       systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to simulate real-world keyword research tools. You must provide highly accurate, data-backed estimates for search volume and competition based on current market trends. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches.",
+      tools: referenceUrl ? [{ urlContext: {} }] : undefined,
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.ARRAY,
@@ -340,7 +345,7 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
   }
 }
 
-export async function generatePrompts(keyword: string, categoryName: string, count: number, settings: AppSettings, contentType: string) {
+export async function generatePrompts(keyword: string, categoryName: string, count: number, settings: AppSettings, contentType: string, referenceFile?: ReferenceFile, referenceUrl?: string) {
   const ai = getAI(settings.apiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
@@ -349,10 +354,11 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
   
   // For large counts, use a combinatorial approach to avoid LLM output token limits and guarantee uniqueness
   if (count > 30) {
-    const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-2.5-flash',
-      contents: `Generate a rich set of prompt components for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
+    const promptText = `Generate a rich set of prompt components for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
       
+      ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration for the components.` : ''}
+      ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" (lighting, color palette, aesthetic) and apply it to the components.` : ''}
+
       We need to programmatically generate ${count} unique combinations. Please provide:
       1. 30 highly distinct subjects (e.g., "a young professional woman", "a modern office desk", "a diverse team of engineers"). MUST be diverse in age, ethnicity, and core concept.
       2. 30 specific and varied details/actions/camera angles (e.g., "typing on a laptop, close-up shot", "holding a coffee cup, wide angle", "brainstorming at a whiteboard, over-the-shoulder view").
@@ -363,12 +369,27 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       
       CRITICAL ADOBE STOCK RULES:
       - NO SIMILAR CONTENT: The components must be vastly different from each other to avoid generating repetitive images. Do not just change colors or minor details. Vary the camera angles, compositions, and core actions.
-      - GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings.
+      - GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms (e.g., "generic modern luxury car" instead of "Tesla").
       - QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
       - Ensure all components are perfectly suited for ${contentType}.
-      Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
+      Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
+
+    const parts: any[] = [{ text: promptText }];
+    if (referenceFile) {
+      parts.push({
+        inlineData: {
+          data: referenceFile.data,
+          mimeType: referenceFile.mimeType
+        }
+      });
+    }
+
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3-flash-preview',
+      contents: { parts },
       config: {
         systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines.",
+        tools: referenceUrl ? [{ urlContext: {} }] : undefined,
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -426,25 +447,41 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
   }
 
   // Standard generation for smaller counts
-  const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-2.5-flash',
-    contents: `Generate exactly ${count} highly detailed, commercial-grade image generation prompts for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
+  const promptTextSmall = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
+
+${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration.` : ''}
+${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" and apply it to these prompts.` : ''}
 
 CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 1. Commercial Utility: Ensure concepts are highly usable for designers and agencies. Include concepts with 'copy space', 'authentic lifestyle', 'modern aesthetics', or 'clean backgrounds' where appropriate.
 2. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for a ${contentType}.
-3. NO SIMILAR CONTENT: Do not generate prompts that are practically identical (e.g., just changing a shirt color). Each prompt MUST have a distinct composition, camera angle, subject, or core action.
-4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings.
-5. QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
+3. NO SIMILAR CONTENT: Do not generate prompts that are practically identical. Each prompt MUST have a distinct composition, camera angle, subject, or core action.
+4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
+5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
 6. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure:
 "${template.template}"
 Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
 
 Respond strictly with a JSON array of strings, where each string is a complete, ready-to-use image generation prompt tailored for a ${contentType}.
 Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
-${settings.includeNegative ? 'Append a strong negative prompt at the end of each prompt (e.g., "--no text, watermark, deformed, blurry, logos, bad anatomy, extra limbs").' : ''}`,
+${settings.includeNegative ? 'Append a strong negative prompt at the end of each prompt (e.g., "--no text, watermark, deformed, blurry, logos, bad anatomy, extra limbs").' : ''}`;
+
+  const partsSmall: any[] = [{ text: promptTextSmall }];
+  if (referenceFile) {
+    partsSmall.push({
+      inlineData: {
+        data: referenceFile.data,
+        mimeType: referenceFile.mimeType
+      }
+    });
+  }
+
+  const response = await ai.models.generateContent({
+    model: settings.model || 'gemini-3-flash-preview',
+    contents: { parts: partsSmall },
     config: {
       systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. You understand lighting, composition, camera settings, and market trends perfectly.",
+      tools: referenceUrl ? [{ urlContext: {} }] : undefined,
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.ARRAY,
@@ -457,6 +494,70 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
   if (!text) throw new Error('No response from Gemini');
   
   // Strip markdown formatting if present
+  text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
+  
+  try {
+    return extractJSON(text);
+  } catch (e) {
+    console.error("Failed to parse JSON response:", text);
+    throw new Error("Failed to parse the response from the AI. Please try again.");
+  }
+}
+
+export async function generatePromptsDirectly(count: number, settings: AppSettings, contentType: string, keyword?: string, referenceFile?: ReferenceFile, referenceUrl?: string) {
+  const ai = getAI(settings.apiKey);
+  const currentTemplateId = typeof settings.templateId === 'string' 
+    ? settings.templateId 
+    : (settings.templateId?.[contentType] || 'midjourney-photo');
+  const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
+  
+  const promptText = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts. The target asset type is '${contentType}'.
+  
+  ${keyword ? `The core theme/keyword is: '${keyword}'.` : ''}
+  ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration. Extract the "Visual DNA" (lighting, color palette, mood) and apply it to new, distinct scenarios.` : ''}
+  ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" and apply it to these prompts. DO NOT make literal copies; instead, create new scenes inspired by this aesthetic.` : ''}
+
+  CRITICAL REQUIREMENTS FOR ADOBE STOCK:
+  1. Commercial Utility: Ensure concepts are highly usable for designers and agencies. Include 'copy space' where relevant.
+  2. Technical Precision: Specify lighting, camera angles, and aesthetic quality.
+  3. NO SIMILAR CONTENT: Each prompt MUST have a distinct composition, camera angle, subject, or core action. Avoid repetitive concepts.
+  4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only (e.g., "generic modern smartphone").
+  5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
+  6. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure:
+  "${template.template}"
+  Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
+
+  Respond strictly with a JSON array of strings, where each string is a complete, ready-to-use image generation prompt tailored for a ${contentType}.
+  Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
+  ${settings.includeNegative ? 'Append a strong negative prompt at the end of each prompt (e.g., "--no text, watermark, deformed, blurry, logos, bad anatomy, extra limbs").' : ''}`;
+
+  const parts: any[] = [{ text: promptText }];
+
+  if (referenceFile) {
+    parts.push({
+      inlineData: {
+        data: referenceFile.data,
+        mimeType: referenceFile.mimeType
+      }
+    });
+  }
+
+  const response = await ai.models.generateContent({
+    model: settings.model || 'gemini-3-flash-preview',
+    contents: { parts },
+    config: {
+      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references. You excel at extracting aesthetic essence and applying it to new, commercially viable concepts.",
+      tools: referenceUrl ? [{ urlContext: {} }] : undefined,
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING }
+      }
+    }
+  });
+
+  let text = response.text;
+  if (!text) throw new Error('No response from Gemini');
   text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
   
   try {

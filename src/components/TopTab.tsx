@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap, Upload, Image as ImageIcon, Film, X } from 'lucide-react';
+import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap, Upload, Image as ImageIcon, Film, X, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { CategoryResult, AppSettings, ReferenceFile } from '../types';
 
 interface TopTabProps {
@@ -8,6 +8,7 @@ interface TopTabProps {
   contentType: string;
   setContentType: React.Dispatch<React.SetStateAction<string>>;
   onAnalyze: () => void;
+  onQuickGenerate: () => void;
   isAnalyzing: boolean;
   results: CategoryResult[];
   sortBy: string;
@@ -16,6 +17,8 @@ interface TopTabProps {
   setFilterCompetition: React.Dispatch<React.SetStateAction<string>>;
   referenceFile: ReferenceFile | null;
   setReferenceFile: React.Dispatch<React.SetStateAction<ReferenceFile | null>>;
+  referenceUrl: string;
+  setReferenceUrl: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const suggestionKeywords = [
@@ -64,9 +67,10 @@ const trendingKeywords = [
 ];
 
 export default function TopTab({
-  keyword, setKeyword, contentType, setContentType, onAnalyze, isAnalyzing, results,
+  keyword, setKeyword, contentType, setContentType, onAnalyze, onQuickGenerate, isAnalyzing, results,
   sortBy, setSortBy, filterCompetition, setFilterCompetition,
-  referenceFile, setReferenceFile
+  referenceFile, setReferenceFile,
+  referenceUrl, setReferenceUrl
 }: TopTabProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -130,111 +134,162 @@ export default function TopTab({
         <p className="text-[#00D8B6] text-sm">Using: Google Gemini</p>
       </div>
 
-      <div className="relative bg-[#111827] border border-slate-800 rounded-xl p-4 mb-8 shadow-2xl max-w-3xl mx-auto">
-        <div className="flex items-center gap-4 mb-4 border-b border-slate-800 pb-4">
-          <span className="text-slate-400 text-sm font-medium">Content Type:</span>
-          <div className="flex flex-wrap gap-2">
-            {['Photo', 'Illustration', 'Vector', 'Background', 'Video', '3D Render'].map(type => (
-              <button
-                key={type}
-                onClick={() => setContentType(type)}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  contentType === type 
-                    ? 'bg-[#00D8B6] text-slate-900' 
-                    : 'bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700'
-                }`}
-              >
-                {type}
-              </button>
-            ))}
+      <div className="bg-[#111827] border border-slate-800 rounded-2xl shadow-2xl max-w-3xl mx-auto overflow-hidden">
+        {/* Header/Content Type Selection */}
+        <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/50">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider shrink-0">Content Type</span>
+            <div className="flex flex-wrap gap-2">
+              {['Photo', 'Illustration', 'Vector', 'Background', 'Video', '3D Render'].map(type => (
+                <button
+                  key={type}
+                  onClick={() => setContentType(type)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    contentType === type 
+                      ? 'bg-[#00D8B6] text-slate-900 shadow-[0_0_15px_rgba(0,216,182,0.3)]' 
+                      : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <textarea 
-          className="w-full h-24 bg-transparent text-white placeholder-slate-500 resize-none outline-none"
-          placeholder="Enter your keyword here..."
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-        />
-
-        {/* File Upload Section */}
-        <div className="mt-2 mb-4">
-          <input 
-            type="file" 
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/*,video/*"
-            className="hidden"
-          />
-          
-          {!referenceFile ? (
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-[#00D8B6] transition-colors bg-slate-800/30 border border-dashed border-slate-700 rounded-lg px-3 py-2"
-            >
-              <Upload size={14} />
-              <span>Add Image/Video Reference (Optional)</span>
-            </button>
-          ) : (
-            <div className="relative inline-block group">
-              <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-700 rounded-lg p-2 pr-10">
-                <div className="w-10 h-10 rounded bg-slate-900 overflow-hidden flex items-center justify-center border border-slate-700">
-                  {referenceFile.mimeType.startsWith('image/') ? (
-                    <img src={referenceFile.previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <Film size={20} className="text-slate-500" />
-                  )}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-slate-200 truncate max-w-[150px]">{referenceFile.name}</span>
-                  <span className="text-[10px] text-slate-500 uppercase">{referenceFile.mimeType.split('/')[1]}</span>
-                </div>
-                <button 
-                  onClick={removeFile}
-                  className="absolute top-1 right-1 p-1 bg-slate-900/80 text-slate-400 hover:text-red-400 rounded-full transition-colors"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        {showSuggestions && filteredSuggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-[#111827] border border-slate-800 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
-            {!keyword.trim() && (
-              <div className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800/50">
-                <Sparkles size={14} className="text-[#00D8B6]" /> Trending Searches
+        {/* Main Input Area */}
+        <div className="p-6 space-y-4 relative">
+          <div className="relative">
+            <textarea 
+              className="w-full h-32 bg-slate-800/20 border border-slate-800 rounded-xl p-4 text-white placeholder-slate-600 resize-none outline-none focus:border-[#00D8B6]/50 transition-all"
+              placeholder="Enter your keyword or topic for research..."
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+            />
+            
+            {showSuggestions && filteredSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-slate-800 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto backdrop-blur-md">
+                {!keyword.trim() && (
+                  <div className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 border-b border-slate-800/50 bg-slate-900/50">
+                    <Sparkles size={12} className="text-[#00D8B6]" /> Trending Searches
+                  </div>
+                )}
+                {filteredSuggestions.map((suggestion, i) => (
+                  <button
+                    key={i}
+                    className="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-[#00D8B6]/10 hover:text-white transition-colors border-b border-slate-800/50 last:border-0 flex items-center gap-3"
+                    onClick={() => {
+                      setKeyword(suggestion);
+                      setIsFocused(false);
+                      setShowSuggestions(false);
+                    }}
+                  >
+                    <Search size={14} className="text-slate-500" />
+                    {suggestion}
+                  </button>
+                ))}
               </div>
             )}
-            {filteredSuggestions.map((suggestion, i) => (
-              <button
-                key={i}
-                className="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-b border-slate-800/50 last:border-0 flex items-center gap-3"
-                onClick={() => {
-                  setKeyword(suggestion);
-                  setIsFocused(false);
-                  setShowSuggestions(false);
-                }}
-              >
-                <Search size={14} className="text-slate-500" />
-                {suggestion}
-              </button>
-            ))}
           </div>
-        )}
 
-        <div className="absolute bottom-4 right-4">
-          <button 
-            onClick={onAnalyze}
-            disabled={isAnalyzing || !keyword.trim()}
-            className="flex items-center space-x-2 bg-[#00D8B6] hover:bg-[#00c2a3] text-slate-900 px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-          >
-            <Search size={18} />
-            <span>{isAnalyzing ? 'Analyzing...' : 'Analyze'}</span>
-          </button>
+          {/* Reference Tools Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* File Upload */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Visual Reference</label>
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*,video/*"
+                className="hidden"
+              />
+              
+              {!referenceFile ? (
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center justify-center gap-2 text-xs font-medium text-slate-400 hover:text-[#00D8B6] hover:border-[#00D8B6]/50 transition-all bg-slate-800/30 border border-dashed border-slate-700 rounded-xl px-4 py-3"
+                >
+                  <Upload size={16} />
+                  <span>Upload Image or Video</span>
+                </button>
+              ) : (
+                <div className="relative bg-slate-800/50 border border-[#00D8B6]/30 rounded-xl p-2 flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-lg bg-slate-900 overflow-hidden flex items-center justify-center border border-slate-700 shrink-0">
+                    {referenceFile.mimeType.startsWith('image/') ? (
+                      <img src={referenceFile.previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <Film size={24} className="text-slate-500" />
+                    )}
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-xs font-semibold text-slate-200 truncate">{referenceFile.name}</span>
+                    <span className="text-[10px] text-slate-500 uppercase tracking-tighter">{referenceFile.mimeType.split('/')[1]} • Ready</span>
+                  </div>
+                  <button 
+                    onClick={removeFile}
+                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* URL Reference */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Link Reference</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <LinkIcon size={16} className="text-slate-500" />
+                </div>
+                <input 
+                  type="url"
+                  value={referenceUrl}
+                  onChange={(e) => setReferenceUrl(e.target.value)}
+                  placeholder="Paste research URL here..."
+                  className="w-full bg-slate-800/30 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-xs text-white outline-none focus:border-[#00D8B6]/50 transition-all placeholder:text-slate-600"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="pt-2 flex flex-col sm:flex-row justify-end gap-3">
+            <button 
+              onClick={onQuickGenerate}
+              disabled={isAnalyzing || (!keyword.trim() && !referenceFile && !referenceUrl.trim())}
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700 active:scale-95"
+            >
+              {isAnalyzing ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <>
+                  <Zap size={18} className="text-yellow-400" />
+                  <span>Quick Prompts</span>
+                </>
+              )}
+            </button>
+            <button 
+              onClick={onAnalyze}
+              disabled={isAnalyzing || (!keyword.trim() && !referenceFile && !referenceUrl.trim())}
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-[#00D8B6] hover:bg-[#00c2a3] text-slate-900 px-8 py-3 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(0,216,182,0.2)] active:scale-95"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Sparkles size={18} className="animate-pulse" />
+                  <span>Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <Search size={18} />
+                  <span>Start Analysis</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
