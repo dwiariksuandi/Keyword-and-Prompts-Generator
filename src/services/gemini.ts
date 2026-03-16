@@ -972,7 +972,7 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
     
     const promptText = `Analyze these sample prompts: ${JSON.stringify(sample)}.
       
-      We need to perform a "Technical Upgrade" on a large batch of similar prompts for Adobe Stock (${contentType}).
+      We need to perform a "Technical Upgrade" on a large batch of similar prompts for Adobe Stock (${contentType}) specifically for the '${template.name}' platform.
       GOAL: Enhance the technical quality (lighting, camera, resolution) WITHOUT changing the core visual subject or scene of each prompt.
       
       ${getContentTypeInstructions(contentType)}
@@ -1073,7 +1073,7 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
   }
 
   // Standard optimization for smaller arrays
-  const promptTextSmall = `Optimize the following list of image generation prompts for Adobe Stock (${contentType}).
+  const promptTextSmall = `Optimize the following list of image generation prompts for Adobe Stock (${contentType}) specifically for the '${template.name}' platform.
   
   ${getContentTypeInstructions(contentType)}
 

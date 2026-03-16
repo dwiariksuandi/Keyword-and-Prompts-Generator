@@ -188,13 +188,13 @@ export default function TopTab({
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setContentType(type.id)}
-                  className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[9px] font-bold tracking-[0.2em] transition-all duration-500 border ${
+                  className={`flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl text-[8px] sm:text-[9px] font-bold tracking-[0.15em] sm:tracking-[0.2em] transition-all duration-500 border ${
                     contentType === type.id 
                       ? 'bg-white text-black border-white shadow-[0_0_25px_rgba(255,255,255,0.15)]' 
                       : 'bg-white/5 text-slate-400 border-white/5 hover:text-white hover:bg-white/10 hover:border-white/20'
                   }`}
                 >
-                  <type.icon size={14} className={contentType === type.id ? 'text-black' : 'text-accent'} />
+                  <type.icon size={12} className={contentType === type.id ? 'text-black' : 'text-accent'} />
                   {type.label}
                 </motion.button>
               ))}
@@ -270,7 +270,7 @@ export default function TopTab({
                   whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.08)' }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full h-20 flex items-center justify-center gap-4 text-[10px] font-bold text-slate-400 hover:text-white hover:border-white/30 transition-all bg-white/5 border border-dashed border-white/10 rounded-3xl px-8 uppercase tracking-[0.2em]"
+                  className="w-full h-16 sm:h-20 flex items-center justify-center gap-4 text-[10px] font-bold text-slate-400 hover:text-white hover:border-white/30 transition-all bg-white/5 border border-dashed border-white/10 rounded-3xl px-8 uppercase tracking-[0.2em]"
                 >
                   <Upload size={20} className="text-accent" />
                   <span>Upload Reference Asset</span>
@@ -396,7 +396,7 @@ export default function TopTab({
                   value={referenceUrl}
                   onChange={(e) => setReferenceUrl(e.target.value)}
                   placeholder="Inject research URL for context..."
-                  className="w-full h-20 bg-white/5 border border-white/10 rounded-3xl pl-16 pr-24 py-4 text-sm text-white outline-none focus:border-accent/40 focus:ring-0 transition-all placeholder:text-slate-600 font-light tracking-wide shadow-inner"
+                  className="w-full h-16 sm:h-20 bg-white/5 border border-white/10 rounded-3xl pl-16 pr-24 py-4 text-sm text-white outline-none focus:border-accent/40 focus:ring-0 transition-all placeholder:text-slate-600 font-light tracking-wide shadow-inner"
                 />
                 {referenceUrl && (
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">

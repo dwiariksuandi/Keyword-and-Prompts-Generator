@@ -734,8 +734,8 @@ export default function App() {
                   className="glass-panel overflow-hidden border-white/10"
                 >
                   <div className="overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left text-sm border-collapse">
-                      <thead className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold border-b border-white/5 bg-white/[0.02]">
+                    <table className="w-full min-w-[1000px] text-left text-sm border-collapse">
+                      <thead className="text-[10px] text-slate-500 uppercase tracking-[0.15em] font-bold border-b border-white/5 bg-white/[0.02]">
                         <tr>
                           <th className="px-8 py-5 font-bold">Neural Sector</th>
                           <th className="px-8 py-5 font-bold">Data Vectors</th>

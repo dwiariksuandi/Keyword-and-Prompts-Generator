@@ -72,12 +72,17 @@ export const ResultRow: React.FC<ResultRowProps> = ({ result, onToggleStar, onVi
         </div>
       </td>
       <td className="px-8 py-6 align-middle">
-        <div className="flex flex-wrap gap-2.5 max-w-[300px]">
-          {result.mainKeywords.map((kw, i) => (
-            <span key={i} className="bg-white/5 text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-xl border border-white/5 group-hover:border-accent/30 transition-all duration-500">
+        <div className="flex flex-wrap gap-1.5 max-w-[240px]">
+          {result.mainKeywords.slice(0, 3).map((kw, i) => (
+            <span key={i} className="bg-white/5 text-slate-400 text-[9px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-lg border border-white/5 group-hover:border-accent/30 transition-all duration-500 whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
               {kw}
             </span>
           ))}
+          {result.mainKeywords.length > 3 && (
+            <span className="bg-accent/10 text-accent text-[9px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-lg border border-accent/20">
+              +{result.mainKeywords.length - 3}
+            </span>
+          )}
         </div>
       </td>
       <td className="px-8 py-6 align-middle">

@@ -260,15 +260,15 @@ export default function PromptTab({
                           <div className="flex-grow pt-1">
                             <p className="text-slate-300 text-base leading-relaxed font-light">{prompt}</p>
                           </div>
-                          <div className="flex-shrink-0 opacity-0 group-hover/item:opacity-100 transition-all transform translate-x-4 group-hover/item:translate-x-0">
+                          <div className="flex-shrink-0 opacity-100 transition-all">
                             <motion.button 
                               whileHover={{ scale: 1.1, backgroundColor: 'var(--color-accent)', color: '#000' }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => handleCopy(prompt)}
-                              className="p-4 bg-black/40 rounded-2xl text-slate-400 transition-all border border-white/5"
+                              className="p-3 sm:p-4 bg-black/40 rounded-2xl text-slate-400 transition-all border border-white/5 hover:border-accent/30"
                               title="Copy Prompt"
                             >
-                              <Copy size={20} />
+                              <Copy size={18} />
                             </motion.button>
                           </div>
                         </div>
@@ -279,7 +279,7 @@ export default function PromptTab({
                             animate={{ opacity: 1 }}
                             className="mt-2 pt-6 border-t border-white/5"
                           >
-                            <div className="flex flex-wrap items-center justify-between gap-6 mb-6">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-6">
                               <div className="flex items-center gap-4">
                                 <div className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${
                                   category.promptScores[index].score >= 80 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.2)]' :
@@ -289,16 +289,16 @@ export default function PromptTab({
                                   Quality Index: {category.promptScores[index].score}%
                                 </div>
                               </div>
-                              <div className="flex gap-6">
+                              <div className="grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
                                 {[
                                   { label: 'Density', val: category.promptScores[index].density, color: 'bg-accent' },
                                   { label: 'Clarity', val: category.promptScores[index].clarity, color: 'bg-cyan-500' },
                                   { label: 'Specific', val: category.promptScores[index].specificity, color: 'bg-indigo-500' },
                                   { label: 'Adobe', val: category.promptScores[index].adherence, color: 'bg-purple-500' }
                                 ].map((m, i) => (
-                                  <div key={i} className="flex flex-col items-center">
+                                  <div key={i} className="flex flex-col items-center sm:items-start">
                                     <span className="text-[8px] text-slate-500 uppercase font-bold tracking-widest mb-2">{m.label}</span>
-                                    <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                                    <div className="w-full sm:w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/5">
                                       <motion.div 
                                         initial={{ width: 0 }}
                                         animate={{ width: `${m.val}%` }}
