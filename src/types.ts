@@ -32,6 +32,7 @@ export interface PromptTemplate {
   name: string;
   template: string;
   description: string;
+  contentTypes: string[];
 }
 
 export interface AppSettings {

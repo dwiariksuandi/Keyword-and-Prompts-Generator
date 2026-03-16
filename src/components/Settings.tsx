@@ -24,7 +24,16 @@ export default function Settings({
 }: SettingsProps) {
   const [activeContentTypeTab, setActiveContentTypeTab] = useState('Photo');
 
-  // Ensure templateId is an object
+  // Ensure templateId is an object with defaults
+  const defaultTemplates: Record<string, string> = {
+    'Photo': 'midjourney-photo',
+    'Illustration': 'midjourney-niji',
+    'Vector': 'midjourney-vector',
+    'Background': 'midjourney-photo',
+    'Video': 'veo-video',
+    '3D Render': 'midjourney-3d'
+  };
+
   const currentTemplateIds = typeof settings.templateId === 'string' 
     ? { 
         'Photo': settings.templateId, 
@@ -34,7 +43,7 @@ export default function Settings({
         'Video': settings.templateId, 
         '3D Render': settings.templateId 
       } 
-    : settings.templateId || {};
+    : { ...defaultTemplates, ...(settings.templateId || {}) };
 
   const handleTemplateChange = (templateId: string) => {
     setSettings({
@@ -130,7 +139,9 @@ export default function Settings({
           </div>
 
           <div className="space-y-3">
-            {promptTemplates.map((template) => (
+            {promptTemplates
+              .filter(template => template.contentTypes.includes(activeContentTypeTab))
+              .map((template) => (
               <button
                 key={template.id}
                 onClick={() => handleTemplateChange(template.id)}

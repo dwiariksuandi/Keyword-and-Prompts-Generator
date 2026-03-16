@@ -31,12 +31,12 @@ export default function App() {
     apiKey: '',
     model: 'gemini-3.1-pro-preview',
     templateId: {
-      'Photo': 'midjourney',
-      'Illustration': 'midjourney',
-      'Vector': 'midjourney',
-      'Background': 'midjourney',
-      'Video': 'midjourney',
-      '3D Render': 'midjourney'
+      'Photo': 'midjourney-photo',
+      'Illustration': 'midjourney-niji',
+      'Vector': 'midjourney-vector',
+      'Background': 'midjourney-photo',
+      'Video': 'veo-video',
+      '3D Render': 'midjourney-3d'
     },
     promptCount: 100,
     language: 'en',
@@ -63,14 +63,36 @@ export default function App() {
           
           // Migrate old string templateId to Record
           if (typeof newSettings.templateId === 'string') {
+            const oldId = newSettings.templateId;
+            // Map old generic IDs to specific new ones if needed, or just use defaults
             newSettings.templateId = {
-              'Photo': newSettings.templateId,
-              'Illustration': newSettings.templateId,
-              'Vector': newSettings.templateId,
-              'Background': newSettings.templateId,
-              'Video': newSettings.templateId,
-              '3D Render': newSettings.templateId
+              'Photo': oldId === 'midjourney' ? 'midjourney-photo' : oldId === 'dalle' ? 'dalle-photo' : oldId === 'stable' ? 'stable-photo' : 'midjourney-photo',
+              'Illustration': oldId === 'midjourney' ? 'midjourney-niji' : oldId === 'dalle' ? 'dalle-illustration' : 'firefly-illustration',
+              'Vector': oldId === 'midjourney' ? 'midjourney-vector' : 'recraft-vector',
+              'Background': oldId === 'midjourney' ? 'midjourney-photo' : oldId === 'dalle' ? 'dalle-photo' : oldId === 'stable' ? 'stable-photo' : 'midjourney-photo',
+              'Video': 'veo-video',
+              '3D Render': oldId === 'midjourney' ? 'midjourney-3d' : oldId === 'dalle' ? 'dalle-3d' : 'midjourney-3d'
             };
+          } else if (newSettings.templateId) {
+            // Also migrate existing objects that might have old IDs
+            const t = newSettings.templateId as Record<string, string>;
+            if (t['Photo'] === 'midjourney') t['Photo'] = 'midjourney-photo';
+            if (t['Illustration'] === 'midjourney') t['Illustration'] = 'midjourney-niji';
+            if (t['Vector'] === 'midjourney') t['Vector'] = 'midjourney-vector';
+            if (t['Background'] === 'midjourney') t['Background'] = 'midjourney-photo';
+            if (t['Video'] === 'midjourney') t['Video'] = 'veo-video';
+            if (t['3D Render'] === 'midjourney') t['3D Render'] = 'midjourney-3d';
+            
+            if (t['Photo'] === 'dalle') t['Photo'] = 'dalle-photo';
+            if (t['Illustration'] === 'dalle') t['Illustration'] = 'dalle-illustration';
+            if (t['Background'] === 'dalle') t['Background'] = 'dalle-photo';
+            if (t['3D Render'] === 'dalle') t['3D Render'] = 'dalle-3d';
+            
+            if (t['Photo'] === 'stable') t['Photo'] = 'stable-photo';
+            if (t['Background'] === 'stable') t['Background'] = 'stable-photo';
+            
+            if (t['Photo'] === 'stock') t['Photo'] = 'stock-photo';
+            if (t['Photo'] === 'nanobanana') t['Photo'] = 'nanobanana-photo';
           }
         } catch (e) {
           console.error("Failed to parse saved preferences");

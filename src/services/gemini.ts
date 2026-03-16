@@ -2,35 +2,147 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { AppSettings, PromptTemplate } from '../types';
 
 export const promptTemplates: PromptTemplate[] = [
+  // Photo Templates
   {
-    id: "midjourney",
-    name: "Midjourney v6",
+    id: "midjourney-photo",
+    name: "Midjourney v6 (Photo)",
     template: "{style} {subject}, {details}, {lighting}, {mood} atmosphere, professional quality, high detail, no text, no watermark, commercial photography. --ar {aspect} --style raw --v 6.0",
-    description: "Optimized for Midjourney v6 with style raw"
+    description: "Optimized for Midjourney v6 with style raw",
+    contentTypes: ["Photo", "Background"]
   },
   {
-    id: "dalle",
-    name: "DALL-E 3",
+    id: "dalle-photo",
+    name: "DALL-E 3 (Photo)",
     template: "A {style} image of {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. High resolution, photorealistic details, commercial stock photography style, no text, no logos.",
-    description: "Natural language prompts for DALL-E 3"
+    description: "Natural language prompts for DALL-E 3",
+    contentTypes: ["Photo", "Background"]
   },
   {
-    id: "stable",
-    name: "Stable Diffusion XL",
+    id: "stable-photo",
+    name: "Stable Diffusion XL (Photo)",
     template: "{subject}, {style}, {details}, {lighting}, {mood}, masterpiece, best quality, highly detailed, 8k uhd, commercial stock photo, clean background",
-    description: "Tag-based prompts for SDXL"
+    description: "Tag-based prompts for SDXL",
+    contentTypes: ["Photo", "Background"]
   },
   {
-    id: "stock",
+    id: "stock-photo",
     name: "Stock Photography",
     template: "Professional stock photo: {subject}. {details}. Shot with {lighting}, conveying {mood}. Commercial use, editorial quality, diverse representation, authentic lifestyle, 8k resolution.",
-    description: "Optimized for stock photography sites"
+    description: "Optimized for stock photography sites",
+    contentTypes: ["Photo"]
   },
   {
-    id: "nanobanana",
+    id: "nanobanana-photo",
     name: "Nano Banana Pro",
     template: "Generate a stunning {style} visual of {subject}. Key elements: {details}. Lighting setup: {lighting}. Overall mood: {mood}. Ultra-high definition, cinematic composition, award-winning quality, commercial stock asset, no text.",
-    description: "Advanced multimodal prompt for Nano Banana Pro AI"
+    description: "Advanced multimodal prompt for Nano Banana Pro AI",
+    contentTypes: ["Photo"]
+  },
+
+  // Illustration Templates
+  {
+    id: "midjourney-niji",
+    name: "Midjourney Niji (Illustration)",
+    template: "{style} illustration of {subject}, {details}, {lighting}, {mood} atmosphere, professional quality, high detail, no text, no watermark, commercial illustration. --ar {aspect} --niji 6",
+    description: "Optimized for Midjourney Niji 6",
+    contentTypes: ["Illustration"]
+  },
+  {
+    id: "dalle-illustration",
+    name: "DALL-E 3 (Illustration)",
+    template: "A {style} illustration of {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. High resolution, commercial stock illustration style, no text, no logos.",
+    description: "Natural language illustration prompts for DALL-E 3",
+    contentTypes: ["Illustration"]
+  },
+  {
+    id: "firefly-illustration",
+    name: "Adobe Firefly (Illustration)",
+    template: "{subject}, {details}, {lighting}, {mood}, {style} illustration, highly detailed, commercial use, clean background, vibrant colors",
+    description: "Optimized for Adobe Firefly",
+    contentTypes: ["Illustration", "Vector"]
+  },
+
+  // Vector Templates
+  {
+    id: "midjourney-vector",
+    name: "Midjourney v6 (Vector Style)",
+    template: "Flat vector illustration of {subject}, {details}, {lighting}, {mood}, clean lines, solid colors, minimal shading, white background, commercial quality, no text. --ar {aspect} --v 6.0",
+    description: "Midjourney prompts designed to look like vectors",
+    contentTypes: ["Vector"]
+  },
+  {
+    id: "recraft-vector",
+    name: "Recraft (Vector)",
+    template: "Vector art of {subject}, {details}, {lighting}, {mood}, {style}, clean SVG style, flat colors, commercial design, no text.",
+    description: "Optimized for Recraft vector generation",
+    contentTypes: ["Vector"]
+  },
+  {
+    id: "leonardo-vector",
+    name: "Leonardo AI (Vector)",
+    template: "Vector illustration of {subject}, {details}, {lighting}, {mood}, flat design, vibrant colors, clean edges, commercial vector asset, white background.",
+    description: "Optimized for Leonardo AI vector style",
+    contentTypes: ["Vector"]
+  },
+
+  // Video Templates
+  {
+    id: "veo-video",
+    name: "Veo (Video)",
+    template: "Cinematic video of {subject}, {details}. {lighting}, {mood} atmosphere. Shot on 35mm lens, 4k resolution, smooth motion, high quality commercial footage.",
+    description: "Optimized for Google Veo",
+    contentTypes: ["Video"]
+  },
+  {
+    id: "sora-video",
+    name: "Sora (Video)",
+    template: "A highly detailed, photorealistic video of {subject}. {details}. The camera moves smoothly, capturing the {lighting} and {mood} atmosphere. 8k resolution, commercial stock footage style.",
+    description: "Natural language prompts for OpenAI Sora",
+    contentTypes: ["Video"]
+  },
+  {
+    id: "wan-video",
+    name: "WAN (Video)",
+    template: "High quality video of {subject}, {details}, {lighting}, {mood}, cinematic lighting, photorealistic, 4k resolution, smooth camera movement, commercial stock footage.",
+    description: "Optimized for WAN Video AI",
+    contentTypes: ["Video"]
+  },
+  {
+    id: "kling-video",
+    name: "Kling (Video)",
+    template: "{subject}, {details}, {lighting}, {mood}, cinematic motion, 4k, ultra realistic, professional stock video, clean composition.",
+    description: "Optimized for Kling AI",
+    contentTypes: ["Video"]
+  },
+  {
+    id: "runway-video",
+    name: "Runway Gen-2 (Video)",
+    template: "{subject}, {details}, {lighting}, {mood}, cinematic, highly detailed, 4k, photorealistic, slow motion, commercial stock footage.",
+    description: "Tag-based prompts for Runway Gen-2",
+    contentTypes: ["Video"]
+  },
+
+  // 3D Render Templates
+  {
+    id: "midjourney-3d",
+    name: "Midjourney v6 (3D Render)",
+    template: "3D render of {subject}, {details}, {lighting}, {mood}, Octane Render, Unreal Engine 5, ray tracing, highly detailed, commercial quality, clean background. --ar {aspect} --v 6.0",
+    description: "Optimized for 3D style in Midjourney",
+    contentTypes: ["3D Render"]
+  },
+  {
+    id: "dalle-3d",
+    name: "DALL-E 3 (3D Render)",
+    template: "A high-quality 3D render of {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. Created in Blender, Octane Render style, commercial stock 3D asset, no text.",
+    description: "Natural language 3D prompts for DALL-E 3",
+    contentTypes: ["3D Render"]
+  },
+  {
+    id: "leonardo-3d",
+    name: "Leonardo AI (3D Render)",
+    template: "3D illustration of {subject}, {details}, {lighting}, {mood}, isometric view, clay render style, soft lighting, pastel colors, commercial 3D asset, clean background.",
+    description: "Optimized for Leonardo AI 3D style",
+    contentTypes: ["3D Render"]
   }
 ];
 
@@ -172,7 +284,7 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
   const ai = getAI(settings.apiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
-    : (settings.templateId?.[contentType] || 'midjourney');
+    : (settings.templateId?.[contentType] || 'midjourney-photo');
   const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
   
   // For large counts, use a combinatorial approach to avoid LLM output token limits and guarantee uniqueness
@@ -299,7 +411,7 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
   const ai = getAI(settings.apiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
-    : (settings.templateId?.[contentType] || 'midjourney');
+    : (settings.templateId?.[contentType] || 'midjourney-photo');
   const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
   
   // If the array is very large, optimizing them one by one via LLM is too slow and hits token limits.
