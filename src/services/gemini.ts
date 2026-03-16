@@ -425,25 +425,18 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
           },
           required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
         },
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
       }
     });
 
     const text = response.text;
     if (!text) throw new Error('No response from Gemini');
     
-    try {
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      const cleanJson = jsonMatch ? jsonMatch[0] : text;
-      return JSON.parse(cleanJson);
-    } catch (e) {
-      console.error("JSON Parse failed for aesthetic reference:", text);
-      throw new Error("Gagal memproses data estetika. Format respons tidak valid.");
-    }
+    return JSON.parse(text);
   } catch (error) {
     console.error("Aesthetic analysis failed:", error);
-    if (error instanceof Error && error.message.includes('Gagal memproses')) {
-      throw error;
+    if (error instanceof Error && error.message.includes('JSON')) {
+       throw new Error("Gagal memproses data estetika. Silakan coba lagi.");
     }
     throw new Error(handleGeminiError(error));
   }
@@ -453,11 +446,7 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
   const ai = getAI(settings.apiKey);
   
   const promptText = `Analyze the content and visual style of this URL: ${url}
-  
-  INSTRUCTIONS:
-  1. Use the urlContext tool to fetch and deeply analyze the content of the page.
-  2. If urlContext fails or is blocked, use the googleSearch tool to find information about this specific Adobe Stock asset or similar assets.
-  3. If both tools fail, analyze the URL path itself (it often contains descriptive keywords) and use your extensive knowledge of Adobe Stock's visual trends to provide a professional aesthetic analysis.
+  You MUST use the urlContext tool to fetch and deeply analyze the content.
   
   Extract its "Aesthetic DNA" optimized for the '${contentType}' category. 
   Focus on identifying the core visual elements that define its unique style and suggest how to incorporate them into high-quality image generation prompts for Adobe Stock.
@@ -482,7 +471,7 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
       model: settings.model || 'gemini-3-flash-preview',
       contents: [{ text: promptText }],
       config: {
-        tools: [{ urlContext: {} }, { googleSearch: {} }],
+        tools: [{ urlContext: {} }],
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -497,25 +486,18 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
           },
           required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
         },
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
       }
     });
 
     const text = response.text;
     if (!text) throw new Error('No response from Gemini');
     
-    try {
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      const cleanJson = jsonMatch ? jsonMatch[0] : text;
-      return JSON.parse(cleanJson);
-    } catch (e) {
-      console.error("JSON Parse failed for URL aesthetic:", text);
-      throw new Error("Gagal memproses data estetika URL. Format respons tidak valid.");
-    }
+    return JSON.parse(text);
   } catch (error) {
     console.error("URL Aesthetic analysis failed:", error);
-    if (error instanceof Error && error.message.includes('Gagal memproses')) {
-      throw error;
+    if (error instanceof Error && error.message.includes('JSON')) {
+       throw new Error("Gagal memproses data estetika URL. Silakan coba lagi.");
     }
     throw new Error(handleGeminiError(error));
   }
@@ -719,15 +701,15 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated components reflect REAL market demand and current design trends.
 
       ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-      You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. 
+      You MUST use the urlContext tool to deeply analyze the visual style, trends, topic, lighting, and keywords from this URL. 
       This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
-      1. Identify the specific content type or niche of the asset in the URL (e.g., "Niche Background", "Video Background", "Photo Landscape", "Technology", "Lifestyle", "Abstract Art", etc.).
-      2. Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter).
-      The niche '${categoryName}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA and content type from the URL into a highly commercial stock asset.` : ''}
+      1. Identify the specific content type, niche, and CORE TOPIC of the asset in the URL.
+      2. Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter, and thematic keywords).
+      The niche '${categoryName}' should be used as a SECONDARY context to adapt the primary visual DNA and topic from the URL into a highly commercial stock asset.` : ''}
       ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference.
       This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
-      Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter).
-      The niche '${categoryName}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the file into a highly commercial stock asset.` : ''}
+      1. Extract its "Visual DNA": style, topic, lighting, and key visual elements.
+      The niche '${categoryName}' should be used as a SECONDARY context to adapt the primary visual DNA from the file into a highly commercial stock asset.` : ''}
 
       We need to programmatically generate ${count} unique combinations. Please provide:
       1. 30 highly distinct subjects (e.g., "a young professional woman", "a modern office desk", "a diverse team of engineers"). MUST be diverse in age, ethnicity, and core concept.
@@ -827,17 +809,16 @@ ${getContentTypeInstructions(contentType)}
 
 CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated prompts reflect REAL market demand and current design trends.
 
-${referenceUrl ? `CRITICAL AESTHETIC REFERENCE (URL): ${referenceUrl}
+${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
 You MUST use the urlContext tool to analyze this URL. 
-LOGIC: Use this URL EXCLUSIVELY as the source for AESTHETIC DNA (lighting, color palette, mood, artistic style, and composition).
-The niche '${categoryName}' is the PRIMARY SUBJECT. 
-TASK: Apply the aesthetic DNA from the URL to the subject matter of '${categoryName}'. 
-ADOBE STOCK SAFETY: Do not replicate the specific content or characters from the URL. Create original scenes that feel like they belong to the same visual universe but serve a different commercial purpose.` : ''}
-${referenceFile ? `CRITICAL AESTHETIC REFERENCE (FILE): Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'}.
-LOGIC: Use this file EXCLUSIVELY as the source for AESTHETIC DNA (lighting, color palette, mood, artistic style, and composition).
-The niche '${categoryName}' is the PRIMARY SUBJECT. 
-TASK: Apply the aesthetic DNA from the file to the subject matter of '${categoryName}'. 
-ADOBE STOCK SAFETY: Do not make a literal copy of the reference. Ensure the generated prompts describe unique compositions and subjects to avoid 'Similar Content' rejection.` : ''}
+LOGIC: Use this URL as the PRIMARY SOURCE for style, topic, lighting, and thematic keywords.
+The niche '${categoryName}' provides additional context. 
+TASK: Generate prompts that are "tepat sasaran" (perfectly targeted) according to the URL's essence.
+ADOBE STOCK SAFETY: Do not replicate specific characters, but capture the exact visual and conceptual DNA.` : ''}
+${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'}.
+LOGIC: Use this file as the PRIMARY SOURCE for style, topic, lighting, and thematic keywords.
+The niche '${categoryName}' provides additional context. 
+TASK: Generate prompts that precisely match the visual and conceptual DNA of the file.` : ''}
 
 ${contentType === 'AI Art & Creativity' ? `SPECIAL AI ART INSTRUCTION: For this category, prioritize surrealism, abstract concepts, and innovative digital aesthetics. If a reference is provided, deeply analyze its 'Aesthetic Soul'—not just the subject, but the emotional resonance, the texture of the light, and the complexity of the forms. Incorporate these into the prompts to create something that feels like a creative evolution of the reference.` : ''}
 ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'. Specify frame rates like '60fps' for slow motion or '24fps' for a cinematic look. Ensure the action described is dynamic and visually engaging.` : ''}
@@ -915,18 +896,15 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
   CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this asset type. Ensure your generated prompts reflect REAL market demand and current design trends.
 
   ${keyword ? `The core theme/keyword is: '${keyword}'.` : ''}
-  ${referenceUrl ? `CRITICAL AESTHETIC REFERENCE (URL): ${referenceUrl}
+  ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
   You MUST use the urlContext tool to analyze this URL. 
-  LOGIC: First, identify the specific content type or niche of the asset in the URL (e.g., "Niche Background", "Video Background", "Photo Landscape", "Technology", "Lifestyle", "Abstract Art", etc.).
-  Then, use this URL as the source for AESTHETIC DNA (lighting, color palette, mood, artistic style, and composition).
-  The keyword '${keyword || 'subject'}' is the PRIMARY SUBJECT. 
-  TASK: Apply the aesthetic DNA and the identified content type characteristics from the URL to the subject matter. 
-  ADOBE STOCK SAFETY: Do not replicate the specific content from the URL. Create original scenes that capture the 'vibe' without infringing on IP.` : ''}
-  ${referenceFile ? `CRITICAL AESTHETIC REFERENCE (FILE): Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'}.
-  LOGIC: Use this file as the source for AESTHETIC DNA (lighting, color palette, mood, artistic style, and composition).
-  The keyword '${keyword || 'subject'}' is the PRIMARY SUBJECT. 
-  TASK: Apply the aesthetic DNA from the file to the subject matter. 
-  ADOBE STOCK SAFETY: Ensure high variety in compositions to avoid 'Similar Content' rejections. Each prompt must be a distinct creative work.` : ''}
+  LOGIC: Use this URL as the PRIMARY SOURCE for style, topic, lighting, and thematic keywords.
+  Identify the specific content type, niche, and CORE TOPIC of the asset in the URL.
+  TASK: Apply the style, topic, lighting, and keywords from the URL to the subject matter. 
+  ADOBE STOCK SAFETY: Capture the 'vibe' and conceptual DNA without infringing on IP.` : ''}
+  ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'}.
+  LOGIC: Use this file as the PRIMARY SOURCE for style, topic, lighting, and thematic keywords.
+  TASK: Apply the style, topic, lighting, and keywords from the file to the subject matter.` : ''}
 
 ${contentType === 'AI Art & Creativity' ? `SPECIAL AI ART INSTRUCTION: For this category, prioritize surrealism, abstract concepts, and innovative digital aesthetics. If a reference is provided, deeply analyze its 'Aesthetic Soul'—not just the subject, but the emotional resonance, the texture of the light, and the complexity of the forms. Incorporate these into the prompts to create something that feels like a creative evolution of the reference.` : ''}
 ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'. Specify frame rates like '60fps' for slow motion or '24fps' for a cinematic look. Ensure the action described is dynamic and visually engaging.` : ''}
@@ -1006,21 +984,25 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
 
       ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
       ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-      You MUST use the urlContext tool to deeply analyze the visual style from this URL. 
-      This URL is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
-      1. Identify the specific content type or niche of the asset in the URL (e.g., "Niche Background", "Video Background", "Photo Landscape", "Technology", "Lifestyle", "Abstract Art", etc.).
-      2. Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.` : ''}
+      You MUST use the urlContext tool to deeply analyze the visual style, topic, lighting, and keywords from this URL. 
+      This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
+      1. Identify the specific content type, niche, and CORE TOPIC of the asset in the URL.
+      2. Use it as the absolute benchmark for style, lighting, camera settings, and overall aesthetic.
+      3. ALIGNMENT: If the original prompts deviate significantly from the topic or style of this URL, you MUST adjust them to be "on target" with the URL's essence while maintaining the original intent where possible.` : ''}
       ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided reference file.
-      This reference file is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
-      Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.` : ''}
+      This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
+      1. Extract the visual DNA: style, topic, lighting, and key visual elements.
+      2. Use it as the absolute benchmark for technical quality and aesthetic alignment.
+      3. ALIGNMENT: Adjust the prompts to precisely match the style, lighting, and thematic keywords found in this file.` : ''}
 
       Provide a comprehensive set of "Neural Enhancement Layers" for a high-complexity technical upgrade:
-      1. 20 Elite Technical Modifiers: Focus on advanced optics, rendering technologies, and sensory details.
-      2. 20 Cinematic Lighting Arrays: Use complex physics-based lighting.
-      3. 15 Masterpiece Quality Signatures: Use high-end industry terms.
+      1. 20 Elite Technical Modifiers: Focus on advanced optics, rendering technologies, and sensory details derived from the reference if provided.
+      2. 20 Cinematic Lighting Arrays: Use complex physics-based lighting that matches the reference's atmosphere.
+      3. 15 Masterpiece Quality Signatures: Use high-end industry terms that align with the reference's style.
+      4. 15 Subject Alignment Modifiers: Thematic keywords and topic-specific descriptors that align the original subject with the reference's topic and keywords.
       
       CRITICAL RULES:
-      - ABSOLUTE SUBJECT FIDELITY: The modifiers must be technically dense but visually neutral regarding the subject. They must elevate the *execution* of the scene, not change the *content* of the scene.
+      - REFERENCE FIDELITY: If a reference is provided, it takes precedence as the "Main Idea". The modifiers must elevate the prompts to match the reference's elite standards and topic essence.
       - NO TEXT/TYPOGRAPHY: Ensure all modifiers avoid text, watermarks, or logos.
       - ADOBE STOCK COMPLIANCE: Use generic high-end terms instead of specific restricted brands.
       
@@ -1049,9 +1031,10 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
             properties: {
               technicals: { type: Type.ARRAY, items: { type: Type.STRING } },
               lightings: { type: Type.ARRAY, items: { type: Type.STRING } },
-              qualities: { type: Type.ARRAY, items: { type: Type.STRING } }
+              qualities: { type: Type.ARRAY, items: { type: Type.STRING } },
+              alignments: { type: Type.ARRAY, items: { type: Type.STRING } }
             },
-            required: ["technicals", "lightings", "qualities"]
+            required: ["technicals", "lightings", "qualities", "alignments"]
           },
           thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
         }
@@ -1078,10 +1061,11 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
         const technical = layers.technicals[Math.floor(Math.random() * layers.technicals.length)] || "high quality";
         const lighting = layers.lightings[Math.floor(Math.random() * layers.lightings.length)] || "professional lighting";
         const quality = layers.qualities[Math.floor(Math.random() * layers.qualities.length)] || "masterpiece";
+        const alignment = layers.alignments[Math.floor(Math.random() * layers.alignments.length)] || "";
         
-        // Reconstruct using the template but prioritizing original content
+        // Reconstruct using the template but prioritizing original content and reference alignment
         let prompt = template.template
-          .replace(/{subject}/g, coreSubject)
+          .replace(/{subject}/g, `${coreSubject}${alignment ? `, ${alignment}` : ''}`)
           .replace(/{details}/g, originalDetails || "highly detailed")
           .replace(/{lighting}/g, lighting)
           .replace(/{mood}/g, quality)
@@ -1106,23 +1090,24 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
   CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
 
   ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-  You MUST use the urlContext tool to deeply analyze the visual style from this URL. 
-  This URL is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
-  1. Identify the specific content type or niche of the asset in the URL (e.g., "Niche Background", "Video Background", "Photo Landscape", "Technology", "Lifestyle", "Abstract Art", etc.).
-  2. Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.
-  Ensure the upgraded prompts reflect the high-end technical qualities and content type characteristics found in this URL.` : ''}
+  You MUST use the urlContext tool to deeply analyze the visual style, topic, lighting, and keywords from this URL. 
+  This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
+  1. Identify the specific content type, niche, and CORE TOPIC of the asset in the URL.
+  2. Use it as the absolute benchmark for style, lighting, camera settings, and overall aesthetic.
+  3. ALIGNMENT: You MUST optimize the prompts to be "on target" with the URL's style, topic, lighting, and keywords. If the original prompt subject differs slightly, align it with the URL's essence to ensure a cohesive commercial set.` : ''}
   ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided reference file.
-  This reference file is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
-  Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.
-  Ensure the upgraded prompts reflect the high-end technical qualities found in this file.` : ''}
+  This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
+  1. Extract the visual DNA: style, topic, lighting, and key visual elements.
+  2. Use it as the absolute benchmark for technical quality and aesthetic alignment.
+  3. ALIGNMENT: Adjust the prompts to precisely match the style, lighting, and thematic keywords found in this file.` : ''}
 
-  STRICT RULE: You MUST preserve the original visual subject, core action, and specific scene details. Do NOT add new subjects, change the setting, or alter the primary visual intent.
+  STRICT RULE: If NO reference is provided, you MUST preserve the original visual subject exactly. If a reference IS provided, you MUST prioritize alignment with the reference's topic and style while respecting the original prompt's intent.
   
   YOUR TASK: Perform a "Hyper-Technical Optimization" by:
-  1. Injecting Extreme Technical Precision: Use advanced camera settings (ISO, shutter speed, specific lens focal lengths), elite rendering engines (Octane, Unreal Engine 5.4), and complex lighting physics (Volumetric, Global Illumination, SSS).
-  2. Enhancing Descriptive Power: Use sophisticated vocabulary to describe textures, materials, and atmospheric effects without changing the core subject.
+  1. Injecting Extreme Technical Precision: Use advanced camera settings, elite rendering engines, and complex lighting physics that match the reference's quality.
+  2. Enhancing Descriptive Power: Use sophisticated vocabulary to describe textures, materials, and atmospheric effects derived from the reference.
   3. Optimizing for Adobe Stock Algorithms: Ensure the prompt structure maximizes commercial appeal and technical rating.
-  4. Maintaining Absolute Fidelity: The original subject, core action, and specific scene details MUST remain the foundation. Your job is to "polish the diamond," not change the stone.
+  4. Targeted Alignment: Ensure the resulting prompts are "tepat sasaran" (perfectly targeted) according to the reference's style, topic, and keywords.
 
 Original Prompts:
 ${JSON.stringify(prompts)}
