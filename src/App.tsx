@@ -151,6 +151,7 @@ export default function App() {
 
   const handleAnalyzeAesthetic = async () => {
     if (!referenceFile && !referenceUrl) return;
+    setAestheticAnalysis(null);
     setIsAnalyzingAesthetic(true);
     try {
       let analysis: AestheticAnalysis;
@@ -160,9 +161,14 @@ export default function App() {
         analysis = await analyzeUrlAesthetic(referenceUrl, settings, contentType);
       }
       setAestheticAnalysis(analysis);
+      setToast({ show: true, message: 'Analisis estetika berhasil!' });
     } catch (error) {
       console.error("Aesthetic analysis failed:", error);
-      setToast({ show: true, message: 'Gagal menganalisis estetika.' });
+      setErrorModal({
+        show: true,
+        title: 'Analisis Estetika Gagal',
+        message: handleGeminiError(error)
+      });
     } finally {
       setIsAnalyzingAesthetic(false);
     }

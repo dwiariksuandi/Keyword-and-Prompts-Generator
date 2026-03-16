@@ -323,10 +323,10 @@ export default function TopTab({
                   <AnimatePresence>
                     {aestheticAnalysis && (
                       <motion.div 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="bg-accent/5 border border-accent/20 rounded-2xl p-6 space-y-4 overflow-hidden"
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="bg-accent/5 border border-accent/20 rounded-2xl p-6 space-y-4 overflow-hidden shadow-[0_0_30px_rgba(0,255,255,0.1)]"
                       >
                         <div className="flex items-center justify-between">
                           <h3 className="text-[9px] font-bold text-accent uppercase tracking-[0.3em] flex items-center gap-2">
