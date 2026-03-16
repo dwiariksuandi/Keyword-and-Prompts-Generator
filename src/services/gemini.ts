@@ -922,9 +922,9 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.` : ''}
 
       Provide a comprehensive set of "Neural Enhancement Layers" for a high-complexity technical upgrade:
-      1. 15 Elite Technical Modifiers: Focus on advanced optics (e.g., "Zeiss Otus 85mm f/1.4", "Phase One XF IQ4 150MP"), rendering technologies (e.g., "Unreal Engine 5.4 Path Tracing", "OctaneRender 2024.1"), and sensory details (e.g., "micro-surface displacement", "subsurface scattering (SSS)").
-      2. 15 Cinematic Lighting Arrays: Use complex physics-based lighting (e.g., "Volumetric God rays", "Global Illumination with Ray-Traced Ambient Occlusion", "Three-point Rembrandt lighting with soft rim highlights", "High-key commercial studio setup with 5600K color temperature").
-      3. 10 Masterpiece Quality Signatures: Use high-end industry terms (e.g., "8K UHD photorealistic textures", "award-winning editorial commercial photography", "hyper-detailed 32-bit depth", "professionally color-graded for cinematic impact").
+      1. 20 Elite Technical Modifiers: Focus on advanced optics, rendering technologies, and sensory details.
+      2. 20 Cinematic Lighting Arrays: Use complex physics-based lighting.
+      3. 15 Masterpiece Quality Signatures: Use high-end industry terms.
       
       CRITICAL RULES:
       - ABSOLUTE SUBJECT FIDELITY: The modifiers must be technically dense but visually neutral regarding the subject. They must elevate the *execution* of the scene, not change the *content* of the scene.
@@ -943,31 +943,43 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       });
     }
 
-    const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-3-flash-preview',
-      contents: { parts },
-      config: {
-        systemInstruction: "You are a Master Neural Prompt Architect. Your specialty is 'Hyper-Optimization'—injecting extreme technical complexity and descriptive power into existing prompts while maintaining absolute fidelity to the original subject and style. You use advanced optics, lighting physics, and digital rendering terminology to elevate prompts to 'Masterpiece' status for Adobe Stock. Respond ONLY with valid JSON.",
-        tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
-      }
-    });
-
-    let text = response.text;
-    if (!text) throw new Error('No response from Gemini');
-    text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
-    
     try {
+      const response = await ai.models.generateContent({
+        model: settings.model || 'gemini-3-flash-preview',
+        contents: { parts },
+        config: {
+          systemInstruction: "You are a Master Neural Prompt Architect. Your specialty is 'Hyper-Optimization'—injecting extreme technical complexity and descriptive power into existing prompts while maintaining absolute fidelity to the original subject and style. You use advanced optics, lighting physics, and digital rendering terminology to elevate prompts to 'Masterpiece' status for Adobe Stock.",
+          tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              technicals: { type: Type.ARRAY, items: { type: Type.STRING } },
+              lightings: { type: Type.ARRAY, items: { type: Type.STRING } },
+              qualities: { type: Type.ARRAY, items: { type: Type.STRING } }
+            },
+            required: ["technicals", "lightings", "qualities"]
+          }
+        }
+      });
+
+      let text = response.text;
+      if (!text) throw new Error('No response from Gemini');
+      
       const layers = extractJSON(text);
       const optimizedPrompts = new Set<string>();
       const negativePrompt = settings.includeNegative ? ' --no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy' : '';
       
       for (const originalPrompt of prompts) {
         let cleanPrompt = originalPrompt.split('--no')[0].trim();
-        let parts = cleanPrompt.split(/[,.]/);
         
-        // Extract the original subject and existing details as much as possible
-        let coreSubject = parts[0] ? parts[0].trim() : "subject";
-        let originalDetails = parts.slice(1).join(', ').trim();
+        // More intelligent splitting
+        let parts = cleanPrompt.split(/[,.]/).map(p => p.trim()).filter(p => p.length > 0);
+        
+        // Extract the original subject (usually the first part)
+        let coreSubject = parts[0] || "subject";
+        // Combine the rest of the original details to preserve theme
+        let originalDetails = parts.slice(1).join(', ');
         
         const technical = layers.technicals[Math.floor(Math.random() * layers.technicals.length)] || "high quality";
         const lighting = layers.lightings[Math.floor(Math.random() * layers.lightings.length)] || "professional lighting";
@@ -978,7 +990,7 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
           .replace(/{subject}/g, coreSubject)
           .replace(/{details}/g, originalDetails || "highly detailed")
           .replace(/{lighting}/g, lighting)
-          .replace(/{mood}/g, quality) // Use quality as mood to be neutral
+          .replace(/{mood}/g, quality)
           .replace(/{style}/g, technical)
           .replace(/{aspect}/g, "16:9");
           
@@ -986,14 +998,14 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
         optimizedPrompts.add(prompt);
       }
       return Array.from(optimizedPrompts);
-    } catch (e) {
-      console.error("Failed to parse JSON response:", text);
-      throw new Error("Failed to parse the response from the AI. Please try again.");
+    } catch (error) {
+      console.error("Batch prompt optimization failed:", error);
+      throw new Error(handleGeminiError(error));
     }
   }
 
   // Standard optimization for smaller arrays
-  const promptTextSmall = `Optimize the following list of image generation prompts. The target asset type is '${contentType}'.
+  const promptTextSmall = `Optimize the following list of image generation prompts for Adobe Stock (${contentType}).
   
   ${getContentTypeInstructions(contentType)}
 
