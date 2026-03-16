@@ -513,7 +513,7 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
 
       We need to programmatically generate ${count} unique combinations. Please provide:
       1. 30 highly distinct subjects (e.g., "a young professional woman", "a modern office desk", "a diverse team of engineers"). MUST be diverse in age, ethnicity, and core concept.
-      2. 30 specific and varied details/actions/camera angles (e.g., "typing on a laptop, close-up shot", "holding a coffee cup, wide angle", "brainstorming at a whiteboard, over-the-shoulder view").
+      2. 30 specific and varied details/actions/camera angles. You MUST rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
       3. 15 distinct lighting styles (e.g., "soft morning sunlight", "dramatic studio lighting", "neon cyberpunk glow").
       4. 15 mood/atmosphere descriptions (e.g., "energetic and focused", "calm and serene", "mysterious and dark").
       5. 10 artistic styles/mediums (e.g., "photorealistic", "cinematic photography", "3D render", "flat vector illustration").
@@ -521,7 +521,8 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       
       CRITICAL ADOBE STOCK RULES:
       - ALGORITHM OPTIMIZATION: To rank high and sell, concepts must have high commercial utility. Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
-      - NO SIMILAR CONTENT: The components must be vastly different from each other to avoid generating repetitive images. Adobe Stock rejects batches of similar images. Vary the camera angles, compositions, and core actions.
+      - NO SIMILAR CONTENT: The components must be vastly different from each other to avoid generating repetitive images. Adobe Stock rejects batches of similar images. 
+        - VARIATION STRATEGY: Rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
       - NO TEXT/TYPOGRAPHY: Absolutely no text, words, letters, signatures, or watermarks should be mentioned or implied in the components. The output must be purely visual.
       - GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms (e.g., "generic modern luxury car" instead of "Tesla").
       - QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
