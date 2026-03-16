@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError } from './services/gemini';
+import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata } from './services/gemini';
 import { CategoryResult, AppSettings, HistoryItem, ReferenceFile } from './types';
 import Settings from './components/Settings';
 import TopTab from './components/TopTab';
@@ -358,6 +358,37 @@ export default function App() {
     }
   };
 
+  const handleGenerateMetadata = async (categoryId: string) => {
+    const category = results.find(c => c.id === categoryId);
+    if (!category || category.generatedPrompts.length === 0) return;
+
+    setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isGeneratingMetadata: true } : c));
+    
+    try {
+      const metadata = await generateAdobeStockMetadata(
+        category.generatedPrompts, 
+        category.categoryName,
+        settings
+      );
+      
+      setResults(prev => prev.map(c => {
+        if (c.id === categoryId) {
+          return { ...c, metadata, isGeneratingMetadata: false };
+        }
+        return c;
+      }));
+      setToast({ show: true, message: 'Metadata Adobe Stock berhasil dibuat!' });
+    } catch (error) {
+      console.error("Metadata generation failed:", error);
+      setErrorModal({
+        show: true,
+        title: 'Metadata Gagal',
+        message: handleGeminiError(error)
+      });
+      setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isGeneratingMetadata: false } : c));
+    }
+  };
+
   const handleToggleStar = (id: string) => {
     setResults(prev => prev.map(r => r.id === id ? { ...r, isStarred: !r.isStarred } : r));
   };
@@ -574,6 +605,7 @@ export default function App() {
             history={history} 
             onClearHistory={handleClearHistory} 
             onLoadHistory={handleLoadHistory} 
+            onGenerateMetadata={handleGenerateMetadata}
           />
         )}
         

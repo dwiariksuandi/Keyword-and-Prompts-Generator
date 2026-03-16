@@ -265,6 +265,8 @@ export async function analyzeKeyword(keyword: string, contentType: string, setti
   
   const promptText = `Perform an exhaustive, data-driven microstock market analysis targeting the asset type: '${contentType}'.
 
+CRITICAL: You MUST use Google Search to find REAL, CURRENT data, trends, and search volumes for Adobe Stock and the microstock industry. Do not rely solely on your internal knowledge; ground your analysis in actual, up-to-date market realities to avoid bias.
+
 ${keyword ? `The broad keyword context is: '${keyword}'.` : 'No specific keyword was provided.'}
 ${referenceUrl ? `I have provided a reference URL: ${referenceUrl}. Please analyze the content, trends, and visual themes from this link to identify similar or complementary niche opportunities.` : ''}
 ${!keyword && !referenceUrl && referenceFile ? 'Please derive the niche opportunities primarily from the visual content of the provided reference.' : ''}
@@ -277,15 +279,15 @@ CRITICAL ADOBE STOCK RULES:
 - GENERATIVE AI COMPLIANCE: The niches MUST NOT rely on trademarked/copyrighted elements, specific brands, recognizable characters, or real known restricted places/buildings. Focus on generic, commercially safe concepts (e.g., "generic modern smartphone" instead of "iPhone").
 - NO SIMILAR CONTENT: Ensure the 4 to 6 niches are distinct from each other.
 
-For each niche, you MUST provide realistic, simulated market data:
+For each niche, you MUST provide realistic, data-backed market metrics based on your search:
 1. categoryName: A highly specific, commercial niche name (e.g., "Gen Z Sustainable Office Lifestyle" instead of "Business People").
 2. mainKeywords: 5-7 exact-match, long-tail keywords that buyers actually type into search bars.
-3. volumeLevel & volumeNumber: Simulated monthly search volume on major stock platforms. Make this a highly realistic number reflecting actual market demand (e.g., 12500, not just 100).
-4. competition & competitionScore: Simulated number of existing assets (0-100 score). 100 means millions of assets (oversaturated), 10 means very few assets (blue ocean).
-5. trend & trendPercent: Current market trajectory (e.g., +45% due to recent news/seasons).
+3. volumeLevel & volumeNumber: Estimated monthly search volume on major stock platforms based on real trends. Make this a highly realistic number reflecting actual market demand (e.g., 12500, not just 100).
+4. competition & competitionScore: Estimated number of existing assets (0-100 score). 100 means millions of assets (oversaturated), 10 means very few assets (blue ocean).
+5. trend & trendPercent: Current market trajectory based on real-world news/seasons (e.g., +45% due to recent events).
 6. difficultyScore: 0-100. How hard is it for a new contributor to rank on page 1?
 7. opportunityScore: 0-100. The ultimate metric. High volume + Low competition = High Opportunity (80-100).
-8. creativeAdvice: Highly specific art direction. What exact visual elements, lighting, colors, or compositions are missing in the current market for this niche? ${referenceFile ? 'Incorporate elements from the provided reference where it makes commercial sense.' : ''}
+8. creativeAdvice: Highly specific art direction based on current design trends. What exact visual elements, lighting, colors, or compositions are missing in the current market for this niche? ${referenceFile ? 'Incorporate elements from the provided reference where it makes commercial sense.' : ''}
 
 CRITICAL: Ensure mathematical and logical consistency. If competition is 95/100 (oversaturated), the opportunity score MUST be low (under 40) unless the volume is exceptionally massive and growing rapidly. Prioritize finding "Blue Ocean" niches (High Opportunity).
 Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
@@ -305,8 +307,8 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     model: settings.model || 'gemini-3-flash-preview',
     contents: { parts },
     config: {
-      systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to simulate real-world keyword research tools. You must provide highly accurate, data-backed estimates for search volume and competition based on current market trends. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches.",
-      tools: referenceUrl ? [{ urlContext: {} }] : undefined,
+      systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to provide highly accurate, data-backed estimates for search volume and competition based on REAL, current market trends using Google Search. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches.",
+      tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.ARRAY,
@@ -356,6 +358,8 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
   if (count > 30) {
     const promptText = `Generate a rich set of prompt components for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}' and the target platform is '${template.name}'.
       
+      CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated components reflect REAL market demand and current design trends.
+
       ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration for the components.` : ''}
       ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" (lighting, color palette, aesthetic) and apply it to the components.` : ''}
 
@@ -389,8 +393,8 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines.",
-        tools: referenceUrl ? [{ urlContext: {} }] : undefined,
+        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. Use real-world data to inform your aesthetic choices.",
+        tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -450,6 +454,8 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
   // Standard generation for smaller counts
   const promptTextSmall = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}' and the target platform is '${template.name}'.
 
+CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated prompts reflect REAL market demand and current design trends.
+
 ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration.` : ''}
 ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" and apply it to these prompts.` : ''}
 
@@ -482,8 +488,8 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
     model: settings.model || 'gemini-3-flash-preview',
     contents: { parts: partsSmall },
     config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. You understand lighting, composition, camera settings, and market trends perfectly.",
-      tools: referenceUrl ? [{ urlContext: {} }] : undefined,
+      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. You understand lighting, composition, camera settings, and market trends perfectly based on real data.",
+      tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.ARRAY,
@@ -515,6 +521,8 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
   
   const promptText = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts. The target asset type is '${contentType}' and the target platform is '${template.name}'.
   
+  CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this asset type. Ensure your generated prompts reflect REAL market demand and current design trends.
+
   ${keyword ? `The core theme/keyword is: '${keyword}'.` : ''}
   ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration. Extract the "Visual DNA" (lighting, color palette, mood) and apply it to new, distinct scenarios.` : ''}
   ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" and apply it to these prompts. DO NOT make literal copies; instead, create new scenes inspired by this aesthetic.` : ''}
@@ -549,8 +557,8 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
     model: settings.model || 'gemini-3-flash-preview',
     contents: { parts },
     config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references. You excel at extracting aesthetic essence and applying it to new, commercially viable concepts.",
-      tools: referenceUrl ? [{ urlContext: {} }] : undefined,
+      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references and real-world market data. You excel at extracting aesthetic essence and applying it to new, commercially viable concepts.",
+      tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.ARRAY,
@@ -587,6 +595,8 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       We need to perform a "Technical Upgrade" on a large batch of similar prompts for Adobe Stock (${contentType}).
       GOAL: Enhance the technical quality (lighting, camera, resolution) WITHOUT changing the core visual subject or scene of each prompt.
       
+      CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
+
       ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
       ${referenceUrl ? `Use the visual style from this URL as a technical quality benchmark: ${referenceUrl}` : ''}
       ${referenceFile ? `Use the visual style from the provided reference as a technical quality benchmark.` : ''}
@@ -617,8 +627,8 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer. Your task is to provide technical enhancement layers that improve prompt quality without altering the original visual subject or intent.",
-        tools: referenceUrl ? [{ urlContext: {} }] : undefined,
+        systemInstruction: "You are an elite AI Image Prompt Engineer. Your task is to provide technical enhancement layers that improve prompt quality without altering the original visual subject or intent. Base your enhancements on real-world commercial photography standards.",
+        tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -675,6 +685,8 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
   // Standard optimization for smaller arrays
   const promptTextSmall = `Optimize the following list of image generation prompts. 
   
+  CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
+
   STRICT RULE: You MUST preserve the original visual subject, core action, and specific scene details. Do NOT add new subjects, change the setting, or alter the primary visual intent.
   
   YOUR TASK: Perform a "Technical Upgrade" by:
@@ -710,8 +722,8 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
     model: settings.model || 'gemini-3-flash-preview',
     contents: { parts: partsSmall },
     config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer. Your specialty is 'Technical Upgrading'—improving the technical execution and formatting of a prompt while strictly preserving its original visual subject and intent.",
-      tools: referenceUrl ? [{ urlContext: {} }] : undefined,
+      systemInstruction: "You are an elite AI Image Prompt Engineer. Your specialty is 'Technical Upgrading'—improving the technical execution and formatting of a prompt while strictly preserving its original visual subject and intent. Base your upgrades on real-world market data.",
+      tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.ARRAY,
@@ -759,6 +771,8 @@ export async function generateAllPromptsBatch(
       
       The niches are: '${categoryNames}'.
       
+      CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for these niches. Ensure your generated components reflect REAL market demand and current design trends.
+
       For EACH niche, provide:
       1. ${itemsNeeded} highly distinct subjects.
       2. ${itemsNeeded} specific and varied details/actions/camera angles.
@@ -772,7 +786,8 @@ export async function generateAllPromptsBatch(
       - GENERATIVE AI COMPLIANCE: NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands.
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor.",
+        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Use real-world data to inform your aesthetic choices.",
+        tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -840,4 +855,69 @@ export async function generateAllPromptsBatch(
     console.error("Batch generation failed:", error);
     throw new Error(handleGeminiError(error));
   }
+}
+
+export async function generateAdobeStockMetadata(
+  prompts: string[], 
+  categoryName: string, 
+  settings: AppSettings
+): Promise<{ title: string, keywords: string[] }[]> {
+  const ai = getAI(settings.apiKey);
+  
+  // Chunk prompts to avoid token limits (max 10 per request)
+  const chunkSize = 10;
+  const chunks = [];
+  for (let i = 0; i < prompts.length; i += chunkSize) {
+    chunks.push(prompts.slice(i, i + chunkSize));
+  }
+
+  let allMetadata: { title: string, keywords: string[] }[] = [];
+
+  for (const chunk of chunks) {
+    const promptText = `Generate highly optimized metadata for Adobe Stock for the following ${chunk.length} image generation prompts in the niche '${categoryName}'.
+    
+CRITICAL: Use Google Search to find the highest-converting, most searched keywords for these specific visual concepts on Adobe Stock and similar platforms.
+
+For EACH prompt, provide:
+1. title: A descriptive, commercial title (max 200 characters). Must be in English.
+2. keywords: Exactly 40-50 highly relevant keywords. Order them by relevance (most important first). Must be in English. No spammy words.
+
+Prompts:
+${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
+`;
+
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3-flash-preview',
+      contents: promptText,
+      config: {
+        systemInstruction: "You are an elite Microstock SEO Expert and Top-Selling Adobe Stock Contributor. You know exactly how to write titles and 50 keywords that rank #1 on Adobe Stock search. You use real-world search data to inform your keywords.",
+        tools: [{ googleSearch: {} }],
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              keywords: { type: Type.ARRAY, items: { type: Type.STRING } }
+            },
+            required: ["title", "keywords"]
+          }
+        }
+      }
+    });
+
+    let text = response.text;
+    if (!text) throw new Error('No response from Gemini');
+    
+    try {
+      const parsed = extractJSON(text);
+      allMetadata = [...allMetadata, ...parsed];
+    } catch (e) {
+      console.error("Failed to parse JSON response for chunk:", text);
+      throw new Error("Failed to parse the response from the AI. Please try again.");
+    }
+  }
+
+  return allMetadata;
 }

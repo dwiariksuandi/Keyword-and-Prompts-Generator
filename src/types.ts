@@ -23,6 +23,8 @@ export interface CategoryResult {
   isGeneratingPrompts: boolean;
   isUpgrading: boolean;
   isStarred: boolean;
+  isGeneratingMetadata?: boolean;
+  metadata?: { title: string; keywords: string[] }[];
 }
 
 export interface HistoryItem {

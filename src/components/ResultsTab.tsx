@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, History, Lightbulb, Download, Copy, Check, ChevronDown, ChevronUp, Trash2, Search } from 'lucide-react';
+import { FileText, History, Lightbulb, Download, Copy, Check, ChevronDown, ChevronUp, Trash2, Search, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { CategoryResult, HistoryItem } from '../types';
 
 interface ResultsTabProps {
@@ -7,9 +7,10 @@ interface ResultsTabProps {
   history: HistoryItem[];
   onClearHistory: () => void;
   onLoadHistory: (item: HistoryItem) => void;
+  onGenerateMetadata: (categoryId: string) => void;
 }
 
-export default function ResultsTab({ results, history, onClearHistory, onLoadHistory }: ResultsTabProps) {
+export default function ResultsTab({ results, history, onClearHistory, onLoadHistory, onGenerateMetadata }: ResultsTabProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -67,6 +68,34 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
     const a = document.createElement('a');
     a.href = url;
     a.download = `keyword_research_all_prompts_${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadCSV = (category: CategoryResult) => {
+    if (!category.metadata) return;
+
+    // Adobe Stock CSV format: Filename, Title, Keywords, Category, Releases
+    let csvContent = "Filename,Title,Keywords,Category,Releases\n";
+    
+    category.metadata.forEach((meta, index) => {
+      const filename = `image_${index + 1}.jpg`;
+      // Escape quotes in title
+      const title = `"${meta.title.replace(/"/g, '""')}"`;
+      // Join keywords and escape quotes
+      const keywords = `"${meta.keywords.join(',').replace(/"/g, '""')}"`;
+      // Default category (e.g., 1 for Animals, 2 for Buildings... we can leave blank or use a default)
+      const categoryId = ""; 
+      const releases = "";
+      
+      csvContent += `${filename},${title},${keywords},${categoryId},${releases}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${category.categoryName.replace(/\s+/g, '_')}_metadata.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -140,8 +169,42 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
                 <span className="bg-slate-800 text-slate-200 text-xs px-2 py-1 rounded-full">
                   {category.generatedPrompts.length} prompts
                 </span>
+                {category.metadata && (
+                  <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded-full flex items-center">
+                    <Check className="w-3 h-3 mr-1" /> Metadata Ready
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2">
+                {!category.metadata ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onGenerateMetadata(category.id);
+                    }}
+                    disabled={category.isGeneratingMetadata}
+                    className="flex items-center px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {category.isGeneratingMetadata ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <FileSpreadsheet className="w-4 h-4 mr-2" />
+                    )}
+                    {category.isGeneratingMetadata ? 'Generating...' : 'Generate Metadata'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownloadCSV(category);
+                    }}
+                    className="flex items-center px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download CSV
+                  </button>
+                )}
+                <div className="w-px h-6 bg-slate-700 mx-1"></div>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
