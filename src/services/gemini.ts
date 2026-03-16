@@ -354,7 +354,7 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
   
   // For large counts, use a combinatorial approach to avoid LLM output token limits and guarantee uniqueness
   if (count > 30) {
-    const promptText = `Generate a rich set of prompt components for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
+    const promptText = `Generate a rich set of prompt components for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}' and the target platform is '${template.name}'.
       
       ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration for the components.` : ''}
       ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" (lighting, color palette, aesthetic) and apply it to the components.` : ''}
@@ -371,7 +371,7 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       - NO SIMILAR CONTENT: The components must be vastly different from each other to avoid generating repetitive images. Do not just change colors or minor details. Vary the camera angles, compositions, and core actions.
       - GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms (e.g., "generic modern luxury car" instead of "Tesla").
       - QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
-      - Ensure all components are perfectly suited for ${contentType}.
+      - Ensure all components are perfectly suited for ${contentType} and optimized for the ${template.name} platform.
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
     const parts: any[] = [{ text: promptText }];
@@ -447,18 +447,18 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
   }
 
   // Standard generation for smaller counts
-  const promptTextSmall = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
+  const promptTextSmall = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}' and the target platform is '${template.name}'.
 
 ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration.` : ''}
 ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" and apply it to these prompts.` : ''}
 
 CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 1. Commercial Utility: Ensure concepts are highly usable for designers and agencies. Include concepts with 'copy space', 'authentic lifestyle', 'modern aesthetics', or 'clean backgrounds' where appropriate.
-2. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for a ${contentType}.
+2. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for a ${contentType} on the ${template.name} platform.
 3. NO SIMILAR CONTENT: Do not generate prompts that are practically identical. Each prompt MUST have a distinct composition, camera angle, subject, or core action.
 4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
 5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
-6. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure:
+6. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
 "${template.template}"
 Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
 
@@ -511,7 +511,7 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
     : (settings.templateId?.[contentType] || 'midjourney-photo');
   const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
   
-  const promptText = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts. The target asset type is '${contentType}'.
+  const promptText = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts. The target asset type is '${contentType}' and the target platform is '${template.name}'.
   
   ${keyword ? `The core theme/keyword is: '${keyword}'.` : ''}
   ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration. Extract the "Visual DNA" (lighting, color palette, mood) and apply it to new, distinct scenarios.` : ''}
@@ -519,11 +519,11 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
 
   CRITICAL REQUIREMENTS FOR ADOBE STOCK:
   1. Commercial Utility: Ensure concepts are highly usable for designers and agencies. Include 'copy space' where relevant.
-  2. Technical Precision: Specify lighting, camera angles, and aesthetic quality.
+  2. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for the ${template.name} platform.
   3. NO SIMILAR CONTENT: Each prompt MUST have a distinct composition, camera angle, subject, or core action. Avoid repetitive concepts.
   4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only (e.g., "generic modern smartphone").
   5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
-  6. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure:
+  6. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
   "${template.template}"
   Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
 
@@ -690,7 +690,7 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
   }
 
   // Standard optimization for smaller arrays
-  const promptTextSmall = `Optimize the following list of image generation prompts to make them more detailed, commercial-grade, and highly targeted for the '${contentType}' category on microstock platforms like Adobe Stock.
+  const promptTextSmall = `Optimize the following list of image generation prompts to make them more detailed, commercial-grade, and highly targeted for the '${contentType}' category on microstock platforms like Adobe Stock. The target platform is '${template.name}'.
 
 ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
 ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration for the optimization.` : ''}
@@ -700,13 +700,13 @@ Original Prompts:
 ${JSON.stringify(prompts)}
 
 CRITICAL REQUIREMENTS FOR OPTIMIZATION (ADOBE STOCK):
-1. Enhance Technical Precision: Add specific lighting, camera angles, lens types, and aesthetic quality appropriate for a ${contentType}.
+1. Enhance Technical Precision: Add specific lighting, camera angles, lens types, and aesthetic quality appropriate for a ${contentType} on the ${template.name} platform.
 2. Improve Commercial Utility: Ensure concepts are highly usable for designers and agencies. Add elements like 'copy space', 'authentic lifestyle', 'modern aesthetics', or 'clean backgrounds' where appropriate.
 3. NO SIMILAR CONTENT: Ensure the optimized prompts are distinct enough from each other to avoid generating repetitive images.
 4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
 5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
-6. Maintain Original Intent: Keep the core subject and action of the original prompt, but elevate its quality and marketability.
-7. STRICT Template Alignment: You MUST strictly format each optimized prompt using this exact template structure:
+6. Maintain Original Intent: Keep the core subject and action of the original prompt, but elevate its quality and marketability for ${template.name}.
+7. STRICT Template Alignment: You MUST strictly format each optimized prompt using this exact template structure for ${template.name}:
 "${template.template}"
 Replace the bracketed placeholders with your optimized content. Do not add conversational text.
 
