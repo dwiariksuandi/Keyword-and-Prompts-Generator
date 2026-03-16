@@ -85,7 +85,7 @@ export default function Settings({
               onClick={onEndSession}
               className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium py-3 rounded-lg transition-colors border border-red-500/20"
             >
-              End Session & Remove Key
+              Reset API Key & End Session
             </button>
             
             <p className="text-xs text-slate-500 mt-2">

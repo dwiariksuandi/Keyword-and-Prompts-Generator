@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Key, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X } from 'lucide-react';
 import { analyzeKeyword, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError } from './services/gemini';
 import { CategoryResult, AppSettings, HistoryItem } from './types';
 import Settings from './components/Settings';
@@ -328,8 +328,17 @@ export default function App() {
                   value={tempApiKey}
                   onChange={(e) => setTempApiKey(e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full bg-[#0B1121] border border-slate-700 rounded-xl text-white pl-11 pr-4 py-3.5 outline-none focus:border-[#00D8B6] focus:ring-1 focus:ring-[#00D8B6] transition-all placeholder:text-slate-600"
+                  className="w-full bg-[#0B1121] border border-slate-700 rounded-xl text-white pl-11 pr-12 py-3.5 outline-none focus:border-[#00D8B6] focus:ring-1 focus:ring-[#00D8B6] transition-all placeholder:text-slate-600"
                 />
+                {tempApiKey && (
+                  <button
+                    type="button"
+                    onClick={() => setTempApiKey('')}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-white transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
               </div>
               <div className="text-xs text-slate-500 ml-1 mt-2 space-y-1">
                 <p>
