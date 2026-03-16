@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Key, Save, Check, AlertCircle } from 'lucide-react';
 import { AppSettings, PromptTemplate } from '../types';
 import { promptTemplates } from '../services/gemini';
@@ -12,6 +12,8 @@ interface SettingsProps {
   prefsValidationMessage?: { type: 'success' | 'error', text: string } | null;
 }
 
+const CONTENT_TYPES = ['Photo', 'Illustration', 'Vector', 'Background', 'Video', '3D Render'];
+
 export default function Settings({ 
   settings, 
   setSettings, 
@@ -20,6 +22,30 @@ export default function Settings({
   prefsSaved,
   prefsValidationMessage
 }: SettingsProps) {
+  const [activeContentTypeTab, setActiveContentTypeTab] = useState('Photo');
+
+  // Ensure templateId is an object
+  const currentTemplateIds = typeof settings.templateId === 'string' 
+    ? { 
+        'Photo': settings.templateId, 
+        'Illustration': settings.templateId, 
+        'Vector': settings.templateId, 
+        'Background': settings.templateId, 
+        'Video': settings.templateId, 
+        '3D Render': settings.templateId 
+      } 
+    : settings.templateId || {};
+
+  const handleTemplateChange = (templateId: string) => {
+    setSettings({
+      ...settings,
+      templateId: {
+        ...currentTemplateIds,
+        [activeContentTypeTab]: templateId
+      }
+    });
+  };
+
   return (
     <div className="max-w-2xl mx-auto py-6">
       <div className="text-center mb-8">
@@ -85,21 +111,38 @@ export default function Settings({
 
         {/* Prompt Template */}
         <div className="bg-[#111827] rounded-xl border border-slate-800 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Prompt Template</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Prompt Template by Content Type</h2>
+          
+          <div className="flex overflow-x-auto pb-2 mb-4 gap-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+            {CONTENT_TYPES.map(type => (
+              <button
+                key={type}
+                onClick={() => setActiveContentTypeTab(type)}
+                className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeContentTypeTab === type
+                    ? 'bg-[#00D8B6] text-black'
+                    : 'bg-[#0B1121] text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+
           <div className="space-y-3">
             {promptTemplates.map((template) => (
               <button
                 key={template.id}
-                onClick={() => setSettings({ ...settings, templateId: template.id })}
+                onClick={() => handleTemplateChange(template.id)}
                 className={`w-full p-4 rounded-lg border text-left transition-all ${
-                  settings.templateId === template.id
+                  currentTemplateIds[activeContentTypeTab] === template.id
                     ? "border-[#00D8B6] bg-[#00D8B6]/10"
                     : "border-slate-800 bg-[#0B1121] hover:border-slate-700"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <p className="font-medium text-white">{template.name}</p>
-                  {settings.templateId === template.id && (
+                  {currentTemplateIds[activeContentTypeTab] === template.id && (
                     <Check className="w-4 h-4 text-[#00D8B6]" />
                   )}
                 </div>

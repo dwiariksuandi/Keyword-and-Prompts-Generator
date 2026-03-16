@@ -30,7 +30,14 @@ export default function App() {
   const [settings, setSettings] = useState<AppSettings>({
     apiKey: '',
     model: 'gemini-3.1-pro-preview',
-    templateId: 'midjourney',
+    templateId: {
+      'Photo': 'midjourney',
+      'Illustration': 'midjourney',
+      'Vector': 'midjourney',
+      'Background': 'midjourney',
+      'Video': 'midjourney',
+      '3D Render': 'midjourney'
+    },
     promptCount: 100,
     language: 'en',
     includeNegative: false,
@@ -53,6 +60,18 @@ export default function App() {
         try {
           const parsed = JSON.parse(savedPrefs);
           Object.assign(newSettings, parsed);
+          
+          // Migrate old string templateId to Record
+          if (typeof newSettings.templateId === 'string') {
+            newSettings.templateId = {
+              'Photo': newSettings.templateId,
+              'Illustration': newSettings.templateId,
+              'Vector': newSettings.templateId,
+              'Background': newSettings.templateId,
+              'Video': newSettings.templateId,
+              '3D Render': newSettings.templateId
+            };
+          }
         } catch (e) {
           console.error("Failed to parse saved preferences");
         }

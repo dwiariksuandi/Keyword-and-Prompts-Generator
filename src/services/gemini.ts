@@ -170,7 +170,10 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
 
 export async function generatePrompts(keyword: string, categoryName: string, count: number, settings: AppSettings, contentType: string) {
   const ai = getAI(settings.apiKey);
-  const template = promptTemplates.find(t => t.id === settings.templateId) || promptTemplates[0];
+  const currentTemplateId = typeof settings.templateId === 'string' 
+    ? settings.templateId 
+    : (settings.templateId?.[contentType] || 'midjourney');
+  const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
   
   // For large counts, use a combinatorial approach to avoid LLM output token limits and guarantee uniqueness
   if (count > 30) {
@@ -294,7 +297,10 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
 
 export async function optimizePrompts(prompts: string[], settings: AppSettings, contentType: string) {
   const ai = getAI(settings.apiKey);
-  const template = promptTemplates.find(t => t.id === settings.templateId) || promptTemplates[0];
+  const currentTemplateId = typeof settings.templateId === 'string' 
+    ? settings.templateId 
+    : (settings.templateId?.[contentType] || 'midjourney');
+  const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
   
   // If the array is very large, optimizing them one by one via LLM is too slow and hits token limits.
   // Instead, we extract the core subjects from a sample, generate high-quality commercial modifiers,

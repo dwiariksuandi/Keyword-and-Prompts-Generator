@@ -37,7 +37,7 @@ export interface PromptTemplate {
 export interface AppSettings {
   apiKey: string;
   model: string;
-  templateId: string;
+  templateId: string | Record<string, string>;
   promptCount: number;
   language: string;
   includeNegative: boolean;
