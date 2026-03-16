@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis } from '../types';
 
 export const promptTemplates: PromptTemplate[] = [
@@ -424,7 +424,8 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
             suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
           },
           required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
-        }
+        },
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
       }
     });
 
@@ -484,7 +485,8 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
             suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
           },
           required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
-        }
+        },
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
       }
     });
 
@@ -579,6 +581,7 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     config: {
       systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to provide highly accurate, data-backed estimates for search volume and competition based on REAL, current market trends using Google Search. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
       tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
     },
   });
 
@@ -654,7 +657,7 @@ export async function scorePrompts(prompts: string[], settings: AppSettings, con
               density: { type: Type.INTEGER },
               clarity: { type: Type.INTEGER },
               specificity: { type: Type.INTEGER },
-              adherence: { type: Type.INTEGER },
+              adherence: { type: Type.NUMBER },
               feedback: { type: Type.STRING },
               keywordFeedback: { type: Type.STRING },
               clarityFeedback: { type: Type.STRING },
@@ -663,7 +666,8 @@ export async function scorePrompts(prompts: string[], settings: AppSettings, con
             },
             required: ["prompt", "score", "density", "clarity", "specificity", "adherence", "feedback", "keywordFeedback", "clarityFeedback", "specificityFeedback", "adherenceFeedback"]
           }
-        }
+        },
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
       }
     });
 
@@ -754,6 +758,7 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       config: {
         systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. Use real-world data to inform your aesthetic choices. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
         tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
       }
     });
 
@@ -858,6 +863,7 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
           type: Type.ARRAY,
           items: { type: Type.STRING },
         },
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
       },
     });
 
@@ -942,6 +948,7 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
       config: {
         systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references and real-world market data. You excel at extracting aesthetic essence and applying it to new, commercially viable concepts. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
         tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
       }
     });
 
@@ -1027,7 +1034,8 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
               qualities: { type: Type.ARRAY, items: { type: Type.STRING } }
             },
             required: ["technicals", "lightings", "qualities"]
-          }
+          },
+          thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
         }
       });
 
@@ -1135,6 +1143,7 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
           type: Type.ARRAY,
           items: { type: Type.STRING },
         },
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
       },
     });
 
@@ -1174,7 +1183,7 @@ export async function generateAllPromptsBatch(
 
   try {
     const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-2.5-flash',
+      model: settings.model || 'gemini-3-flash-preview',
       contents: `Generate rich prompt components for multiple niches based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
       
       ${getContentTypeInstructions(contentType)}
@@ -1216,6 +1225,7 @@ export async function generateAllPromptsBatch(
       config: {
         systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Use real-world data to inform your aesthetic choices. Respond ONLY with valid JSON.",
         tools: [{ googleSearch: {} }],
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
       }
     });
 
@@ -1313,7 +1323,8 @@ ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
               },
               required: ["title", "keywords"]
             }
-          }
+          },
+          thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
         }
       });
 
