@@ -369,6 +369,7 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       
       CRITICAL ADOBE STOCK RULES:
       - NO SIMILAR CONTENT: The components must be vastly different from each other to avoid generating repetitive images. Do not just change colors or minor details. Vary the camera angles, compositions, and core actions.
+      - NO TEXT/TYPOGRAPHY: Absolutely no text, words, letters, signatures, or watermarks should be mentioned or implied in the components. The output must be purely visual.
       - GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms (e.g., "generic modern luxury car" instead of "Tesla").
       - QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
       - Ensure all components are perfectly suited for ${contentType} and optimized for the ${template.name} platform.
@@ -413,7 +414,7 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
     try {
       const components = extractJSON(text);
       const generatedPrompts = new Set<string>();
-      const negativePrompt = settings.includeNegative ? ' --no text, watermark, deformed, blurry, logos' : '';
+      const negativePrompt = settings.includeNegative ? ' --no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy' : '';
       
       // Generate combinations, ensuring uniqueness
       let attempts = 0;
@@ -458,13 +459,14 @@ CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 3. NO SIMILAR CONTENT: Do not generate prompts that are practically identical. Each prompt MUST have a distinct composition, camera angle, subject, or core action.
 4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
 5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
-6. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
+6. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks. The image must be clean and free of any literal text.
+7. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
 "${template.template}"
 Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
 
 Respond strictly with a JSON array of strings, where each string is a complete, ready-to-use image generation prompt tailored for a ${contentType}.
 Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
-${settings.includeNegative ? 'Append a strong negative prompt at the end of each prompt (e.g., "--no text, watermark, deformed, blurry, logos, bad anatomy, extra limbs").' : ''}`;
+${settings.includeNegative ? 'Append a strong negative prompt at the end of each prompt (e.g., "--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy").' : ''}`;
 
   const partsSmall: any[] = [{ text: promptTextSmall }];
   if (referenceFile) {
@@ -523,13 +525,14 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
   3. NO SIMILAR CONTENT: Each prompt MUST have a distinct composition, camera angle, subject, or core action. Avoid repetitive concepts.
   4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only (e.g., "generic modern smartphone").
   5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
-  6. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
+  6. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks.
+  7. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
   "${template.template}"
   Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
 
   Respond strictly with a JSON array of strings, where each string is a complete, ready-to-use image generation prompt tailored for a ${contentType}.
   Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
-  ${settings.includeNegative ? 'Append a strong negative prompt at the end of each prompt (e.g., "--no text, watermark, deformed, blurry, logos, bad anatomy, extra limbs").' : ''}`;
+  ${settings.includeNegative ? 'Append a strong negative prompt at the end of each prompt (e.g., "--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy").' : ''}`;
 
   const parts: any[] = [{ text: promptText }];
 
@@ -575,34 +578,29 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
     : (settings.templateId?.[contentType] || 'midjourney-photo');
   const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
   
-  // If the array is very large, optimizing them one by one via LLM is too slow and hits token limits.
-  // Instead, we extract the core subjects from a sample, generate high-quality commercial modifiers,
-  // and programmatically reconstruct the prompts.
+  // If the array is very large, we use a programmatic approach but with stricter preservation of original content
   if (prompts.length > 30) {
-    // Take a small sample to understand the context
     const sample = prompts.slice(0, 10);
     
     const promptText = `Analyze these sample prompts: ${JSON.stringify(sample)}.
       
-      We need to optimize a massive batch of similar prompts for Adobe Stock (${contentType}).
+      We need to perform a "Technical Upgrade" on a large batch of similar prompts for Adobe Stock (${contentType}).
+      GOAL: Enhance the technical quality (lighting, camera, resolution) WITHOUT changing the core visual subject or scene of each prompt.
+      
       ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
-      ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration for the modifiers.` : ''}
-      ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" (lighting, color palette, aesthetic) and apply it to the modifiers.` : ''}
+      ${referenceUrl ? `Use the visual style from this URL as a technical quality benchmark: ${referenceUrl}` : ''}
+      ${referenceFile ? `Use the visual style from the provided reference as a technical quality benchmark.` : ''}
 
-      To do this instantly, provide a set of highly commercial, premium modifiers that we can programmatically apply to the original subjects.
+      Provide a set of "Technical Enhancement Layers" that can be applied to preserve the original subject:
+      1. 10 premium technical modifiers (e.g., "shot on 85mm lens, f/1.8", "high-end commercial photography, 8k")
+      2. 10 lighting enhancements that fit any scene (e.g., "natural soft lighting", "professional studio setup")
+      3. 5 mood-neutral quality tags (e.g., "hyper-detailed textures", "award-winning masterpiece")
       
-      Provide:
-      1. 15 premium lighting setups (e.g., "cinematic studio lighting, softbox", "golden hour natural sunlight")
-      2. 15 commercial moods/atmospheres (e.g., "authentic lifestyle, candid", "clean corporate, modern")
-      3. 10 high-end technical styles (e.g., "shot on 35mm lens, 8k resolution", "hyper-detailed digital illustration")
-      4. 5 commercial composition tags (e.g., "wide angle, copy space", "close up macro")
+      CRITICAL RULES:
+      - PRESERVE SUBJECT: The modifiers must be neutral enough to not change what is happening in the original prompt.
+      - NO TEXT/TYPOGRAPHY: Ensure all modifiers avoid text or watermarks.
+      - ADOBE STOCK COMPLIANCE: No brands, logos, or trademarks.
       
-      CRITICAL ADOBE STOCK RULES:
-      - NO SIMILAR CONTENT: The modifiers must be distinct enough to create visually different variations of the same subject.
-      - GENERATIVE AI COMPLIANCE: Ensure all modifiers strictly avoid brands, logos, trademarked elements, and specific real-world locations. Use generic terms only.
-      - QUALITY: The modifiers should naturally enhance the quality and realism/detail of the final output.
-      
-      Ensure all modifiers are tailored for ${contentType}.
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
     const parts: any[] = [{ text: promptText }];
@@ -619,18 +617,17 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Provide highly commercial, premium modifiers that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines.",
+        systemInstruction: "You are an elite AI Image Prompt Engineer. Your task is to provide technical enhancement layers that improve prompt quality without altering the original visual subject or intent.",
         tools: referenceUrl ? [{ urlContext: {} }] : undefined,
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
           properties: {
+            technicals: { type: Type.ARRAY, items: { type: Type.STRING } },
             lightings: { type: Type.ARRAY, items: { type: Type.STRING } },
-            moods: { type: Type.ARRAY, items: { type: Type.STRING } },
-            styles: { type: Type.ARRAY, items: { type: Type.STRING } },
-            compositions: { type: Type.ARRAY, items: { type: Type.STRING } },
+            qualities: { type: Type.ARRAY, items: { type: Type.STRING } },
           },
-          required: ["lightings", "moods", "styles", "compositions"]
+          required: ["technicals", "lightings", "qualities"]
         }
       }
     });
@@ -640,47 +637,33 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
     text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
     
     try {
-      const modifiers = extractJSON(text);
+      const layers = extractJSON(text);
       const optimizedPrompts = new Set<string>();
-      const negativePrompt = settings.includeNegative ? ' --no text, watermark, deformed, blurry, logos' : '';
+      const negativePrompt = settings.includeNegative ? ' --no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy' : '';
       
-      // Programmatically optimize all prompts
       for (const originalPrompt of prompts) {
-        // Strip out negative prompts first to avoid capturing them
         let cleanPrompt = originalPrompt.split('--no')[0].trim();
         let parts = cleanPrompt.split(/[,.]/);
         
-        // Extract a rough subject and details from the original prompt
-        let coreSubject = parts[0] ? parts[0].substring(0, 100).trim() : "commercial subject";
-        let coreDetails = parts[1] ? parts[1].substring(0, 100).trim() : "";
+        // Extract the original subject and existing details as much as possible
+        let coreSubject = parts[0] ? parts[0].trim() : "subject";
+        let originalDetails = parts.slice(1).join(', ').trim();
         
-        if (!coreSubject) coreSubject = "commercial subject";
-
-        const lighting = modifiers.lightings[Math.floor(Math.random() * modifiers.lightings.length)] || "professional lighting";
-        const mood = modifiers.moods[Math.floor(Math.random() * modifiers.moods.length)] || "commercial mood";
-        const style = modifiers.styles[Math.floor(Math.random() * modifiers.styles.length)] || "high quality";
-        const composition = modifiers.compositions[Math.floor(Math.random() * modifiers.compositions.length)] || "standard composition";
+        const technical = layers.technicals[Math.floor(Math.random() * layers.technicals.length)] || "high quality";
+        const lighting = layers.lightings[Math.floor(Math.random() * layers.lightings.length)] || "professional lighting";
+        const quality = layers.qualities[Math.floor(Math.random() * layers.qualities.length)] || "masterpiece";
         
-        // Combine original detail with new composition
-        const finalDetails = coreDetails ? `${coreDetails}, ${composition}` : composition;
-        
+        // Reconstruct using the template but prioritizing original content
         let prompt = template.template
           .replace(/{subject}/g, coreSubject)
-          .replace(/{details}/g, finalDetails)
+          .replace(/{details}/g, originalDetails || "highly detailed")
           .replace(/{lighting}/g, lighting)
-          .replace(/{mood}/g, mood)
-          .replace(/{style}/g, style)
-          .replace(/{aspect}/g, "16:9"); // Default aspect for programmatic
+          .replace(/{mood}/g, quality) // Use quality as mood to be neutral
+          .replace(/{style}/g, technical)
+          .replace(/{aspect}/g, "16:9");
           
         prompt += negativePrompt;
-        
-        // Ensure uniqueness if possible, though with original prompts it's usually unique
-        let suffix = 1;
-        let finalPrompt = prompt;
-        while (optimizedPrompts.has(finalPrompt)) {
-          finalPrompt = prompt + ` --v ${suffix++}`; // Add a tiny variation to force uniqueness if needed
-        }
-        optimizedPrompts.add(finalPrompt);
+        optimizedPrompts.add(prompt);
       }
       return Array.from(optimizedPrompts);
     } catch (e) {
@@ -690,29 +673,28 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
   }
 
   // Standard optimization for smaller arrays
-  const promptTextSmall = `Optimize the following list of image generation prompts to make them more detailed, commercial-grade, and highly targeted for the '${contentType}' category on microstock platforms like Adobe Stock. The target platform is '${template.name}'.
-
-${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
-${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration for the optimization.` : ''}
-${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" and apply it to these prompts.` : ''}
+  const promptTextSmall = `Optimize the following list of image generation prompts. 
+  
+  STRICT RULE: You MUST preserve the original visual subject, core action, and specific scene details. Do NOT add new subjects, change the setting, or alter the primary visual intent.
+  
+  YOUR TASK: Perform a "Technical Upgrade" by:
+  1. Enhancing technical precision (camera settings, lens types, lighting terminology) for ${template.name}.
+  2. Improving commercial formatting for Adobe Stock.
+  3. Ensuring strict adherence to the target platform's best practices.
 
 Original Prompts:
 ${JSON.stringify(prompts)}
 
-CRITICAL REQUIREMENTS FOR OPTIMIZATION (ADOBE STOCK):
-1. Enhance Technical Precision: Add specific lighting, camera angles, lens types, and aesthetic quality appropriate for a ${contentType} on the ${template.name} platform.
-2. Improve Commercial Utility: Ensure concepts are highly usable for designers and agencies. Add elements like 'copy space', 'authentic lifestyle', 'modern aesthetics', or 'clean backgrounds' where appropriate.
-3. NO SIMILAR CONTENT: Ensure the optimized prompts are distinct enough from each other to avoid generating repetitive images.
-4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
-5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
-6. Maintain Original Intent: Keep the core subject and action of the original prompt, but elevate its quality and marketability for ${template.name}.
-7. STRICT Template Alignment: You MUST strictly format each optimized prompt using this exact template structure for ${template.name}:
+CRITICAL REQUIREMENTS:
+1. NO VISUAL CHANGES: Keep the subject and scene exactly as described in the original.
+2. NO TEXT: Strictly avoid any mention of text, typography, or watermarks.
+3. ADOBE STOCK COMPLIANCE: Use generic terms for brands/logos.
+4. STRICT Template Alignment: Format each prompt using this exact structure:
 "${template.template}"
-Replace the bracketed placeholders with your optimized content. Do not add conversational text.
 
-Respond strictly with a JSON array of strings, where each string is the optimized version of the corresponding original prompt. The output array must have exactly the same length as the input array.
+Respond strictly with a JSON array of strings.
 Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
-${settings.includeNegative ? 'Append a strong negative prompt at the end of each optimized prompt (e.g., "--no text, watermark, deformed, blurry, logos, bad anatomy, extra limbs").' : ''}`;
+${settings.includeNegative ? 'Append a strong negative prompt at the end of each optimized prompt (e.g., "--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy").' : ''}`;
 
   const partsSmall: any[] = [{ text: promptTextSmall }];
   if (referenceFile) {
@@ -728,7 +710,7 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
     model: settings.model || 'gemini-3-flash-preview',
     contents: { parts: partsSmall },
     config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in optimizing and refining image generation prompts to produce flawless, authentic, and highly usable stock photography and illustrations that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. You excel at extracting aesthetic essence from references and applying it to new concepts.",
+      systemInstruction: "You are an elite AI Image Prompt Engineer. Your specialty is 'Technical Upgrading'—improving the technical execution and formatting of a prompt while strictly preserving its original visual subject and intent.",
       tools: referenceUrl ? [{ urlContext: {} }] : undefined,
       responseMimeType: 'application/json',
       responseSchema: {
