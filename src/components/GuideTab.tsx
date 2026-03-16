@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import { BookOpen, Download, CheckCircle2, Info, Zap, Sparkles, Search, ShieldCheck, FileText } from 'lucide-react';
+import { BookOpen, Download, CheckCircle2, Info, Zap, Sparkles, Search, ShieldCheck, FileText, Compass } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -12,7 +13,7 @@ export default function GuideTab() {
     const canvas = await html2canvas(guideRef.current, {
       scale: 2,
       useCORS: true,
-      backgroundColor: '#0B1121'
+      backgroundColor: '#0B1120'
     });
     
     const imgData = canvas.toDataURL('image/png');
@@ -30,138 +31,143 @@ export default function GuideTab() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-slate-800 rounded-lg">
-            <BookOpen className="w-6 h-6 text-[#00D8B6]" />
-          </div>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-4xl mx-auto px-6 py-16"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8 mb-16">
+        <div className="flex items-center gap-6">
+          <motion.div 
+            whileHover={{ scale: 1.1, rotate: -5 }}
+            className="p-4 glass-panel bg-accent/10 border border-accent/20 futuristic-glow"
+          >
+            <Compass className="w-8 h-8 text-accent" />
+          </motion.div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Panduan Penggunaan</h1>
-            <p className="text-slate-400">Pelajari cara memaksimalkan fitur Adobe Stock Insight.</p>
+            <h1 className="text-4xl font-bold text-white tracking-tight font-display">Neural <span className="text-accent">Navigator</span></h1>
+            <p className="text-slate-400 font-light">Master the architecture of Adobe Stock Insight.</p>
           </div>
         </div>
-        <button 
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={downloadPDF}
-          className="flex items-center justify-center gap-2 bg-[#00D8B6] hover:bg-[#00c2a3] text-slate-900 px-6 py-3 rounded-xl font-bold transition-all shadow-[0_4px_15px_rgba(0,216,182,0.2)]"
+          className="flex items-center justify-center gap-3 bg-accent hover:bg-accent/90 text-slate-900 px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-accent/20 border border-accent/20"
         >
-          <Download size={18} />
-          <span>Download PDF</span>
-        </button>
+          <Download size={20} />
+          <span className="uppercase tracking-widest text-xs">Download Protocol</span>
+        </motion.button>
       </div>
 
-      <div ref={guideRef} className="bg-[#111827] border border-slate-800 rounded-3xl p-8 sm:p-12 space-y-12 text-slate-300">
+      <div ref={guideRef} className="glass-panel p-8 sm:p-16 space-y-20 text-slate-300 relative overflow-hidden">
+        {/* Background decorative element */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 blur-[100px] rounded-full -mr-32 -mt-32" />
+        
         {/* Header Section for PDF */}
-        <div className="border-b border-slate-800 pb-8">
-          <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Adobe Stock Insight <span className="text-[#00D8B6]">v1.3.0</span></h2>
-          <p className="text-slate-500">Ultimate AI-Powered Research & Prompt Engineering Tool</p>
+        <div className="border-b border-white/10 pb-12 relative">
+          <div className="flex items-center gap-4 mb-4">
+            <h2 className="text-4xl font-black text-white tracking-tighter font-display">ADOBE STOCK <span className="text-accent">INSIGHT</span></h2>
+            <span className="text-[10px] font-bold text-accent uppercase tracking-[0.3em] bg-accent/10 px-3 py-1 rounded-lg border border-accent/20">v1.3.0</span>
+          </div>
+          <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">Ultimate AI-Powered Research & Prompt Engineering Tool</p>
         </div>
 
         {/* Section 1: Introduction */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-[#00D8B6]">
-            <Info size={20} />
-            <h3 className="text-xl font-bold uppercase tracking-wider">1. Pendahuluan</h3>
+        <motion.section 
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="space-y-6"
+        >
+          <div className="flex items-center gap-4 text-accent">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
+              <Info size={20} />
+            </div>
+            <h3 className="text-xl font-bold uppercase tracking-[0.2em] font-display">01. Pendahuluan</h3>
           </div>
-          <p className="leading-relaxed">
+          <p className="leading-relaxed font-light text-lg">
             Adobe Stock Insight adalah aplikasi berbasis AI yang dirancang khusus untuk membantu kontributor microstock (terutama Adobe Stock) dalam melakukan riset pasar, menemukan niche yang menguntungkan, dan membuat prompt AI berkualitas tinggi yang siap jual.
           </p>
-        </section>
+        </motion.section>
 
         {/* Section 2: Fitur Utama */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-2 text-[#00D8B6]">
-            <Zap size={20} />
-            <h3 className="text-xl font-bold uppercase tracking-wider">2. Fitur Utama & Fungsi</h3>
+        <motion.section 
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="space-y-10"
+        >
+          <div className="flex items-center gap-4 text-accent">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
+              <Zap size={20} />
+            </div>
+            <h3 className="text-xl font-bold uppercase tracking-[0.2em] font-display">02. Fitur Utama & Fungsi</h3>
           </div>
           
-          <div className="grid grid-cols-1 gap-6">
-            <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
-              <div className="flex items-center gap-3 mb-3">
-                <Search className="text-[#00D8B6]" size={20} />
-                <h4 className="font-bold text-white">Market Analysis (Top Tab)</h4>
-              </div>
-              <p className="text-sm leading-relaxed">
-                Menganalisis kata kunci untuk menemukan "Blue Ocean" (niche dengan volume tinggi namun kompetisi rendah). Fitur ini mensimulasikan data real-time dari pasar microstock global.
-              </p>
-            </div>
-
-            <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
-              <div className="flex items-center gap-3 mb-3">
-                <Sparkles className="text-[#00D8B6]" size={20} />
-                <h4 className="font-bold text-white">Aesthetic DNA Analysis</h4>
-              </div>
-              <p className="text-sm leading-relaxed">
-                Fitur eksklusif untuk kategori AI Art. Unggah gambar referensi untuk mengekstrak palet warna, mood, gaya artistik, dan komposisi secara otomatis untuk digunakan dalam prompt baru.
-              </p>
-            </div>
-
-            <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
-              <div className="flex items-center gap-3 mb-3">
-                <FileText className="text-[#00D8B6]" size={20} />
-                <h4 className="font-bold text-white">Prompt Scoring & Feedback</h4>
-              </div>
-              <p className="text-sm leading-relaxed">
-                Setiap prompt yang dihasilkan akan dinilai berdasarkan 4 kriteria: Keyword Density, Clarity, Specificity, dan Adobe Stock Adherence. Anda akan mendapatkan saran perbaikan yang sangat detail.
-              </p>
-            </div>
-
-            <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
-              <div className="flex items-center gap-3 mb-3">
-                <ShieldCheck className="text-[#00D8B6]" size={20} />
-                <h4 className="font-bold text-white">Adobe Stock Compliance</h4>
-              </div>
-              <p className="text-sm leading-relaxed">
-                Memastikan prompt tidak mengandung merek dagang, teks, atau elemen yang dilarang oleh kebijakan Adobe Stock, sehingga meningkatkan peluang konten Anda diterima oleh reviewer.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {[
+              { icon: <Search size={24} />, title: "Market Analysis", desc: "Menganalisis kata kunci untuk menemukan \"Blue Ocean\" (niche dengan volume tinggi namun kompetisi rendah)." },
+              { icon: <Sparkles size={24} />, title: "Aesthetic DNA", desc: "Fitur eksklusif untuk kategori AI Art. Unggah gambar referensi untuk mengekstrak palet warna, mood, dan gaya artistik." },
+              { icon: <FileText size={24} />, title: "Prompt Scoring", desc: "Setiap prompt dinilai berdasarkan 4 kriteria: Keyword Density, Clarity, Specificity, dan Adobe Stock Adherence." },
+              { icon: <ShieldCheck size={24} />, title: "Adobe Compliance", desc: "Memastikan prompt tidak mengandung merek dagang atau elemen yang dilarang oleh kebijakan Adobe Stock." }
+            ].map((feature, i) => (
+              <motion.div 
+                key={i}
+                whileHover={{ y: -5 }}
+                className="bg-white/5 border border-white/10 p-8 rounded-3xl hover:border-accent/30 transition-all duration-500 group"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20 mb-6 group-hover:futuristic-glow transition-all">
+                  <div className="text-accent">{feature.icon}</div>
+                </div>
+                <h4 className="font-bold text-white text-lg mb-3 font-display tracking-tight">{feature.title}</h4>
+                <p className="text-sm leading-relaxed text-slate-400 font-light">
+                  {feature.desc}
+                </p>
+              </motion.div>
+            ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* Section 3: Cara Penggunaan */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-2 text-[#00D8B6]">
-            <CheckCircle2 size={20} />
-            <h3 className="text-xl font-bold uppercase tracking-wider">3. Langkah-Langkah Penggunaan</h3>
+        <motion.section 
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="space-y-10"
+        >
+          <div className="flex items-center gap-4 text-accent">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
+              <CheckCircle2 size={20} />
+            </div>
+            <h3 className="text-xl font-bold uppercase tracking-[0.2em] font-display">03. Langkah-Langkah Penggunaan</h3>
           </div>
           
-          <div className="space-y-4">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-[#00D8B6] text-slate-900 rounded-full flex items-center justify-center font-bold">1</div>
-              <div>
-                <h5 className="font-bold text-white">Konfigurasi API Key</h5>
-                <p className="text-sm text-slate-400">Masukkan Gemini API Key Anda di halaman awal atau menu Settings untuk mengaktifkan kecerdasan AI.</p>
+          <div className="space-y-6">
+            {[
+              { step: "01", title: "Konfigurasi API Key", desc: "Masukkan Gemini API Key Anda di halaman awal atau menu Settings untuk mengaktifkan kecerdasan AI." },
+              { step: "02", title: "Pilih Tipe Konten & Keyword", desc: "Pilih kategori (Photo, Vector, dll) dan masukkan topik riset. Anda juga bisa mengunggah gambar referensi." },
+              { step: "03", title: "Analisis & Generate", desc: "Klik 'Start Analysis' untuk melihat peluang pasar, lalu klik 'Create Prompts' pada niche yang Anda minati." },
+              { step: "04", title: "Review & Export", desc: "Lihat skor kualitas prompt, baca feedback, lalu salin atau download prompt untuk generator AI favorit Anda." }
+            ].map((item, i) => (
+              <div key={i} className="flex gap-8 p-6 rounded-3xl hover:bg-white/5 transition-colors group">
+                <div className="flex-shrink-0 w-12 h-12 bg-accent text-slate-900 rounded-2xl flex items-center justify-center font-bold font-mono text-xl shadow-lg shadow-accent/20">
+                  {item.step}
+                </div>
+                <div>
+                  <h5 className="font-bold text-white text-lg mb-2 font-display tracking-tight">{item.title}</h5>
+                  <p className="text-sm text-slate-400 font-light leading-relaxed">{item.desc}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-[#00D8B6] text-slate-900 rounded-full flex items-center justify-center font-bold">2</div>
-              <div>
-                <h5 className="font-bold text-white">Pilih Tipe Konten & Keyword</h5>
-                <p className="text-sm text-slate-400">Pilih kategori (Photo, Vector, dll) dan masukkan topik riset. Anda juga bisa mengunggah gambar referensi atau menempelkan URL riset.</p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-[#00D8B6] text-slate-900 rounded-full flex items-center justify-center font-bold">3</div>
-              <div>
-                <h5 className="font-bold text-white">Analisis & Generate</h5>
-                <p className="text-sm text-slate-400">Klik 'Start Analysis' untuk melihat peluang pasar, lalu klik 'Create Prompts' pada niche yang Anda minati.</p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-[#00D8B6] text-slate-900 rounded-full flex items-center justify-center font-bold">4</div>
-              <div>
-                <h5 className="font-bold text-white">Review & Export</h5>
-                <p className="text-sm text-slate-400">Lihat skor kualitas prompt, baca feedback, lalu salin atau download prompt untuk digunakan di generator AI favorit Anda.</p>
-              </div>
-            </div>
+            ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* Footer */}
-        <div className="pt-8 border-t border-slate-800 text-center">
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-widest">© 2026 Adobe Stock Insight • Powered by Google Gemini</p>
+        <div className="pt-12 border-t border-white/10 text-center">
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.5em]">© 2026 Adobe Stock Insight • Powered by Google Gemini</p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -291,21 +291,21 @@ export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean
 function getContentTypeInstructions(contentType: string): string {
   switch (contentType) {
     case 'Photo':
-      return "Focus on photographic elements: camera angles, lighting (e.g., golden hour, studio lighting), lens types (e.g., macro, wide-angle), depth of field, and realistic human subjects or environments. Emphasize authenticity and commercial photography standards.";
+      return "Focus on elite photographic parameters: specific camera bodies (e.g., Hasselblad H6D, Sony A7R V), precise lens optics (e.g., 85mm f/1.2 G Master, 35mm f/1.4 Summilux), advanced lighting physics (volumetric lighting, global illumination, ray-traced shadows), and professional post-processing (color grading, high dynamic range). Emphasize hyper-realism, authentic skin textures, and commercial editorial standards.";
     case 'Illustration':
-      return "Focus on illustrative elements: art styles (e.g., flat design, watercolor, digital painting), color palettes, line work, and artistic composition. Emphasize creativity, stylistic consistency, and commercial illustration trends.";
+      return "Focus on sophisticated illustrative techniques: complex brushwork, layered textures, intricate line art, and advanced color theory. Mention specific mediums like 'digital oil painting', 'meticulous watercolor', or 'hyper-detailed 2D vector art'. Emphasize stylistic depth, emotional resonance, and modern commercial illustration trends.";
     case 'Vector':
-      return "Focus on vector-specific elements: clean lines, scalable graphics, flat colors, isometric designs, icons, and UI/UX elements. Emphasize simplicity, versatility, and modern graphic design trends.";
+      return "Focus on high-end vector aesthetics: perfect geometric precision, complex gradients (mesh gradients), isometric perspectives, and clean SVG-compliant paths. Emphasize scalability, minimalist elegance, and elite UI/UX design standards.";
     case 'Background':
-      return "Focus on background elements: textures, abstract patterns, gradients, bokeh, minimalistic spaces, and copy space. Emphasize usability as a backdrop for text or other design elements.";
+      return "Focus on atmospheric and textural depth: multi-layered bokeh, complex procedural textures, subtle light leaks, and expansive copy space. Emphasize high-end commercial utility, depth of field, and premium aesthetic minimalism.";
     case 'Video':
-      return "Focus on cinematic elements: specific camera movements (e.g., slow-motion tracking shot, dynamic drone footage, handheld camera effect, stabilized gimbal shot, crane shot, dolly zoom), frame rate (e.g., 24fps, 60fps, 120fps), resolution (e.g., 4K, 8K), cinematic lighting, motion blur, and dynamic action. Emphasize storytelling, professional cinematography, and high-end stock footage standards.";
+      return "Focus on cinematic mastery: complex camera choreography (e.g., 'dynamic parallax tracking', 'stabilized gimbal orbit', 'high-speed phantom camera slow-motion'), specific frame rates (24fps, 60fps, 120fps), and cinematic lighting setups (Rembrandt lighting, teal and orange grading). Emphasize fluid motion, professional storytelling, and ultra-high-definition stock footage standards.";
     case '3D Render':
-      return "Focus on 3D elements: rendering engines (e.g., Octane, Unreal Engine), materials (e.g., glass, metal, matte), lighting (e.g., volumetric, HDRI), isometric views, and hyper-realism or stylized 3D. Emphasize modern 3D design trends.";
+      return "Focus on state-of-the-art rendering: Unreal Engine 5.4 Path Tracing, OctaneRender, physically based rendering (PBR) materials, subsurface scattering (SSS), and global illumination. Mention complex material properties like 'anisotropic metal' or 'refractive glass'. Emphasize hyper-realistic lighting and architectural-grade detail.";
     case 'AI Art & Creativity':
-      return "Focus on conceptual and surreal elements: abstract forms, generative patterns, dreamlike atmospheres, high-concept creativity, and unique digital aesthetics. Emphasize artistic innovation, emotional impact, and commercial utility for creative editorial or advertising projects.";
+      return "Focus on boundary-pushing conceptualism: generative patterns, fluid organic forms, surrealist dreamscapes, and innovative digital alchemy. Emphasize high-concept artistic vision, unique visual metaphors, and trending digital art aesthetics on platforms like ArtStation and Behance.";
     default:
-      return "Focus on high-quality, commercially viable visual elements appropriate for this asset type.";
+      return "Focus on high-fidelity, commercially elite visual descriptors appropriate for this specific asset class.";
   }
 }
 
@@ -855,15 +855,15 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       This reference file is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
       Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.` : ''}
 
-      Provide a set of "Technical Enhancement Layers" that can be applied to preserve the original subject:
-      1. 10 premium technical modifiers (e.g., "shot on 85mm lens, f/1.8", "high-end commercial photography, 8k")
-      2. 10 lighting enhancements that fit any scene (e.g., "natural soft lighting", "professional studio setup")
-      3. 5 mood-neutral quality tags (e.g., "hyper-detailed textures", "award-winning masterpiece")
+      Provide a comprehensive set of "Neural Enhancement Layers" for a high-complexity technical upgrade:
+      1. 15 Elite Technical Modifiers: Focus on advanced optics (e.g., "Zeiss Otus 85mm f/1.4", "Phase One XF IQ4 150MP"), rendering technologies (e.g., "Unreal Engine 5.4 Path Tracing", "OctaneRender 2024.1"), and sensory details (e.g., "micro-surface displacement", "subsurface scattering (SSS)").
+      2. 15 Cinematic Lighting Arrays: Use complex physics-based lighting (e.g., "Volumetric God rays", "Global Illumination with Ray-Traced Ambient Occlusion", "Three-point Rembrandt lighting with soft rim highlights", "High-key commercial studio setup with 5600K color temperature").
+      3. 10 Masterpiece Quality Signatures: Use high-end industry terms (e.g., "8K UHD photorealistic textures", "award-winning editorial commercial photography", "hyper-detailed 32-bit depth", "professionally color-graded for cinematic impact").
       
       CRITICAL RULES:
-      - PRESERVE SUBJECT: The modifiers must be neutral enough to not change what is happening in the original prompt.
-      - NO TEXT/TYPOGRAPHY: Ensure all modifiers avoid text or watermarks.
-      - ADOBE STOCK COMPLIANCE: No brands, logos, or trademarks.
+      - ABSOLUTE SUBJECT FIDELITY: The modifiers must be technically dense but visually neutral regarding the subject. They must elevate the *execution* of the scene, not change the *content* of the scene.
+      - NO TEXT/TYPOGRAPHY: Ensure all modifiers avoid text, watermarks, or logos.
+      - ADOBE STOCK COMPLIANCE: Use generic high-end terms instead of specific restricted brands.
       
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
@@ -881,7 +881,7 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer. Your task is to provide technical enhancement layers that improve prompt quality without altering the original visual subject or intent. Base your enhancements on real-world commercial photography standards. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
+        systemInstruction: "You are a Master Neural Prompt Architect. Your specialty is 'Hyper-Optimization'—injecting extreme technical complexity and descriptive power into existing prompts while maintaining absolute fidelity to the original subject and style. You use advanced optics, lighting physics, and digital rendering terminology to elevate prompts to 'Masterpiece' status for Adobe Stock. Respond ONLY with valid JSON.",
         tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
       }
     });
@@ -945,19 +945,21 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
 
   STRICT RULE: You MUST preserve the original visual subject, core action, and specific scene details. Do NOT add new subjects, change the setting, or alter the primary visual intent.
   
-  YOUR TASK: Perform a "Technical Upgrade" by:
-  1. Enhancing technical precision (camera settings, lens types, lighting terminology) for ${template.name}.
-  2. Improving commercial formatting for Adobe Stock.
-  3. Ensuring strict adherence to the target platform's best practices.
+  YOUR TASK: Perform a "Hyper-Technical Optimization" by:
+  1. Injecting Extreme Technical Precision: Use advanced camera settings (ISO, shutter speed, specific lens focal lengths), elite rendering engines (Octane, Unreal Engine 5.4), and complex lighting physics (Volumetric, Global Illumination, SSS).
+  2. Enhancing Descriptive Power: Use sophisticated vocabulary to describe textures, materials, and atmospheric effects without changing the core subject.
+  3. Optimizing for Adobe Stock Algorithms: Ensure the prompt structure maximizes commercial appeal and technical rating.
+  4. Maintaining Absolute Fidelity: The original subject, core action, and specific scene details MUST remain the foundation. Your job is to "polish the diamond," not change the stone.
 
 Original Prompts:
 ${JSON.stringify(prompts)}
 
 CRITICAL REQUIREMENTS:
-1. NO VISUAL CHANGES: Keep the subject and scene exactly as described in the original.
-2. NO TEXT: Strictly avoid any mention of text, typography, or watermarks.
-3. ADOBE STOCK COMPLIANCE: Use generic terms for brands/logos.
-4. STRICT Template Alignment: Format each prompt using this exact structure:
+1. ZERO SUBJECT DRIFT: Keep the subject and scene exactly as described.
+2. NO TEXT/LOGOS: Strictly avoid any mention of text, typography, or watermarks.
+3. ADOBE STOCK COMPLIANCE: Use generic high-end terms.
+4. POWERFUL MODIFIERS: Use terms like "8K UHD", "hyper-detailed textures", "physically based rendering (PBR)", "ray-traced reflections", and "cinematic color grading".
+5. STRICT Template Alignment: Format each prompt using this exact structure:
 "${template.template}"
 
 Respond strictly with a JSON array of strings.
@@ -978,7 +980,7 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
     model: settings.model || 'gemini-3-flash-preview',
     contents: { parts: partsSmall },
     config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer. Your specialty is 'Technical Upgrading'—improving the technical execution and formatting of a prompt while strictly preserving its original visual subject and intent. Base your upgrades on real-world market data.",
+      systemInstruction: "You are a Master Neural Prompt Architect. Your specialty is 'Hyper-Optimization'—injecting extreme technical complexity and descriptive power into existing prompts while maintaining absolute fidelity to the original subject and style. You use advanced optics, lighting physics, and digital rendering terminology to elevate prompts to 'Masterpiece' status for Adobe Stock.",
       tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
       responseMimeType: 'application/json',
       responseSchema: {

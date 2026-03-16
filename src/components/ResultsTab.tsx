@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { FileText, History, Lightbulb, Download, Copy, Check, ChevronDown, ChevronUp, Trash2, Search, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { FileText, History, Lightbulb, Download, Copy, Check, ChevronDown, ChevronUp, Trash2, Search, FileSpreadsheet, Loader2, Sparkles, Database, Clock, Layers } from 'lucide-react';
 import { CategoryResult, HistoryItem } from '../types';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface ResultsTabProps {
   results: CategoryResult[];
@@ -75,16 +76,12 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
   const handleDownloadCSV = (category: CategoryResult) => {
     if (!category.metadata) return;
 
-    // Adobe Stock CSV format: Filename, Title, Keywords, Category, Releases
     let csvContent = "Filename,Title,Keywords,Category,Releases\n";
     
     category.metadata.forEach((meta, index) => {
       const filename = `image_${index + 1}.jpg`;
-      // Escape quotes in title
       const title = `"${meta.title.replace(/"/g, '""')}"`;
-      // Join keywords and escape quotes
       const keywords = `"${meta.keywords.join(',').replace(/"/g, '""')}"`;
-      // Default category (e.g., 1 for Animals, 2 for Buildings... we can leave blank or use a default)
       const categoryId = ""; 
       const releases = "";
       
@@ -101,211 +98,273 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 pb-20 space-y-6">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-white mb-2">Generated Results</h1>
-        <p className="text-slate-400">View and manage all your generated prompts</p>
-      </div>
+    <div className="max-w-6xl mx-auto px-6 pb-32 space-y-16">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mt-16 space-y-2"
+      >
+        <h1 className="text-5xl font-bold text-white tracking-tighter font-display">
+          Generated <span className="text-accent">Assets</span>
+        </h1>
+        <p className="text-slate-400 font-light text-lg">Repository of synthesized prompts and market temporal logs.</p>
+      </motion.div>
       
       {/* Results Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-[#111827] rounded-xl border border-slate-800 p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg bg-teal-500/20 flex items-center justify-center">
-              <FileText className="w-5 h-5 text-teal-400" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {[
+          { label: 'Neural Prompts', value: totalPromptsGenerated, icon: FileText, color: 'accent' },
+          { label: 'Temporal Log', value: history.length, icon: Clock, color: 'purple' },
+          { label: 'Active Sectors', value: categoriesWithPrompts.length, icon: Layers, color: 'emerald' }
+        ].map((stat, i) => (
+          <motion.div 
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="glass-panel p-8 group relative overflow-hidden hover:border-accent/30 transition-all duration-500"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-[80px] rounded-full -mr-16 -mt-16 group-hover:bg-accent/10 transition-all duration-700" />
+            <div className="flex items-center gap-5 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-accent/50 group-hover:bg-accent/5 transition-all duration-500">
+                <stat.icon className="w-7 h-7 text-slate-400 group-hover:text-accent transition-colors" />
+              </div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">{stat.label}</span>
             </div>
-            <span className="text-sm text-slate-400">Total Prompts</span>
-          </div>
-          <p className="text-3xl font-bold text-white">{totalPromptsGenerated}</p>
-        </div>
-        
-        <div className="bg-[#111827] rounded-xl border border-slate-800 p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-              <History className="w-5 h-5 text-purple-400" />
-            </div>
-            <span className="text-sm text-slate-400">Search History</span>
-          </div>
-          <p className="text-3xl font-bold text-white">{history.length}</p>
-        </div>
-        
-        <div className="bg-[#111827] rounded-xl border border-slate-800 p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-              <Lightbulb className="w-5 h-5 text-emerald-400" />
-            </div>
-            <span className="text-sm text-slate-400">Categories with Prompts</span>
-          </div>
-          <p className="text-3xl font-bold text-white">{categoriesWithPrompts.length}</p>
-        </div>
+            <p className="text-5xl font-bold text-white font-mono tracking-tighter">{stat.value}</p>
+          </motion.div>
+        ))}
       </div>
       
       {/* Download All Button */}
       {categoriesWithPrompts.length > 0 && (
-        <div className="flex justify-end">
-          <button
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex justify-end"
+        >
+          <motion.button
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleDownloadAll}
-            className="flex items-center bg-[#00D8B6] hover:bg-[#00c2a3] text-slate-900 px-4 py-2 rounded-lg font-medium transition-colors"
+            className="flex items-center bg-accent hover:bg-accent/90 text-slate-900 px-8 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-accent/20 border border-accent/20 uppercase tracking-widest text-xs"
           >
-            <Download className="w-4 h-4 mr-2" />
-            Download All Prompts
-          </button>
-        </div>
+            <Download className="w-5 h-5 mr-3" />
+            Export Protocol
+          </motion.button>
+        </motion.div>
       )}
       
       {/* Generated Prompts List */}
-      <div className="space-y-4">
-        {categoriesWithPrompts.map((category) => (
-          <div 
-            key={category.id}
-            className="bg-[#111827] rounded-xl border border-slate-800 overflow-hidden"
-          >
-            <div 
-              className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-800/50 transition-colors"
-              onClick={() => toggleExpand(category.id)}
+      <div className="space-y-8">
+        <AnimatePresence>
+          {categoriesWithPrompts.map((category, index) => (
+            <motion.div 
+              key={category.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="glass-panel overflow-hidden group hover:border-accent/30 transition-all duration-500"
             >
-              <div className="flex items-center gap-3">
-                <span className="text-[#00D8B6] font-medium">{category.categoryName}</span>
-                <span className="bg-slate-800 text-slate-200 text-xs px-2 py-1 rounded-full">
-                  {category.generatedPrompts.length} prompts
-                </span>
-                {category.metadata && (
-                  <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded-full flex items-center">
-                    <Check className="w-3 h-3 mr-1" /> Metadata Ready
+              <div 
+                className="flex flex-col sm:flex-row items-center justify-between p-8 cursor-pointer hover:bg-white/5 transition-colors gap-8"
+                onClick={() => toggleExpand(category.id)}
+              >
+                <div className="flex flex-wrap items-center gap-6">
+                  <span className="text-2xl font-bold text-white font-display tracking-tight group-hover:text-accent transition-colors">{category.categoryName}</span>
+                  <span className="bg-white/5 text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-xl border border-white/10">
+                    {category.generatedPrompts.length} PROMPTS
                   </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {!category.metadata ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onGenerateMetadata(category.id);
-                    }}
-                    disabled={category.isGeneratingMetadata}
-                    className="flex items-center px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {category.isGeneratingMetadata ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <FileSpreadsheet className="w-4 h-4 mr-2" />
-                    )}
-                    {category.isGeneratingMetadata ? 'Generating...' : 'Generate Metadata'}
-                  </button>
-                ) : (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDownloadCSV(category);
-                    }}
-                    className="flex items-center px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download CSV
-                  </button>
-                )}
-                <div className="w-px h-6 bg-slate-700 mx-1"></div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCopyAllPrompts(category);
-                  }}
-                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-                  title="Copy All"
-                >
-                  {copiedId === `all-${category.id}` ? (
-                    <Check className="w-4 h-4 text-emerald-400" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
+                  {category.metadata && (
+                    <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-xl flex items-center border border-emerald-500/20">
+                      <Check className="w-3 h-3 mr-2" /> Metadata Valid
+                    </span>
                   )}
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownloadPrompts(category);
-                  }}
-                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-                  title="Download"
-                >
-                  <Download className="w-4 h-4" />
-                </button>
-                {expandedCategories.has(category.id) ? (
-                  <ChevronUp className="w-5 h-5 text-slate-400" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-slate-400" />
-                )}
-              </div>
-            </div>
-            
-            {expandedCategories.has(category.id) && (
-              <div className="border-t border-slate-800 p-4">
-                <div className="max-h-64 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                  {category.generatedPrompts.map((prompt, idx) => (
-                    <div
-                      key={idx}
-                      className="group relative bg-slate-800/50 rounded-lg p-3 text-sm text-slate-300 leading-relaxed cursor-pointer hover:bg-slate-800 border border-slate-700/50 transition-colors"
-                      onClick={() => handleCopyPrompt(prompt, `${category.id}-${idx}`)}
+                </div>
+                <div className="flex items-center gap-4">
+                  {!category.metadata ? (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onGenerateMetadata(category.id);
+                      }}
+                      disabled={category.isGeneratingMetadata}
+                      className="flex items-center px-6 py-3 bg-accent/10 hover:bg-accent/20 text-accent rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-50 border border-accent/20"
                     >
-                      <p className="pr-8">{prompt}</p>
-                      <div className="absolute top-3 right-3">
-                        {copiedId === `${category.id}-${idx}` ? (
-                          <Check className="w-4 h-4 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400" />
-                        )}
-                      </div>
+                      {category.isGeneratingMetadata ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <FileSpreadsheet className="w-4 h-4 mr-2" />
+                      )}
+                      {category.isGeneratingMetadata ? 'Synthesizing...' : 'Generate Metadata'}
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadCSV(category);
+                      }}
+                      className="flex items-center px-6 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all border border-emerald-500/20"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download CSV
+                    </motion.button>
+                  )}
+                  <div className="w-px h-10 bg-white/10 mx-2 hidden sm:block"></div>
+                  <div className="flex items-center gap-3">
+                    <motion.button
+                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.05)' }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyAllPrompts(category);
+                      }}
+                      className="p-3 text-slate-500 hover:text-white rounded-2xl transition-all border border-transparent hover:border-white/10"
+                      title="Copy All"
+                    >
+                      {copiedId === `all-${category.id}` ? (
+                        <Check className="w-5 h-5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-5 h-5" />
+                      )}
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.05)' }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadPrompts(category);
+                      }}
+                      className="p-3 text-slate-500 hover:text-white rounded-2xl transition-all border border-transparent hover:border-white/10"
+                      title="Download"
+                    >
+                      <Download className="w-5 h-5" />
+                    </motion.button>
+                    <div className="p-3 text-slate-500 group-hover:text-accent transition-colors">
+                      {expandedCategories.has(category.id) ? (
+                        <ChevronUp className="w-6 h-6" />
+                      ) : (
+                        <ChevronDown className="w-6 h-6" />
+                      )}
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-        ))}
+              
+              <AnimatePresence>
+                {expandedCategories.has(category.id) && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="border-t border-white/5 p-8 bg-black/40"
+                  >
+                    <div className="max-h-[500px] overflow-y-auto space-y-4 pr-4 custom-scrollbar">
+                      {category.generatedPrompts.map((prompt, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.03 }}
+                          className="group/item relative bg-white/5 rounded-2xl p-6 text-sm text-slate-300 leading-relaxed cursor-pointer hover:bg-white/10 border border-white/5 hover:border-accent/30 transition-all duration-300"
+                          onClick={() => handleCopyPrompt(prompt, `${category.id}-${idx}`)}
+                        >
+                          <p className="pr-12 font-light text-base">{prompt}</p>
+                          <div className="absolute top-6 right-6">
+                            {copiedId === `${category.id}-${idx}` ? (
+                              <Check className="w-5 h-5 text-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
+                            ) : (
+                              <Copy className="w-5 h-5 opacity-0 group-hover/item:opacity-100 transition-opacity text-slate-500" />
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
+        </AnimatePresence>
         
         {categoriesWithPrompts.length === 0 && (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#111827] flex items-center justify-center border border-slate-800">
-              <FileText className="w-8 h-8 text-slate-500" />
-            </div>
-            <h3 className="text-lg font-medium text-white mb-2">No prompts generated yet</h3>
-            <p className="text-slate-400 mb-4">
-              Go to the TOP tab and generate some prompts
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-32 glass-panel bg-white/5"
+          >
+            <motion.div 
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 4, repeat: Infinity }}
+              className="w-24 h-24 mx-auto mb-8 rounded-3xl bg-white/5 flex items-center justify-center border border-white/10"
+            >
+              <Database className="w-12 h-12 text-slate-700" />
+            </motion.div>
+            <h3 className="text-3xl font-bold text-white mb-4 font-display tracking-tight">Vault <span className="text-slate-600">Empty</span></h3>
+            <p className="text-slate-400 mb-8 font-light max-w-md mx-auto">
+              Initiate neural analysis in the <span className="text-accent font-medium">TOP</span> sector to populate this repository.
             </p>
-          </div>
+          </motion.div>
         )}
       </div>
       
       {/* Search History */}
       {history.length > 0 && (
-        <div className="mt-12">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">Search History</h2>
-            <button
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="mt-24 space-y-10"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-3xl font-bold text-white font-display flex items-center gap-4 tracking-tight">
+              <History className="text-accent w-8 h-8" /> Temporal <span className="text-accent">Log</span>
+            </h2>
+            <motion.button
+              whileHover={{ scale: 1.05, color: '#fb7185' }}
+              whileTap={{ scale: 0.95 }}
               onClick={onClearHistory}
-              className="flex items-center text-sm text-slate-400 hover:text-rose-400 transition-colors"
+              className="flex items-center text-xs font-bold uppercase tracking-[0.2em] text-slate-600 transition-colors hover:text-rose-400"
             >
-              <Trash2 className="w-4 h-4 mr-1" />
-              Clear
-            </button>
+              <Trash2 className="w-4 h-4 mr-2" />
+              Purge History
+            </motion.button>
           </div>
-          <div className="bg-[#111827] rounded-xl border border-slate-800 divide-y divide-slate-800">
-            {history.map((item) => (
-              <div
+          <div className="glass-panel divide-y divide-white/5 overflow-hidden">
+            {history.map((item, idx) => (
+              <motion.div
                 key={item.id}
-                className="flex items-center justify-between p-4 hover:bg-slate-800/50 cursor-pointer transition-colors"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: idx * 0.05 }}
+                className="flex items-center justify-between p-8 hover:bg-white/5 cursor-pointer transition-all duration-500 group"
                 onClick={() => onLoadHistory(item)}
               >
-                <div>
-                  <p className="text-white font-medium">{item.query}</p>
-                  <p className="text-sm text-slate-400">
-                    {item.categoryCount} categories | {new Date(item.timestamp).toLocaleString()}
-                  </p>
+                <div className="space-y-3">
+                  <p className="text-2xl font-bold text-white group-hover:text-accent transition-colors font-display tracking-tight">{item.query}</p>
+                  <div className="flex items-center gap-6 text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">
+                    <span className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-lg border border-white/5">
+                      <Layers size={12} className="text-accent" /> {item.categoryCount} SECTORS
+                    </span>
+                    <span className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-lg border border-white/5">
+                      <Clock size={12} className="text-purple-400" /> {new Date(item.timestamp).toLocaleString()}
+                    </span>
+                  </div>
                 </div>
-                <Search className="w-4 h-4 text-slate-500" />
-              </div>
+                <motion.div 
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-accent/50 group-hover:bg-accent/5 transition-all duration-500"
+                >
+                  <Search className="w-6 h-6 text-slate-600 group-hover:text-accent transition-colors" />
+                </motion.div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

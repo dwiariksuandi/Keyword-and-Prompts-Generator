@@ -526,33 +526,54 @@ export default function App() {
 
   if (!isSessionActive) {
     return (
-      <div className="min-h-screen bg-[#0B1121] flex items-center justify-center p-4 selection:bg-cyan-500/30 relative overflow-hidden">
-        {/* Background Glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#00D8B6]/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4 selection:bg-cyan-500/30 relative overflow-hidden font-sans">
+        {/* Atmospheric Background */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/10 blur-[120px] rounded-full" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 blur-[120px] rounded-full" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-[0.03] pointer-events-none" 
+               style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        </div>
         
-        <div className="max-w-md w-full bg-[#111827]/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl relative z-10">
-          <div className="w-16 h-16 bg-gradient-to-br from-[#00D8B6]/20 to-cyan-500/20 border border-[#00D8B6]/30 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-[0_0_30px_rgba(0,216,182,0.15)]">
-            <Sparkles className="w-8 h-8 text-[#00D8B6]" />
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md w-full glass-panel rounded-[2rem] p-10 shadow-2xl relative z-10 overflow-hidden scanline"
+        >
+          <div className="relative mb-10 text-center">
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="w-20 h-20 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 rounded-3xl flex items-center justify-center mb-6 mx-auto futuristic-glow"
+            >
+              <Sparkles className="w-10 h-10 text-cyan-400" />
+            </motion.div>
+            
+            <h1 className="text-3xl font-display font-bold text-white mb-2 tracking-tight">
+              MICROSTOCK<span className="text-cyan-400">.</span>AI
+            </h1>
+            <p className="text-slate-400 text-sm font-light leading-relaxed max-w-[280px] mx-auto">
+              Advanced market intelligence for elite stock contributors.
+            </p>
           </div>
           
-          <h1 className="text-2xl sm:text-3xl font-bold text-white text-center mb-3 tracking-tight">Microstock Analyzer</h1>
-          <p className="text-slate-400 text-center mb-8 text-sm leading-relaxed">
-            Masukkan <strong>Gemini API Key</strong> Anda untuk memulai sesi. Demi keamanan, API Key tidak akan disimpan dan otomatis terhapus saat aplikasi dimuat ulang.
-          </p>
-          
-          <form onSubmit={handleStartSession} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">API Key</label>
-              <div className="relative">
+          <form onSubmit={handleStartSession} className="space-y-8">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Access Protocol</label>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-[10px] text-cyan-500/70 hover:text-cyan-400 transition-colors uppercase tracking-wider">Get Key</a>
+              </div>
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Key className="w-5 h-5 text-slate-500" />
+                  <Key className="w-4 h-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
                 </div>
                 <input
                   type="password"
                   value={tempApiKey}
                   onChange={(e) => setTempApiKey(e.target.value)}
-                  placeholder="AIzaSy..."
-                  className="w-full bg-[#0B1121] border border-slate-700 rounded-xl text-white pl-11 pr-12 py-3.5 outline-none focus:border-[#00D8B6] focus:ring-1 focus:ring-[#00D8B6] transition-all placeholder:text-slate-600"
+                  placeholder="Enter Gemini API Key"
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl text-white pl-11 pr-12 py-4 outline-none focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-600 font-mono text-sm"
                 />
                 {tempApiKey && (
                   <button
@@ -560,63 +581,106 @@ export default function App() {
                     onClick={() => setTempApiKey('')}
                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-white transition-colors"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
-              <div className="text-xs text-slate-500 ml-1 mt-2 space-y-1">
-                <p>
-                  Belum punya? <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-[#00D8B6] hover:underline">Dapatkan di Google AI Studio</a>.
-                </p>
-                <p className="text-amber-500/80 font-medium">
-                  Penting: Buat API Key di "New Project" agar kuota fresh.
-                </p>
-              </div>
+              
+              {validationError && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="flex items-start gap-3 p-4 bg-red-500/5 border border-red-500/20 rounded-2xl text-red-400 text-xs"
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p className="leading-relaxed">{validationError}</p>
+                </motion.div>
+              )}
             </div>
-            
-            {validationError && (
-              <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm animate-in fade-in slide-in-from-top-2">
-                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                <p className="leading-relaxed">{validationError}</p>
-              </div>
-            )}
 
             <button
               type="submit"
               disabled={!tempApiKey.trim() || isValidating}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#00D8B6] to-cyan-500 hover:from-[#00c2a3] hover:to-cyan-600 text-slate-900 font-bold py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,216,182,0.2)] hover:shadow-[0_0_25px_rgba(0,216,182,0.3)]"
+              className="w-full group relative flex items-center justify-center gap-3 bg-white text-black font-bold py-4 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
             >
-              {isValidating ? (
-                <><Loader2 className="w-5 h-5 animate-spin" /> Memvalidasi API Key...</>
-              ) : (
-                <>Mulai Sesi <ArrowRight className="w-5 h-5" /></>
-              )}
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="relative z-10 flex items-center gap-2 group-hover:text-white transition-colors">
+                {isValidating ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> INITIALIZING...</>
+                ) : (
+                  <>AUTHORIZE ACCESS <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
+                )}
+              </span>
             </button>
+            
+            <p className="text-[10px] text-center text-slate-600 uppercase tracking-widest">
+              Secure Environment • v1.3.0
+            </p>
           </form>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0B1121] text-slate-300 font-sans selection:bg-cyan-500/30">
-      <nav className="flex items-center justify-center p-6">
-        <div className="flex items-center space-x-1 bg-[#1E293B]/50 rounded-full p-1 border border-slate-800">
-          <div className="p-2 bg-slate-800 rounded-full text-[#00D8B6] mr-2">
-            <Sparkles size={16} />
+    <div className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-cyan-500/30 relative">
+      {/* Global Background Elements */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] right-[-5%] w-[30%] h-[30%] bg-cyan-500/5 blur-[100px] rounded-full" />
+        <div className="absolute bottom-[-5%] left-[-5%] w-[25%] h-[25%] bg-blue-600/5 blur-[100px] rounded-full" />
+      </div>
+
+      <nav className="sticky top-0 z-50 flex items-center justify-center p-6 pointer-events-none">
+        <div className="flex items-center space-x-1 glass-panel rounded-full p-1.5 pointer-events-auto shadow-2xl">
+          <div className="p-2 bg-white/5 rounded-full text-cyan-400 mr-2">
+            <Sparkles size={14} />
           </div>
-          <button onClick={() => setActiveTab('top')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'top' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>TOP</button>
-          <button onClick={() => setActiveTab('analysis')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'analysis' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>ANALYSIS</button>
-          <button onClick={() => setActiveTab('results')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'results' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>RESULTS</button>
-          <button onClick={() => { setActiveTab('prompt'); setSelectedPromptCategoryId(null); }} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'prompt' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>PROMPT</button>
-          <button onClick={() => setActiveTab('settings')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'settings' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>SETTINGS</button>
-          <button onClick={() => setActiveTab('changelog')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'changelog' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>v1.3.0</button>
-          <button onClick={() => setActiveTab('guide')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'guide' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>GUIDE</button>
-          <button onClick={() => setActiveTab('donate')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'donate' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>DONATE</button>
+          <div className="flex items-center gap-1">
+            {[
+              { id: 'top', label: 'DASHBOARD' },
+              { id: 'analysis', label: 'ANALYSIS' },
+              { id: 'results', label: 'HISTORY' },
+              { id: 'prompt', label: 'PROMPTS' },
+              { id: 'settings', label: 'CONFIG' },
+              { id: 'guide', label: 'GUIDE' }
+            ].map((tab) => (
+              <button 
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id as Tab);
+                  if (tab.id === 'prompt') setSelectedPromptCategoryId(null);
+                }} 
+                className={`px-5 py-2 rounded-full text-[10px] font-bold tracking-[0.15em] transition-all duration-300 ${
+                  activeTab === tab.id 
+                    ? 'bg-white text-black futuristic-glow' 
+                    : 'text-slate-500 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="w-px h-4 bg-white/10 mx-2" />
+          <button 
+            onClick={() => setActiveTab('donate')}
+            className={`px-5 py-2 rounded-full text-[10px] font-bold tracking-[0.15em] transition-all ${
+              activeTab === 'donate' ? 'text-pink-400 bg-pink-400/10' : 'text-slate-500 hover:text-pink-400'
+            }`}
+          >
+            SUPPORT
+          </button>
         </div>
       </nav>
 
-      <main>
+      <main className="relative z-10 pb-20">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
         {activeTab === 'settings' && (
           <Settings 
             settings={settings} 
@@ -655,21 +719,25 @@ export default function App() {
 
             {results.length > 0 && (
               <div className="max-w-6xl mx-auto px-6 pb-20">
-                <div className="bg-[#111827] border border-slate-800 rounded-xl overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="text-xs text-slate-400 uppercase border-b border-slate-800 bg-[#111827]">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="glass-panel overflow-hidden border-white/10"
+                >
+                  <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold border-b border-white/5 bg-white/[0.02]">
                         <tr>
-                          <th className="px-6 py-4 font-medium">Category</th>
-                          <th className="px-6 py-4 font-medium">Main Keywords</th>
-                          <th className="px-6 py-4 font-medium">Volume</th>
-                          <th className="px-6 py-4 font-medium">Competition</th>
-                          <th className="px-6 py-4 font-medium">Trend</th>
-                          <th className="px-6 py-4 font-medium">Opportunity</th>
-                          <th className="px-6 py-4 font-medium text-right">Actions</th>
+                          <th className="px-8 py-5 font-bold">Neural Sector</th>
+                          <th className="px-8 py-5 font-bold">Data Vectors</th>
+                          <th className="px-8 py-5 font-bold">Volume</th>
+                          <th className="px-8 py-5 font-bold">Competition</th>
+                          <th className="px-8 py-5 font-bold">Trend</th>
+                          <th className="px-8 py-5 font-bold">Opportunity</th>
+                          <th className="px-8 py-5 font-bold text-right">Protocol</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/50">
+                      <tbody className="divide-y divide-white/[0.03]">
                         {sortedResults.map((result) => (
                           <ResultRow 
                             key={result.id} 
@@ -681,7 +749,7 @@ export default function App() {
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </motion.div>
               </div>
             )}
           </>
@@ -730,6 +798,8 @@ export default function App() {
             onShowToast={(msg) => setToast({ show: true, message: msg })}
           />
         )}
+        </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Error Modal Overlay */}
@@ -747,25 +817,25 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-[#111827] border border-red-500/30 rounded-2xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md glass-panel border border-red-500/30 rounded-[2rem] shadow-2xl overflow-hidden"
             >
-              <div className="p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+              <div className="p-10">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
                     <AlertTriangle className="w-6 h-6 text-red-500" />
                   </div>
-                  <h3 className="text-xl font-bold text-white">{errorModal.title}</h3>
+                  <h3 className="text-xl font-display font-bold text-white">{errorModal.title}</h3>
                 </div>
-                <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-4 mb-6">
-                  <p className="text-slate-300 text-sm leading-relaxed">
+                <div className="bg-red-500/5 border border-red-500/10 rounded-2xl p-5 mb-8">
+                  <p className="text-slate-400 text-sm leading-relaxed">
                     {errorModal.message}
                   </p>
                 </div>
                 <button
                   onClick={() => setErrorModal({ ...errorModal, show: false })}
-                  className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors"
+                  className="w-full py-4 bg-white text-black font-bold rounded-2xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-xs"
                 >
-                  Tutup
+                  DISMISS
                 </button>
               </div>
             </motion.div>
@@ -780,10 +850,10 @@ export default function App() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-3 bg-[#00D8B6] text-slate-900 px-6 py-3 rounded-full font-bold shadow-lg shadow-[#00D8B6]/20"
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-3 bg-white text-black px-8 py-4 rounded-full font-bold shadow-2xl futuristic-glow"
           >
-            <CheckCircle2 className="w-5 h-5" />
-            {toast.message}
+            <CheckCircle2 className="w-4 h-4 text-cyan-500" />
+            <span className="text-[10px] tracking-[0.2em] uppercase">{toast.message}</span>
           </motion.div>
         )}
       </AnimatePresence>

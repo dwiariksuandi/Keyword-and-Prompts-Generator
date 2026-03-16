@@ -1,6 +1,7 @@
 import React from 'react';
-import { Download, Copy, ArrowLeft, Wand2, Sparkles, RefreshCw } from 'lucide-react';
+import { Download, Copy, ArrowLeft, Wand2, Sparkles, RefreshCw, Loader2 } from 'lucide-react';
 import { CategoryResult } from '../types';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface PromptTabProps {
   results: CategoryResult[];
@@ -25,7 +26,6 @@ export default function PromptTab({
 }: PromptTabProps) {
   const selectedCategory = results.find(r => r.id === selectedCategoryId);
   
-  // If no specific category is selected, or we want to show all categories that have prompts
   const displayCategories = selectedCategory 
     ? [selectedCategory] 
     : results;
@@ -36,12 +36,12 @@ export default function PromptTab({
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    onShowToast('Berhasil disalin ke clipboard!');
+    onShowToast('Copied to clipboard');
   };
 
   const handleCopyAll = (category: CategoryResult) => {
     navigator.clipboard.writeText(category.generatedPrompts.join('\n\n'));
-    onShowToast('Semua prompt berhasil disalin!');
+    onShowToast('All prompts copied');
   };
 
   const handleDownload = (category: CategoryResult) => {
@@ -57,60 +57,85 @@ export default function PromptTab({
 
   if (displayCategories.length === 0) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-12 text-center">
-        <div className="bg-[#111827] border border-slate-800 rounded-xl p-12">
-          <h2 className="text-xl font-medium text-slate-300 mb-2">No Categories Available</h2>
-          <p className="text-slate-500 mb-6">Go back to the Top tab and analyze a keyword first.</p>
-          <button 
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-6xl mx-auto px-6 py-20 text-center"
+      >
+        <div className="glass-panel p-12 max-w-lg mx-auto">
+          <h2 className="text-2xl font-bold text-white mb-4 font-display">No Categories Available</h2>
+          <p className="text-slate-400 mb-8">Initiate keyword analysis to unlock the Prompt Studio.</p>
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onBack}
-            className="bg-[#00D8B6] hover:bg-[#00c2a3] text-slate-900 px-6 py-2 rounded-md font-medium transition-colors"
+            className="bg-accent text-slate-900 px-8 py-3 rounded-xl font-bold transition-all futuristic-glow"
           >
-            Go to Top Tab
-          </button>
+            Return to Top Tab
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10 relative">
-      {isProcessing && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0B1120]/90 backdrop-blur-md">
-          <div className="bg-[#111827] border border-slate-800 p-10 rounded-3xl shadow-[0_0_50px_rgba(0,216,182,0.1)] flex flex-col items-center max-w-sm w-full mx-4 text-center">
-            <div className="relative w-20 h-20 mb-8">
-              <div className={`absolute inset-0 border-4 rounded-full animate-spin ${isGeneratingAny ? 'border-[#00D8B6]/20 border-t-[#00D8B6]' : 'border-[#FF8A00]/20 border-t-[#FF8A00]'}`}></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                {isGeneratingAny ? <Sparkles className="text-[#00D8B6] animate-pulse" size={32} /> : <Wand2 className="text-[#FF8A00] animate-pulse" size={32} />}
+    <div className="max-w-6xl mx-auto px-6 py-12 relative">
+      <AnimatePresence>
+        {isProcessing && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="glass-panel p-12 flex flex-col items-center max-w-sm w-full mx-4 text-center futuristic-glow"
+            >
+              <div className="relative w-24 h-24 mb-10">
+                <div className={`absolute inset-0 border-4 rounded-full animate-spin ${isGeneratingAny ? 'border-accent/20 border-t-accent' : 'border-orange-500/20 border-t-orange-500'}`}></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {isGeneratingAny ? <Sparkles className="text-accent animate-pulse" size={40} /> : <Wand2 className="text-orange-500 animate-pulse" size={40} />}
+                </div>
               </div>
-            </div>
-            <h3 className={`text-2xl font-black mb-3 tracking-tight ${isGeneratingAny ? 'text-[#00D8B6]' : 'text-[#FF8A00]'}`}>
-              {isGeneratingAny ? 'Crafting Prompts' : 'Optimizing Style'}
-            </h3>
-            <p className="text-slate-400 text-sm leading-relaxed">
-              Our AI is meticulously {isGeneratingAny ? 'generating unique prompts' : 'refining the visual language'} for your selected niche. This won't take long.
-            </p>
-          </div>
-        </div>
-      )}
+              <h3 className={`text-3xl font-bold mb-4 tracking-tight font-display ${isGeneratingAny ? 'text-accent' : 'text-orange-500'}`}>
+                {isGeneratingAny ? 'Synthesizing' : 'Optimizing'}
+              </h3>
+              <p className="text-slate-400 text-sm leading-relaxed font-light">
+                Our neural engine is {isGeneratingAny ? 'crafting high-fidelity prompts' : 'refining visual parameters'} for your niche.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-        <div className="flex items-center gap-5">
-          <button 
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12"
+      >
+        <div className="flex items-center gap-6">
+          <motion.button 
+            whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.1)' }}
+            whileTap={{ scale: 0.9 }}
             onClick={onBack}
-            className="p-3 bg-slate-800/50 hover:bg-slate-700 border border-slate-700 rounded-2xl text-slate-300 transition-all active:scale-90"
+            className="p-4 glass-panel text-slate-300 transition-all border border-white/10"
             title="Go Back"
           >
-            <ArrowLeft size={20} />
-          </button>
+            <ArrowLeft size={24} />
+          </motion.button>
           <div>
-            <h1 className="text-3xl font-black text-white tracking-tight">Prompt Studio</h1>
-            <p className="text-slate-500 text-sm">Generate and manage high-converting prompts</p>
+            <h1 className="text-4xl font-bold text-white tracking-tight font-display">
+              Prompt <span className="text-accent">Studio</span>
+            </h1>
+            <p className="text-slate-500">Neural synthesis of high-conversion visual descriptors.</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 bg-[#111827] border border-slate-800 rounded-2xl p-2 pl-5 shadow-lg">
-          <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Prompts per category</span>
-          <div className="flex items-center bg-slate-800/50 rounded-xl px-3 py-2 border border-slate-700">
+        <div className="flex items-center gap-6 glass-panel p-3 pl-6">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Density</span>
+          <div className="flex items-center bg-slate-800/50 rounded-xl px-4 py-2 border border-slate-700/50">
             <input 
               type="number" 
               value={promptsCount || ''}
@@ -119,191 +144,202 @@ export default function PromptTab({
                 if (promptsCount < 1) setPromptsCount(1);
                 if (promptsCount > 1500) setPromptsCount(1500);
               }}
-              className="bg-transparent text-white w-12 outline-none text-sm font-bold text-center"
+              className="bg-transparent text-white w-14 outline-none text-sm font-bold text-center font-mono"
               min="1"
               max="1500"
             />
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="space-y-10">
-        {displayCategories.map(category => (
-          <div key={category.id} className="bg-[#111827] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-            <div className="p-6 sm:p-8 border-b border-slate-800 bg-slate-900/30">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="space-y-4">
-                  <h2 className="text-2xl font-black text-[#00D8B6] tracking-tight">{category.categoryName}</h2>
-                  <div className="flex flex-wrap gap-2">
-                    {category.mainKeywords.map((kw, i) => (
-                      <span key={i} className="bg-slate-800/50 text-slate-400 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border border-slate-700/50">
-                        {kw}
-                      </span>
-                    ))}
+      <div className="space-y-12">
+        <AnimatePresence>
+          {displayCategories.map((category, catIdx) => (
+            <motion.div 
+              key={category.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: catIdx * 0.1 }}
+              className="glass-panel overflow-hidden group"
+            >
+              <div className="p-8 sm:p-10 border-b border-white/5 bg-white/[0.02]">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                  <div className="space-y-5">
+                    <h2 className="text-3xl font-bold text-accent tracking-tight font-display">{category.categoryName}</h2>
+                    <div className="flex flex-wrap gap-3">
+                      {category.mainKeywords.map((kw, i) => (
+                        <span key={i} className="bg-slate-800/40 text-slate-400 text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-lg border border-slate-700/30">
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-3">
-                  {category.generatedPrompts.length === 0 ? (
-                    <button 
-                      onClick={() => onGenerate(category.id)}
-                      disabled={category.isGeneratingPrompts}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#00D8B6] hover:bg-[#00c2a3] text-slate-900 px-6 py-3 rounded-xl font-bold transition-all disabled:opacity-50 shadow-[0_4px_15px_rgba(0,216,182,0.2)]"
-                    >
-                      <Sparkles size={18} />
-                      <span>Generate Prompts</span>
-                    </button>
-                  ) : (
-                    <>
-                      <button 
+                  
+                  <div className="flex flex-wrap items-center gap-4">
+                    {category.generatedPrompts.length === 0 ? (
+                      <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => onGenerate(category.id)}
                         disabled={category.isGeneratingPrompts}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-3 rounded-xl font-bold border border-slate-700 transition-all disabled:opacity-50"
+                        className="w-full sm:w-auto flex items-center justify-center gap-3 bg-accent hover:bg-accent/90 text-slate-900 px-8 py-4 rounded-2xl font-bold transition-all disabled:opacity-50 futuristic-glow"
                       >
-                        <RefreshCw size={16} className={category.isGeneratingPrompts ? "animate-spin" : ""} />
-                        <span>Regenerate</span>
-                      </button>
-                      <button 
-                        onClick={() => onUpgrade(category.id)}
-                        disabled={category.isUpgrading}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#FF8A00]/10 hover:bg-[#FF8A00]/20 text-[#FF8A00] px-4 py-3 rounded-xl font-bold border border-[#FF8A00]/30 transition-all disabled:opacity-50"
-                      >
-                        <Wand2 size={16} />
-                        <span>Optimize</span>
-                      </button>
-                      <div className="w-px h-8 bg-slate-800 hidden sm:block mx-1" />
-                      <button 
-                        onClick={() => handleDownload(category)}
-                        className="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition-all"
-                        title="Download TXT"
-                      >
-                        <Download size={18} />
-                      </button>
-                      <button 
-                        onClick={() => handleCopyAll(category)}
-                        className="flex items-center gap-2 bg-[#00D8B6] hover:bg-[#00c2a3] text-slate-900 px-6 py-3 rounded-xl font-bold transition-all shadow-[0_4px_15px_rgba(0,216,182,0.2)]"
-                      >
-                        <Copy size={18} />
-                        <span>Copy All</span>
-                      </button>
-                    </>
-                  )}
+                        <Sparkles size={20} />
+                        <span>Initiate Synthesis</span>
+                      </motion.button>
+                    ) : (
+                      <>
+                        <motion.button 
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => onGenerate(category.id)}
+                          disabled={category.isGeneratingPrompts}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-3 bg-slate-800/50 hover:bg-slate-800 text-slate-200 px-6 py-4 rounded-2xl font-bold border border-slate-700/50 transition-all disabled:opacity-50"
+                        >
+                          <RefreshCw size={18} className={category.isGeneratingPrompts ? "animate-spin" : ""} />
+                          <span>Regenerate</span>
+                        </motion.button>
+                        <motion.button 
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => onUpgrade(category.id)}
+                          disabled={category.isUpgrading}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 px-6 py-4 rounded-2xl font-bold border border-orange-500/30 transition-all disabled:opacity-50"
+                        >
+                          <Wand2 size={18} />
+                          <span>Optimize</span>
+                        </motion.button>
+                        <div className="w-px h-10 bg-slate-800 hidden sm:block mx-2" />
+                        <motion.button 
+                          whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleDownload(category)}
+                          className="p-4 bg-slate-800/50 hover:bg-slate-800 text-slate-300 rounded-2xl border border-slate-700/50 transition-all"
+                          title="Export TXT"
+                        >
+                          <Download size={20} />
+                        </motion.button>
+                        <motion.button 
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleCopyAll(category)}
+                          className="flex items-center gap-3 bg-accent hover:bg-accent/90 text-slate-900 px-8 py-4 rounded-2xl font-bold transition-all futuristic-glow"
+                        >
+                          <Copy size={20} />
+                          <span>Copy All</span>
+                        </motion.button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="p-6 sm:p-8">
-              {category.generatedPrompts.length === 0 ? (
-                <div className="text-center py-20 bg-slate-900/20 rounded-2xl border border-dashed border-slate-800">
-                  <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Sparkles className="text-slate-600" size={32} />
-                  </div>
-                  <h3 className="text-slate-300 font-bold mb-1">No Prompts Yet</h3>
-                  <p className="text-slate-500 text-sm">Click the button above to generate unique prompts for this niche.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {category.generatedPrompts.map((prompt, index) => (
-                    <div key={index} className="bg-slate-800/20 border border-slate-800/50 rounded-2xl p-5 flex flex-col gap-4 group hover:border-[#00D8B6]/30 hover:bg-slate-800/40 transition-all">
-                      <div className="flex gap-5">
-                        <div className="flex-shrink-0 w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-[#00D8B6] font-black text-sm border border-slate-800 group-hover:border-[#00D8B6]/20 transition-all">
-                          {index + 1}
-                        </div>
-                        <div className="flex-grow pt-1">
-                          <p className="text-slate-300 text-sm leading-relaxed font-medium">{prompt}</p>
-                        </div>
-                        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                          <button 
-                            onClick={() => handleCopy(prompt)}
-                            className="p-3 bg-slate-900 hover:bg-[#00D8B6] hover:text-slate-900 rounded-xl text-slate-400 transition-all border border-slate-800"
-                            title="Copy Prompt"
-                          >
-                            <Copy size={16} />
-                          </button>
-                        </div>
-                      </div>
-
-                      {category.promptScores && category.promptScores[index] && (
-                        <div className="mt-2 pt-4 border-t border-slate-800/50">
-                          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                                category.promptScores[index].score >= 80 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                                category.promptScores[index].score >= 60 ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' :
-                                'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                              }`}>
-                                Quality Score: {category.promptScores[index].score}%
-                              </div>
-                            </div>
-                            <div className="flex gap-4">
-                              <div className="flex flex-col items-center">
-                                <span className="text-[8px] text-slate-500 uppercase font-bold mb-1">Density</span>
-                                <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
-                                  <div className="h-full bg-[#00D8B6]" style={{ width: `${category.promptScores[index].density}%` }} />
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-center">
-                                <span className="text-[8px] text-slate-500 uppercase font-bold mb-1">Clarity</span>
-                                <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
-                                  <div className="h-full bg-cyan-500" style={{ width: `${category.promptScores[index].clarity}%` }} />
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-center">
-                                <span className="text-[8px] text-slate-500 uppercase font-bold mb-1">Specific</span>
-                                <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
-                                  <div className="h-full bg-indigo-500" style={{ width: `${category.promptScores[index].specificity}%` }} />
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-center">
-                                <span className="text-[8px] text-slate-500 uppercase font-bold mb-1">Adobe</span>
-                                <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
-                                  <div className="h-full bg-purple-500" style={{ width: `${category.promptScores[index].adherence}%` }} />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800/50 space-y-3">
-                            <p className="text-[11px] text-slate-300 italic leading-relaxed">
-                              <span className="text-[#00D8B6] font-bold not-italic mr-1">Summary:</span>
-                              {category.promptScores[index].feedback}
-                            </p>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                              {category.promptScores[index].keywordFeedback && (
-                                <div className="space-y-1">
-                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Keyword Usage</span>
-                                  <p className="text-[10px] text-slate-400 leading-relaxed">{category.promptScores[index].keywordFeedback}</p>
-                                </div>
-                              )}
-                              {category.promptScores[index].clarityFeedback && (
-                                <div className="space-y-1">
-                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Clarity & Subject</span>
-                                  <p className="text-[10px] text-slate-400 leading-relaxed">{category.promptScores[index].clarityFeedback}</p>
-                                </div>
-                              )}
-                              {category.promptScores[index].specificityFeedback && (
-                                <div className="space-y-1">
-                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Technical Specificity</span>
-                                  <p className="text-[10px] text-slate-400 leading-relaxed">{category.promptScores[index].specificityFeedback}</p>
-                                </div>
-                              )}
-                              {category.promptScores[index].adherenceFeedback && (
-                                <div className="space-y-1">
-                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Adobe Stock Compliance</span>
-                                  <p className="text-[10px] text-slate-400 leading-relaxed">{category.promptScores[index].adherenceFeedback}</p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
+              
+              <div className="p-8 sm:p-10">
+                {category.generatedPrompts.length === 0 ? (
+                  <div className="text-center py-24 bg-black/20 rounded-3xl border border-dashed border-slate-800/50">
+                    <div className="w-20 h-20 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-slate-700/30">
+                      <Sparkles className="text-slate-600" size={40} />
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+                    <h3 className="text-xl font-bold text-slate-300 mb-2 font-display">Awaiting Synthesis</h3>
+                    <p className="text-slate-500 text-sm font-light">Execute the command above to generate unique visual descriptors.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-6">
+                    {category.generatedPrompts.map((prompt, index) => (
+                      <motion.div 
+                        key={index}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="bg-slate-900/40 border border-white/5 rounded-2xl p-6 flex flex-col gap-6 group/item hover:border-accent/30 hover:bg-white/[0.02] transition-all duration-300"
+                      >
+                        <div className="flex gap-6">
+                          <div className="flex-shrink-0 w-12 h-12 bg-black/40 rounded-xl flex items-center justify-center text-accent font-mono font-bold text-lg border border-white/5 group-hover/item:border-accent/20 transition-all">
+                            {index + 1}
+                          </div>
+                          <div className="flex-grow pt-1">
+                            <p className="text-slate-300 text-base leading-relaxed font-light">{prompt}</p>
+                          </div>
+                          <div className="flex-shrink-0 opacity-0 group-hover/item:opacity-100 transition-all transform translate-x-4 group-hover/item:translate-x-0">
+                            <motion.button 
+                              whileHover={{ scale: 1.1, backgroundColor: 'var(--color-accent)', color: '#000' }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleCopy(prompt)}
+                              className="p-4 bg-black/40 rounded-2xl text-slate-400 transition-all border border-white/5"
+                              title="Copy Prompt"
+                            >
+                              <Copy size={20} />
+                            </motion.button>
+                          </div>
+                        </div>
+
+                        {category.promptScores && category.promptScores[index] && (
+                          <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-2 pt-6 border-t border-white/5"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-6 mb-6">
+                              <div className="flex items-center gap-4">
+                                <div className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${
+                                  category.promptScores[index].score >= 80 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.2)]' :
+                                  category.promptScores[index].score >= 60 ? 'bg-teal-500/10 text-teal-400 border-teal-500/20 shadow-[0_0_10px_rgba(45,212,191,0.2)]' :
+                                  'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                                }`}>
+                                  Quality Index: {category.promptScores[index].score}%
+                                </div>
+                              </div>
+                              <div className="flex gap-6">
+                                {[
+                                  { label: 'Density', val: category.promptScores[index].density, color: 'bg-accent' },
+                                  { label: 'Clarity', val: category.promptScores[index].clarity, color: 'bg-cyan-500' },
+                                  { label: 'Specific', val: category.promptScores[index].specificity, color: 'bg-indigo-500' },
+                                  { label: 'Adobe', val: category.promptScores[index].adherence, color: 'bg-purple-500' }
+                                ].map((m, i) => (
+                                  <div key={i} className="flex flex-col items-center">
+                                    <span className="text-[8px] text-slate-500 uppercase font-bold tracking-widest mb-2">{m.label}</span>
+                                    <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                                      <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${m.val}%` }}
+                                        transition={{ duration: 1, delay: 0.5 + (i * 0.1) }}
+                                        className={`h-full ${m.color}`} 
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="bg-black/20 rounded-2xl p-6 border border-white/5 space-y-4">
+                              <p className="text-sm text-slate-300 italic leading-relaxed font-light">
+                                <span className="text-accent font-bold not-italic mr-2 uppercase tracking-widest text-[10px]">Analysis:</span>
+                                {category.promptScores[index].feedback}
+                              </p>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5">
+                                {[
+                                  { label: 'Keyword Vectors', text: category.promptScores[index].keywordFeedback },
+                                  { label: 'Visual Clarity', text: category.promptScores[index].clarityFeedback },
+                                  { label: 'Technical Specs', text: category.promptScores[index].specificityFeedback },
+                                  { label: 'Compliance', text: category.promptScores[index].adherenceFeedback }
+                                ].map((f, i) => f.text && (
+                                  <div key={i} className="space-y-2">
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">{f.label}</span>
+                                    <p className="text-xs text-slate-400 leading-relaxed font-light">{f.text}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </div>
   );

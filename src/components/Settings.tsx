@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Key, Save, Check, AlertCircle } from 'lucide-react';
+import { Key, Save, Check, AlertCircle, LogOut, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe } from 'lucide-react';
 import { AppSettings, PromptTemplate } from '../types';
 import { promptTemplates } from '../services/gemini';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface SettingsProps {
   settings: AppSettings;
@@ -24,7 +25,6 @@ export default function Settings({
 }: SettingsProps) {
   const [activeContentTypeTab, setActiveContentTypeTab] = useState('Photo');
 
-  // Ensure templateId is an object with defaults
   const defaultTemplates: Record<string, string> = {
     'Photo': 'nanobanana-photo',
     'Illustration': 'nanobanana-illustration',
@@ -56,87 +56,143 @@ export default function Settings({
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-6">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-white mb-2">Settings</h1>
-        <p className="text-slate-400">Configure your API keys and preferences</p>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-3xl mx-auto py-12 px-6"
+    >
+      <div className="text-center mb-12">
+        <motion.div 
+          initial={{ scale: 0.9 }}
+          animate={{ scale: 1 }}
+          className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 mb-6 futuristic-glow"
+        >
+          <SettingsIcon className="w-8 h-8 text-accent" />
+        </motion.div>
+        <h1 className="text-4xl font-bold text-white mb-3 tracking-tight font-display">System <span className="text-accent">Configuration</span></h1>
+        <p className="text-slate-400 font-light">Manage your neural parameters and API integration.</p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* API Key Section */}
-        <div className="bg-[#111827] rounded-xl border border-slate-800 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-[#00D8B6]/20 flex items-center justify-center">
-              <Key className="w-5 h-5 text-[#00D8B6]" />
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          className="glass-panel p-8"
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
+              <Key className="w-6 h-6 text-accent" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Active Session</h2>
-              <p className="text-sm text-slate-400">Your API key is active for this session only.</p>
+              <h2 className="text-xl font-bold text-white font-display">Neural Link</h2>
+              <p className="text-sm text-slate-500 font-light">Active session authentication status.</p>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-3 text-emerald-400">
-              <Check className="w-5 h-5" />
-              <span className="font-medium">API Key is connected</span>
+          <div className="space-y-6">
+            <div className="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center gap-4 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.05)]">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-medium tracking-wide">Secure Connection Established</span>
             </div>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={onEndSession}
-              className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium py-3 rounded-lg transition-colors border border-red-500/20"
+              className="w-full flex items-center justify-center gap-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold py-4 rounded-2xl transition-all border border-red-500/20"
             >
-              Reset API Key & End Session
-            </button>
+              <LogOut size={20} />
+              Terminate Session
+            </motion.button>
             
-            <p className="text-xs text-slate-500 mt-2">
-              <strong className="text-slate-400">Catatan Kuota:</strong> Limit/kuota API Gemini dihitung berdasarkan <strong>Project</strong> di Google Cloud, bukan per API Key. Jika Anda membuat API Key baru di Project yang sama, kuotanya akan tetap habis. Anda harus membuat Project baru di Google AI Studio untuk mendapatkan kuota yang baru.
-            </p>
+            <div className="p-4 bg-slate-900/40 rounded-xl border border-white/5">
+              <p className="text-[11px] text-slate-500 leading-relaxed font-light">
+                <strong className="text-slate-400 uppercase tracking-widest mr-2">Quota Protocol:</strong> 
+                Gemini API limits are tied to your Google Cloud Project. Creating new keys within the same project will not reset quotas. For fresh allocation, initialize a new project in Google AI Studio.
+              </p>
+            </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Model Selection */}
-        <div className="bg-[#111827] rounded-xl border border-slate-800 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">AI Model</h2>
-          <div className="grid grid-cols-2 gap-3">
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="glass-panel p-8"
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
+              <Cpu className="w-6 h-6 text-accent" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white font-display">Core Engine</h2>
+              <p className="text-sm text-slate-500 font-light">Select the primary LLM for synthesis.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", desc: "Fast & Efficient (Default)" },
-              { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", desc: "Best for complex tasks" },
-              { id: "gemini-2.0-flash", name: "Gemini 2 Flash", desc: "Alternative Flash model" },
-              { id: "gemini-3-flash-preview", name: "Gemini 3 Flash", desc: "Latest Flash version" },
+              { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", desc: "High Velocity (Default)" },
+              { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", desc: "Maximum Reasoning" },
+              { id: "gemini-2.0-flash", name: "Gemini 2 Flash", desc: "Legacy Flash" },
+              { id: "gemini-3-flash-preview", name: "Gemini 3 Flash", desc: "Next-Gen Flash" },
             ].map((model) => (
-              <button
+              <motion.button
                 key={model.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setSettings({ ...settings, model: model.id })}
-                className={`p-4 rounded-lg border text-left transition-all ${
+                className={`p-5 rounded-2xl border text-left transition-all duration-300 ${
                   settings.model === model.id
-                    ? "border-[#00D8B6] bg-[#00D8B6]/10"
-                    : "border-slate-800 bg-[#0B1121] hover:border-slate-700"
+                    ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,216,182,0.1)]"
+                    : "border-white/5 bg-black/20 hover:border-white/20"
                 }`}
               >
-                <p className="font-medium text-white">{model.name}</p>
-                <p className="text-xs text-slate-400">{model.desc}</p>
-              </button>
+                <div className="flex items-center justify-between mb-1">
+                  <p className={`font-bold tracking-tight ${settings.model === model.id ? 'text-accent' : 'text-white'}`}>{model.name}</p>
+                  {settings.model === model.id && <div className="w-2 h-2 rounded-full bg-accent futuristic-glow" />}
+                </div>
+                <p className="text-xs text-slate-500 font-light">{model.desc}</p>
+              </motion.button>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Prompt Template */}
-        <div className="bg-[#111827] rounded-xl border border-slate-800 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Prompt Template by Content Type</h2>
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          className="glass-panel p-8"
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
+              <Layout className="w-6 h-6 text-accent" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white font-display">Synthesis Blueprints</h2>
+              <p className="text-sm text-slate-500 font-light">Configure prompt templates for specific outputs.</p>
+            </div>
+          </div>
           
-          <div className="flex overflow-x-auto pb-2 mb-4 gap-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <div className="flex overflow-x-auto pb-4 mb-6 gap-3 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
             {CONTENT_TYPES.map(type => (
-              <button
+              <motion.button
                 key={type}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setActiveContentTypeTab(type)}
-                className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`whitespace-nowrap px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
                   activeContentTypeTab === type
-                    ? 'bg-[#00D8B6] text-black'
-                    : 'bg-[#0B1121] text-slate-400 hover:text-white border border-slate-800'
+                    ? 'bg-accent text-slate-900 futuristic-glow'
+                    : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'
                 }`}
               >
                 {type}
-              </button>
+              </motion.button>
             ))}
           </div>
 
@@ -144,166 +200,219 @@ export default function Settings({
             {promptTemplates
               .filter(template => template.contentTypes.includes(activeContentTypeTab))
               .map((template) => (
-              <button
+              <motion.button
                 key={template.id}
+                whileHover={{ x: 5 }}
                 onClick={() => handleTemplateChange(template.id)}
-                className={`w-full p-4 rounded-lg border text-left transition-all ${
+                className={`w-full p-5 rounded-2xl border text-left transition-all duration-300 ${
                   currentTemplateIds[activeContentTypeTab] === template.id
-                    ? "border-[#00D8B6] bg-[#00D8B6]/10"
-                    : "border-slate-800 bg-[#0B1121] hover:border-slate-700"
+                    ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,216,182,0.1)]"
+                    : "border-white/5 bg-black/20 hover:border-white/20"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-white">{template.name}</p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className={`font-bold tracking-tight ${currentTemplateIds[activeContentTypeTab] === template.id ? 'text-accent' : 'text-white'}`}>{template.name}</p>
                   {currentTemplateIds[activeContentTypeTab] === template.id && (
-                    <Check className="w-4 h-4 text-[#00D8B6]" />
+                    <Check className="w-5 h-5 text-accent" />
                   )}
                 </div>
-                <p className="text-xs text-slate-400 mt-1">{template.description}</p>
-              </button>
+                <p className="text-xs text-slate-500 font-light leading-relaxed">{template.description}</p>
+              </motion.button>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Output Options */}
-        <div className="bg-[#111827] rounded-xl border border-slate-800 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Output Options</h2>
-          <div className="space-y-4">
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
+          className="glass-panel p-8"
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
+              <Sliders className="w-6 h-6 text-accent" />
+            </div>
             <div>
-              <label className="text-sm text-slate-400 mb-2 block">Default Prompt Count</label>
-              <input
-                type="number"
-                value={settings.promptCount || ''}
-                onChange={(e) => setSettings({ ...settings, promptCount: Number(e.target.value) })}
-                onBlur={() => {
-                  let val = settings.promptCount;
-                  if (val < 1) val = 1;
-                  if (val > 1500) val = 1500;
-                  setSettings({ ...settings, promptCount: val });
-                }}
-                className="w-full bg-[#0B1121] border border-slate-800 rounded-lg text-white px-4 py-3 outline-none focus:border-[#00D8B6]"
-                min="1"
-                max="1500"
-              />
+              <h2 className="text-xl font-bold text-white font-display">Output Parameters</h2>
+              <p className="text-sm text-slate-500 font-light">Fine-tune the generation behavior.</p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block">Default Synthesis Density</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={settings.promptCount || ''}
+                  onChange={(e) => setSettings({ ...settings, promptCount: Number(e.target.value) })}
+                  onBlur={() => {
+                    let val = settings.promptCount;
+                    if (val < 1) val = 1;
+                    if (val > 1500) val = 1500;
+                    setSettings({ ...settings, promptCount: val });
+                  }}
+                  className="w-full bg-black/40 border border-white/5 rounded-2xl text-white px-6 py-4 outline-none focus:border-accent transition-all font-mono"
+                  min="1"
+                  max="1500"
+                />
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600 uppercase tracking-widest">Prompts</div>
+              </div>
             </div>
             
-            <div>
-              <label className="text-sm text-slate-400 mb-2 block">Language</label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: "en", name: "English" },
-                  { id: "id", name: "Indonesian" },
-                ].map((lang) => (
-                  <button
-                    key={lang.id}
-                    onClick={() => setSettings({ ...settings, language: lang.id })}
-                    className={`p-3 rounded-lg border text-center transition-all ${
-                      settings.language === lang.id
-                        ? "border-[#00D8B6] bg-[#00D8B6]/10 text-[#00D8B6]"
-                        : "border-slate-800 bg-[#0B1121] text-slate-400 hover:text-white hover:border-slate-700"
-                    }`}
-                  >
-                    {lang.name}
-                  </button>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block flex items-center gap-2">
+                  <Globe size={12} /> Language Protocol
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: "en", name: "English" },
+                    { id: "id", name: "Indonesian" },
+                  ].map((lang) => (
+                    <motion.button
+                      key={lang.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setSettings({ ...settings, language: lang.id })}
+                      className={`p-3 rounded-xl border text-sm font-bold transition-all ${
+                        settings.language === lang.id
+                          ? "border-accent bg-accent/10 text-accent"
+                          : "border-white/5 bg-black/20 text-slate-500 hover:text-white hover:border-white/20"
+                      }`}
+                    >
+                      {lang.name}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block flex items-center gap-2">
+                  <Cpu size={12} /> Entropy Level
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { id: "Low", name: "Low" },
+                    { id: "Medium", name: "Mid" },
+                    { id: "High", name: "High" },
+                  ].map((level) => (
+                    <motion.button
+                      key={level.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setSettings({ ...settings, variationLevel: level.id as any })}
+                      className={`p-3 rounded-xl border text-xs font-bold transition-all ${
+                        settings.variationLevel === level.id
+                          ? "border-accent bg-accent/10 text-accent"
+                          : "border-white/5 bg-black/20 text-slate-500 hover:text-white hover:border-white/20"
+                      }`}
+                    >
+                      {level.name}
+                    </motion.button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="text-sm text-slate-400 mb-2 block">Variation Level</label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: "Low", name: "Low", desc: "Similar" },
-                  { id: "Medium", name: "Medium", desc: "Standard" },
-                  { id: "High", name: "High", desc: "Maximum" },
-                ].map((level) => (
-                  <button
-                    key={level.id}
-                    onClick={() => setSettings({ ...settings, variationLevel: level.id as any })}
-                    className={`p-3 rounded-lg border text-center transition-all ${
-                      settings.variationLevel === level.id
-                        ? "border-[#00D8B6] bg-[#00D8B6]/10 text-[#00D8B6]"
-                        : "border-slate-800 bg-[#0B1121] text-slate-400 hover:text-white hover:border-slate-700"
-                    }`}
-                  >
-                    <div className="font-medium">{level.name}</div>
-                    <div className="text-[10px] opacity-60">{level.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-800/50 space-y-4">
+            <div className="pt-8 border-t border-white/5 space-y-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-white">Auto-save History & Results</h3>
-                  <p className="text-xs text-slate-400">Save your analysis history automatically</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
+                    <Database size={18} className="text-slate-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white tracking-tight">Neural Cache</h3>
+                    <p className="text-xs text-slate-500 font-light">Auto-save synthesis logs locally.</p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setSettings({ ...settings, autoSave: !settings.autoSave })}
-                  className={`w-12 h-6 rounded-full transition-colors relative ${
-                    settings.autoSave ? "bg-[#00D8B6]" : "bg-slate-700"
+                  className={`w-14 h-7 rounded-full transition-all relative p-1 ${
+                    settings.autoSave ? "bg-accent" : "bg-slate-800"
                   }`}
                 >
-                  <div
-                    className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
-                      settings.autoSave ? "left-7" : "left-1"
-                    }`}
+                  <motion.div
+                    animate={{ x: settings.autoSave ? 28 : 0 }}
+                    className="w-5 h-5 rounded-full bg-white shadow-lg"
                   />
                 </button>
               </div>
 
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-white">Include Negative Prompts</h3>
-                  <p className="text-xs text-slate-400">Add negative prompts for SD/SDXL</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
+                    <AlertCircle size={18} className="text-slate-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white tracking-tight">Negative Vectors</h3>
+                    <p className="text-xs text-slate-500 font-light">Include exclusion parameters for SDXL.</p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setSettings({ ...settings, includeNegative: !settings.includeNegative })}
-                  className={`w-12 h-6 rounded-full transition-colors relative ${
-                    settings.includeNegative ? "bg-[#00D8B6]" : "bg-slate-700"
+                  className={`w-14 h-7 rounded-full transition-all relative p-1 ${
+                    settings.includeNegative ? "bg-accent" : "bg-slate-800"
                   }`}
                 >
-                  <div
-                    className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
-                      settings.includeNegative ? "left-7" : "left-1"
-                    }`}
+                  <motion.div
+                    animate={{ x: settings.includeNegative ? 28 : 0 }}
+                    className="w-5 h-5 rounded-full bg-white shadow-lg"
                   />
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Save Preferences Button */}
-        <div className="pt-4">
-          <button
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="pt-6"
+        >
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={onSavePreferences}
-            className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-lg transition-colors"
+            className={`w-full flex items-center justify-center gap-3 font-bold py-5 rounded-2xl transition-all duration-500 ${
+              prefsSaved 
+                ? "bg-emerald-500 text-slate-900 shadow-[0_0_30px_rgba(16,185,129,0.3)]" 
+                : "bg-accent text-slate-900 futuristic-glow"
+            }`}
           >
             {prefsSaved ? (
-              <><Check className="w-5 h-5 text-[#00D8B6]" /> Saved!</>
+              <><Check className="w-6 h-6" /> Configuration Synchronized</>
             ) : (
-              <><Save className="w-5 h-5" /> Save Preferences</>
+              <><Save className="w-6 h-6" /> Commit Preferences</>
             )}
-          </button>
+          </motion.button>
 
-          {prefsValidationMessage && (
-            <div className={`mt-4 flex items-center gap-2 p-3 rounded-lg text-sm ${
-              prefsValidationMessage.type === 'success' 
-                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                : 'bg-red-500/10 text-red-400 border border-red-500/20'
-            }`}>
-              {prefsValidationMessage.type === 'success' ? (
-                <Check className="w-4 h-4 shrink-0" />
-              ) : (
-                <AlertCircle className="w-4 h-4 shrink-0" />
-              )}
-              <p>{prefsValidationMessage.text}</p>
-            </div>
-          )}
-        </div>
+          <AnimatePresence>
+            {prefsValidationMessage && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className={`mt-6 flex items-center gap-4 p-5 rounded-2xl text-sm border ${
+                  prefsValidationMessage.type === 'success' 
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                    : 'bg-red-500/10 text-red-400 border-red-500/20'
+                }`}
+              >
+                {prefsValidationMessage.type === 'success' ? (
+                  <Check className="w-5 h-5 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 shrink-0" />
+                )}
+                <p className="font-medium">{prefsValidationMessage.text}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
