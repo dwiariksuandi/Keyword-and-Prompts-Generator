@@ -108,8 +108,12 @@ export default function PromptTab({
             <span className="text-slate-400 text-sm font-medium mr-3">Prompts per Category:</span>
             <input 
               type="number" 
-              value={promptsCount}
+              value={promptsCount || ''}
               onChange={(e) => setPromptsCount(Number(e.target.value))}
+              onBlur={() => {
+                if (promptsCount < 1) setPromptsCount(1);
+                if (promptsCount > 1500) setPromptsCount(1500);
+              }}
               className="bg-transparent text-white w-16 outline-none text-sm font-semibold text-right"
               min="1"
               max="1500"

@@ -117,8 +117,14 @@ export default function Settings({
               <label className="text-sm text-slate-400 mb-2 block">Default Prompt Count</label>
               <input
                 type="number"
-                value={settings.promptCount}
+                value={settings.promptCount || ''}
                 onChange={(e) => setSettings({ ...settings, promptCount: Number(e.target.value) })}
+                onBlur={() => {
+                  let val = settings.promptCount;
+                  if (val < 1) val = 1;
+                  if (val > 1500) val = 1500;
+                  setSettings({ ...settings, promptCount: val });
+                }}
                 className="w-full bg-[#0B1121] border border-slate-800 rounded-lg text-white px-4 py-3 outline-none focus:border-[#00D8B6]"
                 min="1"
                 max="1500"

@@ -70,6 +70,24 @@ export function handleGeminiError(error: any): string {
   return `An error occurred: ${errorString}`;
 }
 
+function extractJSON(text: string) {
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    const startArr = text.indexOf('[');
+    const endArr = text.lastIndexOf(']');
+    const startObj = text.indexOf('{');
+    const endObj = text.lastIndexOf('}');
+    
+    if (startArr !== -1 && endArr !== -1 && (startObj === -1 || startArr < startObj)) {
+      return JSON.parse(text.substring(startArr, endArr + 1));
+    } else if (startObj !== -1 && endObj !== -1) {
+      return JSON.parse(text.substring(startObj, endObj + 1));
+    }
+    throw new Error("Could not find valid JSON in response");
+  }
+}
+
 export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean; error?: string }> {
   try {
     const ai = getAI(apiKey);
@@ -93,6 +111,10 @@ export async function analyzeKeyword(keyword: string, contentType: string, setti
     contents: `Perform an exhaustive, data-driven microstock market analysis for the broad keyword: '${keyword}' targeting the asset type: '${contentType}'.
 
 Your objective is to uncover 4 to 6 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.
+
+CRITICAL ADOBE STOCK RULES:
+- GENERATIVE AI COMPLIANCE: The niches MUST NOT rely on trademarked/copyrighted elements, specific brands, recognizable characters, or real known restricted places/buildings. Focus on generic, commercially safe concepts (e.g., "generic modern smartphone" instead of "iPhone").
+- NO SIMILAR CONTENT: Ensure the 4 to 6 niches are distinct from each other.
 
 For each niche, you MUST provide realistic, simulated market data:
 1. categoryName: A highly specific, commercial niche name (e.g., "Gen Z Sustainable Office Lifestyle" instead of "Business People").
@@ -139,7 +161,7 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
   text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
   
   try {
-    return JSON.parse(text);
+    return extractJSON(text);
   } catch (e) {
     console.error("Failed to parse JSON response:", text);
     throw new Error("Failed to parse the response from the AI. Please try again.");
@@ -157,17 +179,21 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       contents: `Generate a rich set of prompt components for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
       
       We need to programmatically generate ${count} unique combinations. Please provide:
-      1. 30 diverse subjects (e.g., "a young professional woman", "a modern office desk")
-      2. 30 specific details/actions (e.g., "typing on a laptop", "holding a coffee cup")
-      3. 15 lighting styles (e.g., "soft morning sunlight", "dramatic studio lighting")
-      4. 15 mood/atmosphere descriptions (e.g., "energetic and focused", "calm and serene")
-      5. 10 artistic styles/mediums (e.g., "photorealistic", "cinematic photography")
+      1. 30 highly distinct subjects (e.g., "a young professional woman", "a modern office desk", "a diverse team of engineers"). MUST be diverse in age, ethnicity, and core concept.
+      2. 30 specific and varied details/actions/camera angles (e.g., "typing on a laptop, close-up shot", "holding a coffee cup, wide angle", "brainstorming at a whiteboard, over-the-shoulder view").
+      3. 15 distinct lighting styles (e.g., "soft morning sunlight", "dramatic studio lighting", "neon cyberpunk glow").
+      4. 15 mood/atmosphere descriptions (e.g., "energetic and focused", "calm and serene", "mysterious and dark").
+      5. 10 artistic styles/mediums (e.g., "photorealistic", "cinematic photography", "3D render", "flat vector illustration").
       6. 5 aspect ratios (e.g., "16:9", "4:3", "3:2", "1:1", "9:16")
       
-      Ensure all components are highly commercial, safe for microstock (no logos/brands), and perfectly suited for ${contentType}.
+      CRITICAL ADOBE STOCK RULES:
+      - NO SIMILAR CONTENT: The components must be vastly different from each other to avoid generating repetitive images. Do not just change colors or minor details. Vary the camera angles, compositions, and core actions.
+      - GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings.
+      - QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
+      - Ensure all components are perfectly suited for ${contentType}.
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components.",
+        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines.",
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -189,12 +215,15 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
     text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
     
     try {
-      const components = JSON.parse(text);
-      const generatedPrompts: string[] = [];
+      const components = extractJSON(text);
+      const generatedPrompts = new Set<string>();
       const negativePrompt = settings.includeNegative ? ' --no text, watermark, deformed, blurry, logos' : '';
       
-      // Generate combinations
-      for (let i = 0; i < count; i++) {
+      // Generate combinations, ensuring uniqueness
+      let attempts = 0;
+      const maxAttempts = count * 5;
+      
+      while (generatedPrompts.size < count && attempts < maxAttempts) {
         const subject = components.subjects[Math.floor(Math.random() * components.subjects.length)] || "subject";
         const detail = components.details[Math.floor(Math.random() * components.details.length)] || "detail";
         const lighting = components.lightings[Math.floor(Math.random() * components.lightings.length)] || "lighting";
@@ -211,9 +240,10 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
           .replace(/{aspect}/g, aspect);
           
         prompt += negativePrompt;
-        generatedPrompts.push(prompt);
+        generatedPrompts.add(prompt);
+        attempts++;
       }
-      return generatedPrompts;
+      return Array.from(generatedPrompts);
     } catch (e) {
       console.error("Failed to parse JSON response:", text);
       throw new Error("Failed to parse the response from the AI. Please try again.");
@@ -228,17 +258,18 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
 CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 1. Commercial Utility: Ensure concepts are highly usable for designers and agencies. Include concepts with 'copy space', 'authentic lifestyle', 'modern aesthetics', or 'clean backgrounds' where appropriate.
 2. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for a ${contentType}.
-3. Safe for Microstock: Ensure prompts naturally avoid requesting branded items, text, or recognizable logos.
-4. Variety: Provide a diverse mix of subjects, compositions, and moods within the requested niche.
-5. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure:
+3. NO SIMILAR CONTENT: Do not generate prompts that are practically identical (e.g., just changing a shirt color). Each prompt MUST have a distinct composition, camera angle, subject, or core action.
+4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings.
+5. QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
+6. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure:
 "${template.template}"
 Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
 
 Respond strictly with a JSON array of strings, where each string is a complete, ready-to-use image generation prompt tailored for a ${contentType}.
 Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
-${settings.includeNegative ? 'Append a strong negative prompt at the end of each prompt (e.g., "--no text, watermark, deformed, blurry, logos").' : ''}`,
+${settings.includeNegative ? 'Append a strong negative prompt at the end of each prompt (e.g., "--no text, watermark, deformed, blurry, logos, bad anatomy, extra limbs").' : ''}`,
     config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts (for Midjourney, DALL-E 3, SDXL) that produce flawless, authentic, and highly usable stock photography and illustrations. You understand lighting, composition, camera settings, and market trends perfectly.",
+      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. You understand lighting, composition, camera settings, and market trends perfectly.",
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.ARRAY,
@@ -254,7 +285,7 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
   text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
   
   try {
-    return JSON.parse(text);
+    return extractJSON(text);
   } catch (e) {
     console.error("Failed to parse JSON response:", text);
     throw new Error("Failed to parse the response from the AI. Please try again.");
@@ -285,10 +316,15 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       3. 10 high-end technical styles (e.g., "shot on 35mm lens, 8k resolution", "hyper-detailed digital illustration")
       4. 5 commercial composition tags (e.g., "wide angle, copy space", "close up macro")
       
-      Ensure all modifiers are tailored for ${contentType} and strictly avoid brands/text.
+      CRITICAL ADOBE STOCK RULES:
+      - NO SIMILAR CONTENT: The modifiers must be distinct enough to create visually different variations of the same subject.
+      - GENERATIVE AI COMPLIANCE: Ensure all modifiers strictly avoid brands, logos, trademarked elements, and specific real-world locations.
+      - QUALITY: The modifiers should naturally enhance the quality and realism/detail of the final output.
+      
+      Ensure all modifiers are tailored for ${contentType}.
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Provide highly commercial, premium modifiers.",
+        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Provide highly commercial, premium modifiers that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines.",
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -308,14 +344,20 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
     text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
     
     try {
-      const modifiers = JSON.parse(text);
-      const optimizedPrompts: string[] = [];
+      const modifiers = extractJSON(text);
+      const optimizedPrompts = new Set<string>();
       const negativePrompt = settings.includeNegative ? ' --no text, watermark, deformed, blurry, logos' : '';
       
       // Programmatically optimize all prompts
       for (const originalPrompt of prompts) {
-        // Extract a rough subject from the original prompt (first 50 chars or up to first comma)
-        let coreSubject = originalPrompt.split(',')[0].substring(0, 80).trim();
+        // Strip out negative prompts first to avoid capturing them
+        let cleanPrompt = originalPrompt.split('--no')[0].trim();
+        let parts = cleanPrompt.split(/[,.]/);
+        
+        // Extract a rough subject and details from the original prompt
+        let coreSubject = parts[0] ? parts[0].substring(0, 100).trim() : "commercial subject";
+        let coreDetails = parts[1] ? parts[1].substring(0, 100).trim() : "";
+        
         if (!coreSubject) coreSubject = "commercial subject";
 
         const lighting = modifiers.lightings[Math.floor(Math.random() * modifiers.lightings.length)] || "professional lighting";
@@ -323,18 +365,28 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
         const style = modifiers.styles[Math.floor(Math.random() * modifiers.styles.length)] || "high quality";
         const composition = modifiers.compositions[Math.floor(Math.random() * modifiers.compositions.length)] || "standard composition";
         
+        // Combine original detail with new composition
+        const finalDetails = coreDetails ? `${coreDetails}, ${composition}` : composition;
+        
         let prompt = template.template
           .replace(/{subject}/g, coreSubject)
-          .replace(/{details}/g, composition)
+          .replace(/{details}/g, finalDetails)
           .replace(/{lighting}/g, lighting)
           .replace(/{mood}/g, mood)
           .replace(/{style}/g, style)
           .replace(/{aspect}/g, "16:9"); // Default aspect for programmatic
           
         prompt += negativePrompt;
-        optimizedPrompts.push(prompt);
+        
+        // Ensure uniqueness if possible, though with original prompts it's usually unique
+        let suffix = 1;
+        let finalPrompt = prompt;
+        while (optimizedPrompts.has(finalPrompt)) {
+          finalPrompt = prompt + ` --v ${suffix++}`; // Add a tiny variation to force uniqueness if needed
+        }
+        optimizedPrompts.add(finalPrompt);
       }
-      return optimizedPrompts;
+      return Array.from(optimizedPrompts);
     } catch (e) {
       console.error("Failed to parse JSON response:", text);
       throw new Error("Failed to parse the response from the AI. Please try again.");
@@ -352,17 +404,19 @@ ${JSON.stringify(prompts)}
 CRITICAL REQUIREMENTS FOR OPTIMIZATION (ADOBE STOCK):
 1. Enhance Technical Precision: Add specific lighting, camera angles, lens types, and aesthetic quality appropriate for a ${contentType}.
 2. Improve Commercial Utility: Ensure concepts are highly usable for designers and agencies. Add elements like 'copy space', 'authentic lifestyle', 'modern aesthetics', or 'clean backgrounds' where appropriate.
-3. Safe for Microstock: Ensure the optimized prompts naturally avoid requesting branded items, text, or recognizable logos.
-4. Maintain Original Intent: Keep the core subject and action of the original prompt, but elevate its quality and marketability.
-5. STRICT Template Alignment: You MUST strictly format each optimized prompt using this exact template structure:
+3. NO SIMILAR CONTENT: Ensure the optimized prompts are distinct enough from each other to avoid generating repetitive images.
+4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings.
+5. QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
+6. Maintain Original Intent: Keep the core subject and action of the original prompt, but elevate its quality and marketability.
+7. STRICT Template Alignment: You MUST strictly format each optimized prompt using this exact template structure:
 "${template.template}"
 Replace the bracketed placeholders with your optimized content. Do not add conversational text.
 
 Respond strictly with a JSON array of strings, where each string is the optimized version of the corresponding original prompt. The output array must have exactly the same length as the input array.
 Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
-${settings.includeNegative ? 'Append a strong negative prompt at the end of each optimized prompt (e.g., "--no text, watermark, deformed, blurry, logos").' : ''}`,
+${settings.includeNegative ? 'Append a strong negative prompt at the end of each optimized prompt (e.g., "--no text, watermark, deformed, blurry, logos, bad anatomy, extra limbs").' : ''}`,
     config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in optimizing and refining image generation prompts to produce flawless, authentic, and highly usable stock photography and illustrations.",
+      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in optimizing and refining image generation prompts to produce flawless, authentic, and highly usable stock photography and illustrations that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines.",
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.ARRAY,
@@ -378,7 +432,7 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
   text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
   
   try {
-    return JSON.parse(text);
+    return extractJSON(text);
   } catch (e) {
     console.error("Failed to parse JSON response:", text);
     throw new Error("Failed to parse the response from the AI. Please try again.");
