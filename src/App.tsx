@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X } from 'lucide-react';
-import { analyzeKeyword, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError } from './services/gemini';
+import { analyzeKeyword, generatePrompts, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError } from './services/gemini';
 import { CategoryResult, AppSettings, HistoryItem } from './types';
 import Settings from './components/Settings';
 import TopTab from './components/TopTab';
