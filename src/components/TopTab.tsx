@@ -140,7 +140,7 @@ export default function TopTab({
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <span className="text-slate-400 text-xs font-bold uppercase tracking-wider shrink-0">Content Type</span>
             <div className="flex flex-wrap gap-2">
-              {['Photo', 'Illustration', 'Vector', 'Background', 'Video', '3D Render'].map(type => (
+              {['Photo', 'Illustration', 'Vector', 'Background', 'Video', '3D Render', 'AI Art & Creativity'].map(type => (
                 <button
                   key={type}
                   onClick={() => setContentType(type)}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata } from './services/gemini';
+import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, scorePrompts } from './services/gemini';
 import { CategoryResult, AppSettings, HistoryItem, ReferenceFile } from './types';
 import Settings from './components/Settings';
 import TopTab from './components/TopTab';
@@ -39,7 +39,8 @@ export default function App() {
       'Vector': 'nanobanana-vector',
       'Background': 'nanobanana-background',
       'Video': 'veo-video',
-      '3D Render': 'nanobanana-3d'
+      '3D Render': 'nanobanana-3d',
+      'AI Art & Creativity': 'nanobanana-ai-art'
     },
     promptCount: 100,
     language: 'en',
@@ -261,13 +262,22 @@ export default function App() {
         opportunityScore: 100,
         creativeAdvice: 'Directly generated from reference.',
         generatedPrompts: prompts,
-        isGeneratingPrompts: false,
+        isGeneratingPrompts: true, // Temporarily true while scoring
         isUpgrading: false,
         isStarred: true,
       };
 
       setResults(prev => [quickResult, ...prev]);
       setActiveTab('prompt');
+
+      // Score the prompts
+      try {
+        const scores = await scorePrompts(prompts, settings, contentType, quickResult.categoryName);
+        setResults(prev => prev.map(r => r.id === quickResult.id ? { ...r, promptScores: scores, isGeneratingPrompts: false } : r));
+      } catch (scoreError) {
+        console.error("Scoring failed:", scoreError);
+        setResults(prev => prev.map(r => r.id === quickResult.id ? { ...r, isGeneratingPrompts: false } : r));
+      }
       
       setHistory(prev => [{
         id: Date.now().toString(),
@@ -308,9 +318,13 @@ export default function App() {
         referenceUrl || undefined
       );
 
+      // Score the prompts
+      const scores = await scorePrompts(prompts, settings, result.contentType, result.categoryName);
+
       setResults(prev => prev.map(r => r.id === id ? { 
         ...r, 
         generatedPrompts: prompts,
+        promptScores: scores,
         isGeneratingPrompts: false 
       } : r));
     } catch (error) {
@@ -341,9 +355,12 @@ export default function App() {
         referenceUrl || undefined
       );
       
+      // Re-score the optimized prompts
+      const scores = await scorePrompts(optimizedPrompts, settings, category.contentType, category.categoryName);
+
       setResults(prev => prev.map(c => {
         if (c.id === categoryId) {
-          return { ...c, generatedPrompts: optimizedPrompts, isUpgrading: false };
+          return { ...c, generatedPrompts: optimizedPrompts, promptScores: scores, isUpgrading: false };
         }
         return c;
       }));
@@ -387,6 +404,60 @@ export default function App() {
         message: handleGeminiError(error)
       });
       setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isGeneratingMetadata: false } : c));
+    }
+  };
+
+  const handleGenerateAllPrompts = async () => {
+    if (results.length === 0) return;
+    
+    setIsAnalyzing(true);
+    try {
+      const actualTotalCount = Math.min(settings.promptCount * results.length, 5000);
+      const promptMap = await generateAllPromptsBatch(
+        keyword,
+        results,
+        actualTotalCount,
+        settings,
+        contentType
+      );
+
+      const updatedResults = [...results];
+      
+      for (const result of updatedResults) {
+        const prompts = promptMap.get(result.categoryName) || [];
+        if (prompts.length > 0) {
+          result.generatedPrompts = prompts;
+          result.isGeneratingPrompts = true;
+        }
+      }
+      
+      setResults([...updatedResults]);
+      setActiveTab('prompt');
+
+      // Score each category's prompts
+      for (let i = 0; i < updatedResults.length; i++) {
+        const result = updatedResults[i];
+        if (result.generatedPrompts.length > 0) {
+          try {
+            const scores = await scorePrompts(result.generatedPrompts, settings, result.contentType, result.categoryName);
+            setResults(prev => prev.map(r => r.id === result.id ? { ...r, promptScores: scores, isGeneratingPrompts: false } : r));
+          } catch (scoreError) {
+            console.error(`Scoring failed for ${result.categoryName}:`, scoreError);
+            setResults(prev => prev.map(r => r.id === result.id ? { ...r, isGeneratingPrompts: false } : r));
+          }
+        }
+      }
+
+      setToast({ show: true, message: 'Semua prompt berhasil dibuat dan dinilai!' });
+    } catch (error) {
+      console.error("Batch generation failed:", error);
+      setErrorModal({
+        show: true,
+        title: 'Gagal Generate Massal',
+        message: handleGeminiError(error)
+      });
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -597,6 +668,8 @@ export default function App() {
           <AnalysisTab 
             results={results} 
             onToggleStar={handleToggleStar} 
+            onGenerateAll={handleGenerateAllPrompts}
+            isGeneratingAll={isAnalyzing}
           />
         )}
         

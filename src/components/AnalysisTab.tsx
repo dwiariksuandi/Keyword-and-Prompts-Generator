@@ -5,9 +5,11 @@ import { CategoryResult } from '../types';
 interface AnalysisTabProps {
   results: CategoryResult[];
   onToggleStar: (id: string) => void;
+  onGenerateAll: () => void;
+  isGeneratingAll: boolean;
 }
 
-export default function AnalysisTab({ results, onToggleStar }: AnalysisTabProps) {
+export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGeneratingAll }: AnalysisTabProps) {
   const totalKeywords = results.reduce((sum, c) => sum + c.mainKeywords.length, 0);
   const avgOpportunity = results.length > 0 
     ? Math.round(results.reduce((sum, c) => sum + c.opportunityScore, 0) / results.length)
@@ -54,9 +56,22 @@ export default function AnalysisTab({ results, onToggleStar }: AnalysisTabProps)
 
   return (
     <div className="max-w-6xl mx-auto px-6 pb-20 space-y-8">
-      <div className="text-center mt-10 mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Market Intelligence</h1>
-        <p className="text-slate-400 max-w-2xl mx-auto">Deep dive into keyword metrics, competition levels, and creative opportunities discovered for your niche.</p>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-10 mb-8">
+        <div className="text-center sm:text-left">
+          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Market Intelligence</h1>
+          <p className="text-slate-400 max-w-2xl mx-auto sm:mx-0">Deep dive into keyword metrics, competition levels, and creative opportunities discovered for your niche.</p>
+        </div>
+        <button
+          onClick={onGenerateAll}
+          disabled={isGeneratingAll}
+          className="flex items-center gap-2 bg-[#00D8B6] hover:bg-[#00c2a3] text-slate-900 font-bold px-6 py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,216,182,0.2)]"
+        >
+          {isGeneratingAll ? (
+            <><Sparkles className="w-5 h-5 animate-spin" /> Generating All...</>
+          ) : (
+            <><Sparkles className="w-5 h-5" /> Generate All Prompts</>
+          )}
+        </button>
       </div>
       
       {/* Stats Cards */}

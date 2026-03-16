@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from '@google/genai';
-import { AppSettings, PromptTemplate, ReferenceFile } from '../types';
+import { AppSettings, PromptTemplate, ReferenceFile, PromptScore } from '../types';
 
 export const promptTemplates: PromptTemplate[] = [
   // --- PHOTO ---
@@ -99,6 +99,34 @@ export const promptTemplates: PromptTemplate[] = [
     template: "Masterpiece digital {style} illustration of {subject}, {details}. {lighting}, {mood} atmosphere. Intricate details, vibrant colors, commercial editorial illustration, trending on ArtStation, 8k resolution.",
     description: "High-end illustration prompt for Nano Banana Pro",
     contentTypes: ["Illustration"]
+  },
+  {
+    id: "nanobanana-ai-art",
+    name: "Nano Banana Pro (AI Art)",
+    template: "Surreal and conceptual {style} AI art piece titled '{subject}', {details}. {lighting}, {mood} color palette. Intricate generative patterns, fluid forms, digital dreamscape, high-concept creativity, trending on ArtStation and Behance, 8k resolution, masterpiece.",
+    description: "Conceptual and creative AI art prompt for Nano Banana Pro",
+    contentTypes: ["AI Art & Creativity"]
+  },
+  {
+    id: "midjourney-ai-art",
+    name: "Midjourney v6 (AI Art)",
+    template: "Conceptual {style} AI art of {subject}, {details}, {lighting}, {mood}, surrealism, abstract expressionism, intricate details, professional quality, high-concept, no text. --ar {aspect} --v 6.0 --stylize 750",
+    description: "High-stylization prompts for Midjourney AI art",
+    contentTypes: ["AI Art & Creativity"]
+  },
+  {
+    id: "dalle-ai-art",
+    name: "DALL-E 3 (AI Art)",
+    template: "A highly creative and conceptual {style} AI art piece depicting {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. Surreal elements, digital art masterpiece, high resolution, no text.",
+    description: "Creative and conceptual prompts for DALL-E 3",
+    contentTypes: ["AI Art & Creativity"]
+  },
+  {
+    id: "stock-ai-art",
+    name: "Adobe Stock AI Art",
+    template: "Conceptual AI art: {subject}. {details}. {style} aesthetic, {lighting}, {mood}. High commercial utility for creative projects, clean composition, 8k resolution, masterpiece.",
+    description: "Optimized for Adobe Stock's AI art category",
+    contentTypes: ["AI Art & Creativity"]
   },
   {
     id: "midjourney-niji",
@@ -274,6 +302,8 @@ function getContentTypeInstructions(contentType: string): string {
       return "Focus on cinematic elements: camera movement (e.g., pan, tilt, tracking shot), frame rate, resolution (e.g., 4K, 8K), lighting, motion blur, and dynamic action. Emphasize storytelling and high-end stock footage standards.";
     case '3D Render':
       return "Focus on 3D elements: rendering engines (e.g., Octane, Unreal Engine), materials (e.g., glass, metal, matte), lighting (e.g., volumetric, HDRI), isometric views, and hyper-realism or stylized 3D. Emphasize modern 3D design trends.";
+    case 'AI Art & Creativity':
+      return "Focus on conceptual and surreal elements: abstract forms, generative patterns, dreamlike atmospheres, high-concept creativity, and unique digital aesthetics. Emphasize artistic innovation, emotional impact, and commercial utility for creative editorial or advertising projects.";
     default:
       return "Focus on high-quality, commercially viable visual elements appropriate for this asset type.";
   }
@@ -377,6 +407,83 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     console.error("Failed to parse JSON response:", text);
     throw new Error("Failed to parse the response from the AI. Please try again.");
   }
+}
+
+export async function scorePrompts(prompts: string[], settings: AppSettings, contentType: string, categoryName: string): Promise<PromptScore[]> {
+  const ai = getAI(settings.apiKey);
+  
+  // Chunking to avoid token limits (max 15 per request for scoring)
+  const chunkSize = 15;
+  const chunks = [];
+  for (let i = 0; i < prompts.length; i += chunkSize) {
+    chunks.push(prompts.slice(i, i + chunkSize));
+  }
+
+  let allScores: PromptScore[] = [];
+
+  for (const chunk of chunks) {
+    const promptText = `Evaluate the quality of the following ${chunk.length} image generation prompts for Adobe Stock. 
+    Target Asset Type: '${contentType}'
+    Niche: '${categoryName}'
+
+    ${getContentTypeInstructions(contentType)}
+
+    CRITICAL EVALUATION CRITERIA (Score 0-100 for each):
+    1. Keyword Density: Are the keywords relevant and well-distributed? (Avoid stuffing, but ensure essential terms are present).
+    2. Clarity: Is the prompt easy for an AI to understand? Is the subject clear?
+    3. Specificity: Does it provide enough detail (lighting, composition, textures) to generate a high-quality, unique image?
+    4. Adobe Stock Adherence: Does it follow commercial utility rules (copy space, diversity, authentic lifestyle) and AI compliance (no brands, no text)?
+
+    Prompts to evaluate:
+    ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
+
+    Respond strictly with a JSON array of objects, one for each prompt in the same order.
+    Each object MUST have:
+    - prompt: (the original prompt string)
+    - score: (overall quality score 0-100)
+    - density: (0-100)
+    - clarity: (0-100)
+    - specificity: (0-100)
+    - adherence: (0-100)
+    - feedback: (Short, actionable advice to improve this specific prompt for Adobe Stock).`;
+
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3-flash-preview',
+      contents: promptText,
+      config: {
+        systemInstruction: "You are an expert Adobe Stock Quality Reviewer and AI Prompt Auditor. Your job is to provide harsh but fair evaluations of image prompts to ensure they meet the highest commercial and technical standards of Adobe Stock.",
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              prompt: { type: Type.STRING },
+              score: { type: Type.INTEGER },
+              density: { type: Type.INTEGER },
+              clarity: { type: Type.INTEGER },
+              specificity: { type: Type.INTEGER },
+              adherence: { type: Type.INTEGER },
+              feedback: { type: Type.STRING }
+            },
+            required: ["prompt", "score", "density", "clarity", "specificity", "adherence", "feedback"]
+          }
+        }
+      }
+    });
+
+    let text = response.text;
+    if (!text) continue;
+    
+    try {
+      const parsed = extractJSON(text);
+      allScores = [...allScores, ...parsed];
+    } catch (e) {
+      console.error("Failed to parse JSON response for scoring chunk:", text);
+    }
+  }
+
+  return allScores;
 }
 
 export async function generatePrompts(keyword: string, categoryName: string, count: number, settings: AppSettings, contentType: string, referenceFile?: ReferenceFile, referenceUrl?: string) {
@@ -500,15 +607,19 @@ ${getContentTypeInstructions(contentType)}
 
 CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated prompts reflect REAL market demand and current design trends.
 
-${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. 
-This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
-Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter).
-The niche '${categoryName}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the URL into a highly commercial stock asset.` : ''}
-${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference.
-This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
-Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter).
-The niche '${categoryName}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the file into a highly commercial stock asset.` : ''}
+${referenceUrl ? `CRITICAL AESTHETIC REFERENCE (URL): ${referenceUrl}
+You MUST use the urlContext tool to analyze this URL. 
+LOGIC: Use this URL EXCLUSIVELY as the source for AESTHETIC DNA (lighting, color palette, mood, artistic style, and composition).
+The niche '${categoryName}' is the PRIMARY SUBJECT. 
+TASK: Apply the aesthetic DNA from the URL to the subject matter of '${categoryName}'. 
+ADOBE STOCK SAFETY: Do not replicate the specific content or characters from the URL. Create original scenes that feel like they belong to the same visual universe but serve a different commercial purpose.` : ''}
+${referenceFile ? `CRITICAL AESTHETIC REFERENCE (FILE): Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'}.
+LOGIC: Use this file EXCLUSIVELY as the source for AESTHETIC DNA (lighting, color palette, mood, artistic style, and composition).
+The niche '${categoryName}' is the PRIMARY SUBJECT. 
+TASK: Apply the aesthetic DNA from the file to the subject matter of '${categoryName}'. 
+ADOBE STOCK SAFETY: Do not make a literal copy of the reference. Ensure the generated prompts describe unique compositions and subjects to avoid 'Similar Content' rejection.` : ''}
+
+${contentType === 'AI Art & Creativity' ? `SPECIAL AI ART INSTRUCTION: For this category, prioritize surrealism, abstract concepts, and innovative digital aesthetics. If a reference is provided, deeply analyze its 'Aesthetic Soul'—not just the subject, but the emotional resonance, the texture of the light, and the complexity of the forms. Incorporate these into the prompts to create something that feels like a creative evolution of the reference.` : ''}
 
 CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 1. ALGORITHM OPTIMIZATION & Commercial Utility: Ensure concepts are highly usable for designers and agencies. You MUST include concepts with 'copy space', 'authentic lifestyle', 'diverse representation', 'modern aesthetics', or 'clean backgrounds' where appropriate.
@@ -577,17 +688,19 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
   CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this asset type. Ensure your generated prompts reflect REAL market demand and current design trends.
 
   ${keyword ? `The core theme/keyword is: '${keyword}'.` : ''}
-  ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-  You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. 
-  This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
-  Extract the "Visual DNA" (lighting, color palette, mood, composition, subject matter).
-  ${keyword ? `The core theme/keyword '${keyword}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the URL into a highly commercial stock asset.` : 'Adapt the primary visual DNA from the URL into highly commercial stock assets.'}
-  DO NOT make literal copies; instead, create new scenes heavily inspired by this aesthetic and concept.` : ''}
-  ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference.
-  This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
-  Extract the "Visual DNA" (lighting, color palette, mood, composition, subject matter).
-  ${keyword ? `The core theme/keyword '${keyword}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the file into a highly commercial stock asset.` : 'Adapt the primary visual DNA from the file into highly commercial stock assets.'}
-  DO NOT make literal copies; instead, create new scenes heavily inspired by this aesthetic and concept.` : ''}
+  ${referenceUrl ? `CRITICAL AESTHETIC REFERENCE (URL): ${referenceUrl}
+  You MUST use the urlContext tool to analyze this URL. 
+  LOGIC: Use this URL as the source for AESTHETIC DNA (lighting, color palette, mood, artistic style, and composition).
+  The keyword '${keyword || 'subject'}' is the PRIMARY SUBJECT. 
+  TASK: Apply the aesthetic DNA from the URL to the subject matter. 
+  ADOBE STOCK SAFETY: Do not replicate the specific content from the URL. Create original scenes that capture the 'vibe' without infringing on IP.` : ''}
+  ${referenceFile ? `CRITICAL AESTHETIC REFERENCE (FILE): Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'}.
+  LOGIC: Use this file as the source for AESTHETIC DNA (lighting, color palette, mood, artistic style, and composition).
+  The keyword '${keyword || 'subject'}' is the PRIMARY SUBJECT. 
+  TASK: Apply the aesthetic DNA from the file to the subject matter. 
+  ADOBE STOCK SAFETY: Ensure high variety in compositions to avoid 'Similar Content' rejections. Each prompt must be a distinct creative work.` : ''}
+
+${contentType === 'AI Art & Creativity' ? `SPECIAL AI ART INSTRUCTION: For this category, prioritize surrealism, abstract concepts, and innovative digital aesthetics. If a reference is provided, deeply analyze its 'Aesthetic Soul'—not just the subject, but the emotional resonance, the texture of the light, and the complexity of the forms. Incorporate these into the prompts to create something that feels like a creative evolution of the reference.` : ''}
 
   CRITICAL REQUIREMENTS FOR ADOBE STOCK:
   1. ALGORITHM OPTIMIZATION & Commercial Utility: Ensure concepts are highly usable for designers and agencies. You MUST include concepts with 'copy space', 'authentic lifestyle', 'diverse representation', 'modern aesthetics', or 'clean backgrounds' where appropriate.

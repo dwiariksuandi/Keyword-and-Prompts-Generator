@@ -204,22 +204,72 @@ export default function PromptTab({
               ) : (
                 <div className="grid grid-cols-1 gap-4">
                   {category.generatedPrompts.map((prompt, index) => (
-                    <div key={index} className="bg-slate-800/20 border border-slate-800/50 rounded-2xl p-5 flex gap-5 group hover:border-[#00D8B6]/30 hover:bg-slate-800/40 transition-all">
-                      <div className="flex-shrink-0 w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-[#00D8B6] font-black text-sm border border-slate-800 group-hover:border-[#00D8B6]/20 transition-all">
-                        {index + 1}
+                    <div key={index} className="bg-slate-800/20 border border-slate-800/50 rounded-2xl p-5 flex flex-col gap-4 group hover:border-[#00D8B6]/30 hover:bg-slate-800/40 transition-all">
+                      <div className="flex gap-5">
+                        <div className="flex-shrink-0 w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-[#00D8B6] font-black text-sm border border-slate-800 group-hover:border-[#00D8B6]/20 transition-all">
+                          {index + 1}
+                        </div>
+                        <div className="flex-grow pt-1">
+                          <p className="text-slate-300 text-sm leading-relaxed font-medium">{prompt}</p>
+                        </div>
+                        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                          <button 
+                            onClick={() => handleCopy(prompt)}
+                            className="p-3 bg-slate-900 hover:bg-[#00D8B6] hover:text-slate-900 rounded-xl text-slate-400 transition-all border border-slate-800"
+                            title="Copy Prompt"
+                          >
+                            <Copy size={16} />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex-grow pt-1">
-                        <p className="text-slate-300 text-sm leading-relaxed font-medium">{prompt}</p>
-                      </div>
-                      <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                        <button 
-                          onClick={() => handleCopy(prompt)}
-                          className="p-3 bg-slate-900 hover:bg-[#00D8B6] hover:text-slate-900 rounded-xl text-slate-400 transition-all border border-slate-800"
-                          title="Copy Prompt"
-                        >
-                          <Copy size={16} />
-                        </button>
-                      </div>
+
+                      {category.promptScores && category.promptScores[index] && (
+                        <div className="mt-2 pt-4 border-t border-slate-800/50">
+                          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                                category.promptScores[index].score >= 80 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                category.promptScores[index].score >= 60 ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' :
+                                'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                              }`}>
+                                Quality Score: {category.promptScores[index].score}%
+                              </div>
+                            </div>
+                            <div className="flex gap-4">
+                              <div className="flex flex-col items-center">
+                                <span className="text-[8px] text-slate-500 uppercase font-bold mb-1">Density</span>
+                                <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                  <div className="h-full bg-[#00D8B6]" style={{ width: `${category.promptScores[index].density}%` }} />
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-center">
+                                <span className="text-[8px] text-slate-500 uppercase font-bold mb-1">Clarity</span>
+                                <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                  <div className="h-full bg-cyan-500" style={{ width: `${category.promptScores[index].clarity}%` }} />
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-center">
+                                <span className="text-[8px] text-slate-500 uppercase font-bold mb-1">Specific</span>
+                                <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                  <div className="h-full bg-indigo-500" style={{ width: `${category.promptScores[index].specificity}%` }} />
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-center">
+                                <span className="text-[8px] text-slate-500 uppercase font-bold mb-1">Adobe</span>
+                                <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                  <div className="h-full bg-purple-500" style={{ width: `${category.promptScores[index].adherence}%` }} />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-800/50">
+                            <p className="text-[11px] text-slate-400 italic leading-relaxed">
+                              <span className="text-[#00D8B6] font-bold not-italic mr-1">Feedback:</span>
+                              {category.promptScores[index].feedback}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

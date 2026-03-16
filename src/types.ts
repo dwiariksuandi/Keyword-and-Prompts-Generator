@@ -5,6 +5,16 @@ export interface ReferenceFile {
   previewUrl: string;
 }
 
+export interface PromptScore {
+  prompt: string;
+  score: number;
+  density: number;
+  clarity: number;
+  specificity: number;
+  adherence: number;
+  feedback: string;
+}
+
 export interface CategoryResult {
   id: string;
   categoryName: string;
@@ -20,6 +30,7 @@ export interface CategoryResult {
   opportunityScore: number;
   creativeAdvice: string;
   generatedPrompts: string[];
+  promptScores?: PromptScore[];
   isGeneratingPrompts: boolean;
   isUpgrading: boolean;
   isStarred: boolean;
