@@ -162,8 +162,7 @@ export default function App() {
       setAestheticAnalysis(analysis);
     } catch (error) {
       console.error("Aesthetic analysis failed:", error);
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menganalisis estetika.';
-      setToast({ show: true, message: errorMessage });
+      setToast({ show: true, message: 'Gagal menganalisis estetika.' });
     } finally {
       setIsAnalyzingAesthetic(false);
     }
@@ -736,15 +735,15 @@ export default function App() {
                 >
                   <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full min-w-[1000px] text-left text-sm border-collapse">
-                      <thead className="text-[10px] text-slate-500 uppercase tracking-[0.15em] font-bold border-b border-white/5 bg-white/[0.02]">
+                      <thead className="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold border-b border-white/5 bg-white/[0.02]">
                         <tr>
-                          <th className="px-8 py-5 font-bold">Neural Sector</th>
-                          <th className="px-8 py-5 font-bold">Data Vectors</th>
-                          <th className="px-8 py-5 font-bold">Volume</th>
-                          <th className="px-8 py-5 font-bold">Competition</th>
-                          <th className="px-8 py-5 font-bold">Trend</th>
-                          <th className="px-8 py-5 font-bold">Opportunity</th>
-                          <th className="px-8 py-5 font-bold text-right">Protocol</th>
+                          <th className="px-6 py-4 font-bold">Neural Sector</th>
+                          <th className="px-6 py-4 font-bold">Data Vectors</th>
+                          <th className="px-6 py-4 font-bold">Volume</th>
+                          <th className="px-6 py-4 font-bold">Competition</th>
+                          <th className="px-6 py-4 font-bold">Trend</th>
+                          <th className="px-6 py-4 font-bold text-center">Opportunity</th>
+                          <th className="px-6 py-4 font-bold text-right">Protocol</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.03]">

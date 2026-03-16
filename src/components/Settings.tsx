@@ -313,6 +313,17 @@ export default function Settings({
                     </motion.button>
                   ))}
                 </div>
+                <div className="mt-4 p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2">
+                  <p className="text-[10px] text-slate-500 leading-relaxed font-light">
+                    <span className="text-accent/80 font-bold mr-1">Low:</span> Fokus, literal, dan dapat diprediksi.
+                  </p>
+                  <p className="text-[10px] text-slate-500 leading-relaxed font-light">
+                    <span className="text-accent/80 font-bold mr-1">Mid:</span> Keseimbangan antara akurasi dan kreativitas.
+                  </p>
+                  <p className="text-[10px] text-slate-500 leading-relaxed font-light">
+                    <span className="text-accent/80 font-bold mr-1">High:</span> Kreativitas maksimal dan eksplorasi ide unik.
+                  </p>
+                </div>
               </div>
             </div>
 

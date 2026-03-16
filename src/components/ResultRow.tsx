@@ -56,43 +56,43 @@ export const ResultRow: React.FC<ResultRowProps> = ({ result, onToggleStar, onVi
       animate={{ opacity: 1, x: 0 }}
       className="group hover:bg-white/[0.03] transition-all duration-500 border-b border-white/[0.05]"
     >
-      <td className="px-8 py-6 align-middle">
-        <div className="flex items-center gap-6">
+      <td className="px-6 py-5 align-middle">
+        <div className="flex items-center gap-4">
           <motion.button 
-            whileHover={{ scale: 1.3, rotate: 15 }}
-            whileTap={{ scale: 0.8 }}
+            whileHover={{ scale: 1.2, rotate: 10 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => onToggleStar(result.id)} 
-            className={`transition-all duration-300 ${result.isStarred ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' : 'text-slate-600 hover:text-slate-400'}`}
+            className={`transition-all duration-300 shrink-0 ${result.isStarred ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' : 'text-slate-600 hover:text-slate-400'}`}
           >
-            <Star size={20} fill={result.isStarred ? 'currentColor' : 'none'} />
+            <Star size={18} fill={result.isStarred ? 'currentColor' : 'none'} />
           </motion.button>
-          <span className="text-white font-bold tracking-tight font-display text-xl group-hover:text-accent transition-all duration-500">
+          <span className="text-white font-bold tracking-tight font-display text-lg group-hover:text-accent transition-all duration-500 leading-tight">
             {result.categoryName}
           </span>
         </div>
       </td>
-      <td className="px-8 py-6 align-middle">
-        <div className="flex flex-wrap gap-1.5 max-w-[240px]">
+      <td className="px-6 py-5 align-middle">
+        <div className="flex flex-wrap gap-1.5 max-w-[220px]">
           {result.mainKeywords.slice(0, 3).map((kw, i) => (
-            <span key={i} className="bg-white/5 text-slate-400 text-[9px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-lg border border-white/5 group-hover:border-accent/30 transition-all duration-500 whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
+            <span key={i} className="bg-white/5 text-slate-400 text-[8px] font-bold uppercase tracking-[0.1em] px-2.5 py-1 rounded-md border border-white/5 group-hover:border-accent/30 transition-all duration-500 whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
               {kw}
             </span>
           ))}
           {result.mainKeywords.length > 3 && (
-            <span className="bg-accent/10 text-accent text-[9px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-lg border border-accent/20">
+            <span className="bg-accent/10 text-accent text-[8px] font-bold uppercase tracking-[0.1em] px-2 py-1 rounded-md border border-accent/20">
               +{result.mainKeywords.length - 3}
             </span>
           )}
         </div>
       </td>
-      <td className="px-8 py-6 align-middle">
-        <div className="flex flex-col gap-1">
-          <span className="text-white font-bold font-mono text-lg tracking-tighter">{result.volumeLevel}</span>
-          <span className="text-slate-500 text-[10px] font-mono uppercase tracking-[0.3em] font-bold">{result.volumeNumber.toLocaleString()}</span>
+      <td className="px-6 py-5 align-middle">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-white font-bold font-mono text-base tracking-tighter">{result.volumeLevel}</span>
+          <span className="text-slate-500 text-[9px] font-mono uppercase tracking-[0.2em] font-bold">{result.volumeNumber.toLocaleString()}</span>
         </div>
       </td>
-      <td className="px-8 py-6 align-middle">
-        <span className={`text-[10px] font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-xl border ${
+      <td className="px-6 py-5 align-middle">
+        <span className={`text-[9px] font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-lg border inline-block ${
           result.competition === 'High' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
           result.competition === 'Medium' ? 'bg-accent/10 text-accent border-accent/20' :
           'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
@@ -100,44 +100,46 @@ export const ResultRow: React.FC<ResultRowProps> = ({ result, onToggleStar, onVi
           {result.competition}
         </span>
       </td>
-      <td className="px-8 py-6 align-middle">
-        <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg ${
+      <td className="px-6 py-5 align-middle">
+        <div className="flex items-center gap-2.5">
+          <div className={`p-1.5 rounded-lg ${
             result.trend === 'down' ? 'bg-rose-500/5' : 
             result.trend === 'up' ? 'bg-emerald-500/5' : 'bg-white/5'
           }`}>
             {result.trend === 'down' ? (
-              <TrendingDown size={18} className="text-rose-400" />
+              <TrendingDown size={16} className="text-rose-400" />
             ) : result.trend === 'up' ? (
-              <TrendingUp size={18} className="text-emerald-400" />
+              <TrendingUp size={16} className="text-emerald-400" />
             ) : (
-              <Minus size={18} className="text-slate-500" />
+              <Minus size={16} className="text-slate-500" />
             )}
           </div>
-          <span className={`font-bold font-mono text-base tracking-tighter ${
+          <span className={`font-bold font-mono text-sm tracking-tighter ${
             result.trend === 'down' ? 'text-rose-400' : 
             result.trend === 'up' ? 'text-emerald-400' : 'text-slate-500'
           }`}>{result.trendPercent}%</span>
         </div>
       </td>
-      <td className="px-8 py-6 align-middle">
-        <OpportunityScore score={result.opportunityScore} />
+      <td className="px-6 py-5 align-middle">
+        <div className="flex justify-center">
+          <OpportunityScore score={result.opportunityScore} />
+        </div>
       </td>
-      <td className="px-8 py-6 align-middle text-right">
+      <td className="px-6 py-5 align-middle text-right">
         <motion.button 
-          whileHover={{ scale: 1.05, y: -2 }}
+          whileHover={{ scale: 1.05, y: -1 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onViewPrompts(result.id)}
-          className={`px-6 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-500 border ${
+          className={`px-5 py-2.5 rounded-xl text-[9px] font-bold uppercase tracking-[0.15em] transition-all duration-500 border ${
             result.generatedPrompts.length > 0 
               ? 'bg-white/5 text-white border-white/10 hover:border-accent/50 hover:bg-accent/5' 
-              : 'bg-accent text-slate-900 border-accent/20 shadow-xl shadow-accent/20'
+              : 'bg-accent text-slate-900 border-accent/20 shadow-lg shadow-accent/10'
           }`}
         >
           {result.generatedPrompts.length > 0 ? (
-            <span className="flex items-center gap-3"><FileText size={16} /> View Assets</span>
+            <span className="flex items-center gap-2"><FileText size={14} /> Assets</span>
           ) : (
-            <span className="flex items-center gap-3"><Zap size={16} /> Synthesize</span>
+            <span className="flex items-center gap-2"><Zap size={14} /> Synthesize</span>
           )}
         </motion.button>
       </td>
