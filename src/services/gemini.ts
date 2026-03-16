@@ -260,29 +260,56 @@ export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean
   }
 }
 
+function getContentTypeInstructions(contentType: string): string {
+  switch (contentType) {
+    case 'Photo':
+      return "Focus on photographic elements: camera angles, lighting (e.g., golden hour, studio lighting), lens types (e.g., macro, wide-angle), depth of field, and realistic human subjects or environments. Emphasize authenticity and commercial photography standards.";
+    case 'Illustration':
+      return "Focus on illustrative elements: art styles (e.g., flat design, watercolor, digital painting), color palettes, line work, and artistic composition. Emphasize creativity, stylistic consistency, and commercial illustration trends.";
+    case 'Vector':
+      return "Focus on vector-specific elements: clean lines, scalable graphics, flat colors, isometric designs, icons, and UI/UX elements. Emphasize simplicity, versatility, and modern graphic design trends.";
+    case 'Background':
+      return "Focus on background elements: textures, abstract patterns, gradients, bokeh, minimalistic spaces, and copy space. Emphasize usability as a backdrop for text or other design elements.";
+    case 'Video':
+      return "Focus on cinematic elements: camera movement (e.g., pan, tilt, tracking shot), frame rate, resolution (e.g., 4K, 8K), lighting, motion blur, and dynamic action. Emphasize storytelling and high-end stock footage standards.";
+    case '3D Render':
+      return "Focus on 3D elements: rendering engines (e.g., Octane, Unreal Engine), materials (e.g., glass, metal, matte), lighting (e.g., volumetric, HDRI), isometric views, and hyper-realism or stylized 3D. Emphasize modern 3D design trends.";
+    default:
+      return "Focus on high-quality, commercially viable visual elements appropriate for this asset type.";
+  }
+}
+
 export async function analyzeKeyword(keyword: string, contentType: string, settings: AppSettings, referenceFile?: ReferenceFile, referenceUrl?: string) {
   const ai = getAI(settings.apiKey);
   
   const promptText = `Perform an exhaustive, data-driven microstock market analysis targeting the asset type: '${contentType}'.
 
+${getContentTypeInstructions(contentType)}
+
 CRITICAL: You MUST use Google Search to find REAL, CURRENT data, trends, and search volumes for Adobe Stock and the microstock industry. Do not rely solely on your internal knowledge; ground your analysis in actual, up-to-date market realities to avoid bias.
 
 ${keyword ? `The broad keyword context is: '${keyword}'.` : 'No specific keyword was provided.'}
-${referenceUrl ? `CRITICAL REFERENCE URL: ${referenceUrl}
+${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
 You MUST use the urlContext tool to fetch and deeply analyze the content of this URL. 
-1. Extract the core visual themes, color palettes, lighting styles, subject matter, and underlying concepts.
-2. Identify the target audience and commercial purpose of the content.
-3. Use Google Search to cross-reference these extracted themes with current market demand on Adobe Stock.
-4. Identify highly profitable, underserved niche opportunities inspired by the aesthetic and concepts of this URL.` : ''}
+This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for this analysis.
+1. Extract the core visual themes, color palettes, lighting styles, subject matter, and underlying concepts from the URL.
+2. The generated niches MUST be directly derived from, or highly complementary to, the specific content found in this URL. Do not deviate into unrelated topics.
+3. Identify the target audience and commercial purpose of the content in the URL.
+4. Use Google Search to cross-reference these extracted themes with current market demand on Adobe Stock to find profitable angles based on the URL's core concept.` : ''}
 ${!keyword && !referenceUrl && referenceFile ? 'Please derive the niche opportunities primarily from the visual content of the provided reference.' : ''}
 
 Your objective is to uncover 4 to 6 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.
 
-${referenceFile ? `I have provided an ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference. Please analyze the visual style, composition, subject matter, and mood of this reference. Use it to identify niche opportunities that are visually similar, complementary, or inspired by this specific style, but remain underserved in the current market.` : ''}
+${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: I have provided an ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference. 
+This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for this analysis.
+1. Extract the core visual themes, color palettes, lighting styles, subject matter, and underlying concepts from the file.
+2. The generated niches MUST be directly derived from, or highly complementary to, the specific content found in this file. Do not deviate into unrelated topics.
+3. Identify the target audience and commercial purpose of the content in the file.
+4. Use Google Search to cross-reference these extracted themes with current market demand on Adobe Stock to find profitable angles based on the file's core concept.` : ''}
 
 CRITICAL ADOBE STOCK RULES:
 - GENERATIVE AI COMPLIANCE: The niches MUST NOT rely on trademarked/copyrighted elements, specific brands, recognizable characters, or real known restricted places/buildings. Focus on generic, commercially safe concepts (e.g., "generic modern smartphone" instead of "iPhone").
-- NO SIMILAR CONTENT: Ensure the 4 to 6 niches are distinct from each other.
+- NO SIMILAR CONTENT: Ensure the 4 to 6 niches are distinct from each other, while still adhering to the main idea if a reference URL/file is provided.
 
 For each niche, you MUST provide realistic, data-backed market metrics based on your search:
 1. categoryName: A highly specific, commercial niche name (e.g., "Gen Z Sustainable Office Lifestyle" instead of "Business People").
@@ -292,7 +319,7 @@ For each niche, you MUST provide realistic, data-backed market metrics based on 
 5. trend & trendPercent: Current market trajectory based on real-world news/seasons (e.g., +45% due to recent events).
 6. difficultyScore: 0-100. How hard is it for a new contributor to rank on page 1?
 7. opportunityScore: 0-100. The ultimate metric. High volume + Low competition = High Opportunity (80-100).
-8. creativeAdvice: Highly specific art direction based on current design trends. What exact visual elements, lighting, colors, or compositions are missing in the current market for this niche? ${referenceFile ? 'Incorporate elements from the provided reference where it makes commercial sense.' : ''}
+8. creativeAdvice: Highly specific art direction based on current design trends. What exact visual elements, lighting, colors, or compositions are missing in the current market for this niche? ${referenceUrl ? 'Ensure the advice heavily incorporates the aesthetic and concepts from the reference URL.' : ''} ${referenceFile ? 'Ensure the advice heavily incorporates the aesthetic and concepts from the reference file.' : ''}
 
 CRITICAL: Ensure mathematical and logical consistency. If competition is 95/100 (oversaturated), the opportunity score MUST be low (under 40) unless the volume is exceptionally massive and growing rapidly. Prioritize finding "Blue Ocean" niches (High Opportunity).
 Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
@@ -363,11 +390,19 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
   if (count > 30) {
     const promptText = `Generate a rich set of prompt components for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}' and the target platform is '${template.name}'.
       
+      ${getContentTypeInstructions(contentType)}
+
       CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated components reflect REAL market demand and current design trends.
 
-      ${referenceUrl ? `CRITICAL REFERENCE URL: ${referenceUrl}
-      You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. Extract its "Visual DNA" (lighting, color palette, mood, composition) and apply it to the generated components to ensure they match the aesthetic quality of the reference.` : ''}
-      ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" (lighting, color palette, aesthetic) and apply it to the components.` : ''}
+      ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
+      You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. 
+      This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
+      Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter).
+      The niche '${categoryName}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the URL into a highly commercial stock asset.` : ''}
+      ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference.
+      This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
+      Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter).
+      The niche '${categoryName}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the file into a highly commercial stock asset.` : ''}
 
       We need to programmatically generate ${count} unique combinations. Please provide:
       1. 30 highly distinct subjects (e.g., "a young professional woman", "a modern office desk", "a diverse team of engineers"). MUST be diverse in age, ethnicity, and core concept.
@@ -460,11 +495,19 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
   // Standard generation for smaller counts
   const promptTextSmall = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}' and the target platform is '${template.name}'.
 
+${getContentTypeInstructions(contentType)}
+
 CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated prompts reflect REAL market demand and current design trends.
 
-${referenceUrl ? `CRITICAL REFERENCE URL: ${referenceUrl}
-You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. Extract its "Visual DNA" (lighting, color palette, mood, composition) and apply it to the generated prompts to ensure they match the aesthetic quality of the reference.` : ''}
-${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" and apply it to these prompts.` : ''}
+${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
+You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. 
+This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
+Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter).
+The niche '${categoryName}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the URL into a highly commercial stock asset.` : ''}
+${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference.
+This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
+Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter).
+The niche '${categoryName}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the file into a highly commercial stock asset.` : ''}
 
 CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 1. Commercial Utility: Ensure concepts are highly usable for designers and agencies. Include concepts with 'copy space', 'authentic lifestyle', 'modern aesthetics', or 'clean backgrounds' where appropriate.
@@ -528,12 +571,22 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
   
   const promptText = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts. The target asset type is '${contentType}' and the target platform is '${template.name}'.
   
+  ${getContentTypeInstructions(contentType)}
+
   CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this asset type. Ensure your generated prompts reflect REAL market demand and current design trends.
 
   ${keyword ? `The core theme/keyword is: '${keyword}'.` : ''}
-  ${referenceUrl ? `CRITICAL REFERENCE URL: ${referenceUrl}
-  You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. Extract the "Visual DNA" (lighting, color palette, mood, composition) and apply it to new, distinct scenarios. DO NOT make literal copies; instead, create new scenes inspired by this aesthetic.` : ''}
-  ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" and apply it to these prompts. DO NOT make literal copies; instead, create new scenes inspired by this aesthetic.` : ''}
+  ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
+  You MUST use the urlContext tool to deeply analyze the visual style, trends, and content from this URL. 
+  This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
+  Extract the "Visual DNA" (lighting, color palette, mood, composition, subject matter).
+  ${keyword ? `The core theme/keyword '${keyword}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the URL into a highly commercial stock asset.` : 'Adapt the primary visual DNA from the URL into highly commercial stock assets.'}
+  DO NOT make literal copies; instead, create new scenes heavily inspired by this aesthetic and concept.` : ''}
+  ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference.
+  This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
+  Extract the "Visual DNA" (lighting, color palette, mood, composition, subject matter).
+  ${keyword ? `The core theme/keyword '${keyword}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the file into a highly commercial stock asset.` : 'Adapt the primary visual DNA from the file into highly commercial stock assets.'}
+  DO NOT make literal copies; instead, create new scenes heavily inspired by this aesthetic and concept.` : ''}
 
   CRITICAL REQUIREMENTS FOR ADOBE STOCK:
   1. Commercial Utility: Ensure concepts are highly usable for designers and agencies. Include 'copy space' where relevant.
@@ -603,12 +656,18 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       We need to perform a "Technical Upgrade" on a large batch of similar prompts for Adobe Stock (${contentType}).
       GOAL: Enhance the technical quality (lighting, camera, resolution) WITHOUT changing the core visual subject or scene of each prompt.
       
+      ${getContentTypeInstructions(contentType)}
+
       CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
 
       ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
-      ${referenceUrl ? `CRITICAL REFERENCE URL: ${referenceUrl}
-      You MUST use the urlContext tool to deeply analyze the visual style from this URL. Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.` : ''}
-      ${referenceFile ? `Use the visual style from the provided reference as a technical quality benchmark.` : ''}
+      ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
+      You MUST use the urlContext tool to deeply analyze the visual style from this URL. 
+      This URL is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
+      Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.` : ''}
+      ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided reference file.
+      This reference file is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
+      Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.` : ''}
 
       Provide a set of "Technical Enhancement Layers" that can be applied to preserve the original subject:
       1. 10 premium technical modifiers (e.g., "shot on 85mm lens, f/1.8", "high-end commercial photography, 8k")
@@ -692,9 +751,21 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
   }
 
   // Standard optimization for smaller arrays
-  const promptTextSmall = `Optimize the following list of image generation prompts. 
+  const promptTextSmall = `Optimize the following list of image generation prompts. The target asset type is '${contentType}'.
   
+  ${getContentTypeInstructions(contentType)}
+
   CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
+
+  ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
+  You MUST use the urlContext tool to deeply analyze the visual style from this URL. 
+  This URL is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
+  Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.
+  Ensure the upgraded prompts reflect the high-end technical qualities found in this URL.` : ''}
+  ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided reference file.
+  This reference file is the PRIMARY SOURCE OF INSPIRATION for the technical upgrade.
+  Use it as a technical quality benchmark for lighting, camera settings, and overall aesthetic.
+  Ensure the upgraded prompts reflect the high-end technical qualities found in this file.` : ''}
 
   STRICT RULE: You MUST preserve the original visual subject, core action, and specific scene details. Do NOT add new subjects, change the setting, or alter the primary visual intent.
   
@@ -778,6 +849,8 @@ export async function generateAllPromptsBatch(
       model: settings.model || 'gemini-2.5-flash',
       contents: `Generate rich prompt components for multiple niches based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
       
+      ${getContentTypeInstructions(contentType)}
+
       The niches are: '${categoryNames}'.
       
       CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for these niches. Ensure your generated components reflect REAL market demand and current design trends.
@@ -869,7 +942,8 @@ export async function generateAllPromptsBatch(
 export async function generateAdobeStockMetadata(
   prompts: string[], 
   categoryName: string, 
-  settings: AppSettings
+  settings: AppSettings,
+  contentType: string
 ): Promise<{ title: string, keywords: string[] }[]> {
   const ai = getAI(settings.apiKey);
   
@@ -883,8 +957,10 @@ export async function generateAdobeStockMetadata(
   let allMetadata: { title: string, keywords: string[] }[] = [];
 
   for (const chunk of chunks) {
-    const promptText = `Generate highly optimized metadata for Adobe Stock for the following ${chunk.length} image generation prompts in the niche '${categoryName}'.
+    const promptText = `Generate highly optimized metadata for Adobe Stock for the following ${chunk.length} image generation prompts in the niche '${categoryName}'. The target asset type is '${contentType}'.
     
+    ${getContentTypeInstructions(contentType)}
+
 CRITICAL: Use Google Search to find the highest-converting, most searched keywords for these specific visual concepts on Adobe Stock and similar platforms.
 
 For EACH prompt, provide:

@@ -368,7 +368,8 @@ export default function App() {
       const metadata = await generateAdobeStockMetadata(
         category.generatedPrompts, 
         category.categoryName,
-        settings
+        settings,
+        contentType
       );
       
       setResults(prev => prev.map(c => {
