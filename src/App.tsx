@@ -10,9 +10,10 @@ import ResultsTab from './components/ResultsTab';
 import DonateTab from './components/DonateTab';
 import PromptTab from './components/PromptTab';
 import ChangelogTab from './components/ChangelogTab';
+import GuideTab from './components/GuideTab';
 import { ResultRow } from './components/ResultRow';
 
-type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog";
+type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide";
 
 export default function App() {
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -610,6 +611,7 @@ export default function App() {
           <button onClick={() => { setActiveTab('prompt'); setSelectedPromptCategoryId(null); }} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'prompt' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>PROMPT</button>
           <button onClick={() => setActiveTab('settings')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'settings' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>SETTINGS</button>
           <button onClick={() => setActiveTab('changelog')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'changelog' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>v1.3.0</button>
+          <button onClick={() => setActiveTab('guide')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'guide' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>GUIDE</button>
           <button onClick={() => setActiveTab('donate')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'donate' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>DONATE</button>
         </div>
       </nav>
@@ -710,6 +712,10 @@ export default function App() {
 
         {activeTab === 'changelog' && (
           <ChangelogTab />
+        )}
+
+        {activeTab === 'guide' && (
+          <GuideTab />
         )}
 
         {activeTab === 'prompt' && (
