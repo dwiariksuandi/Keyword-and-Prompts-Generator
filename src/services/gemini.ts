@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from '@google/genai';
-import { AppSettings, PromptTemplate } from '../types';
+import { AppSettings, PromptTemplate, ReferenceFile } from '../types';
 
 export const promptTemplates: PromptTemplate[] = [
   // --- PHOTO ---
@@ -260,13 +260,14 @@ export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean
   }
 }
 
-export async function analyzeKeyword(keyword: string, contentType: string, settings: AppSettings) {
+export async function analyzeKeyword(keyword: string, contentType: string, settings: AppSettings, referenceFile?: ReferenceFile) {
   const ai = getAI(settings.apiKey);
-  const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-2.5-flash',
-    contents: `Perform an exhaustive, data-driven microstock market analysis for the broad keyword: '${keyword}' targeting the asset type: '${contentType}'.
+  
+  const promptText = `Perform an exhaustive, data-driven microstock market analysis for the broad keyword: '${keyword}' targeting the asset type: '${contentType}'.
 
 Your objective is to uncover 4 to 6 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.
+
+${referenceFile ? `I have also provided an ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference. Please analyze the visual style, composition, subject matter, and mood of this reference. Use it to identify niche opportunities that are visually similar, complementary, or inspired by this specific style, but remain underserved in the current market.` : ''}
 
 CRITICAL ADOBE STOCK RULES:
 - GENERATIVE AI COMPLIANCE: The niches MUST NOT rely on trademarked/copyrighted elements, specific brands, recognizable characters, or real known restricted places/buildings. Focus on generic, commercially safe concepts (e.g., "generic modern smartphone" instead of "iPhone").
@@ -280,10 +281,25 @@ For each niche, you MUST provide realistic, simulated market data:
 5. trend & trendPercent: Current market trajectory (e.g., +45% due to recent news/seasons).
 6. difficultyScore: 0-100. How hard is it for a new contributor to rank on page 1?
 7. opportunityScore: 0-100. The ultimate metric. High volume + Low competition = High Opportunity (80-100).
-8. creativeAdvice: Highly specific art direction. What exact visual elements, lighting, colors, or compositions are missing in the current market for this niche?
+8. creativeAdvice: Highly specific art direction. What exact visual elements, lighting, colors, or compositions are missing in the current market for this niche? ${referenceFile ? 'Incorporate elements from the provided reference where it makes commercial sense.' : ''}
 
 CRITICAL: Ensure mathematical and logical consistency. If competition is 95/100 (oversaturated), the opportunity score MUST be low (under 40) unless the volume is exceptionally massive and growing rapidly. Prioritize finding "Blue Ocean" niches (High Opportunity).
-Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
+Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
+
+  const parts: any[] = [{ text: promptText }];
+
+  if (referenceFile) {
+    parts.push({
+      inlineData: {
+        data: referenceFile.data,
+        mimeType: referenceFile.mimeType
+      }
+    });
+  }
+
+  const response = await ai.models.generateContent({
+    model: settings.model || 'gemini-2.5-flash',
+    contents: { parts },
     config: {
       systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to simulate real-world keyword research tools. You must provide highly accurate, data-backed estimates for search volume and competition based on current market trends. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches.",
       responseMimeType: 'application/json',

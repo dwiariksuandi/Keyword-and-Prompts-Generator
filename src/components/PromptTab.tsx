@@ -10,6 +10,7 @@ interface PromptTabProps {
   onUpgrade: (id: string) => void | Promise<void>;
   promptsCount: number;
   setPromptsCount: React.Dispatch<React.SetStateAction<number>>;
+  onShowToast: (message: string) => void;
 }
 
 export default function PromptTab({ 
@@ -19,7 +20,8 @@ export default function PromptTab({
   onGenerate, 
   onUpgrade,
   promptsCount,
-  setPromptsCount
+  setPromptsCount,
+  onShowToast
 }: PromptTabProps) {
   const selectedCategory = results.find(r => r.id === selectedCategoryId);
   
@@ -34,12 +36,12 @@ export default function PromptTab({
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
+    onShowToast('Berhasil disalin ke clipboard!');
   };
 
   const handleCopyAll = (category: CategoryResult) => {
     navigator.clipboard.writeText(category.generatedPrompts.join('\n\n'));
-    alert('All prompts copied to clipboard!');
+    onShowToast('Semua prompt berhasil disalin!');
   };
 
   const handleDownload = (category: CategoryResult) => {

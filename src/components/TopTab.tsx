@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap } from 'lucide-react';
-import { CategoryResult, AppSettings } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap, Upload, Image as ImageIcon, Film, X } from 'lucide-react';
+import { CategoryResult, AppSettings, ReferenceFile } from '../types';
 
 interface TopTabProps {
   keyword: string;
@@ -14,6 +14,8 @@ interface TopTabProps {
   setSortBy: React.Dispatch<React.SetStateAction<string>>;
   filterCompetition: string;
   setFilterCompetition: React.Dispatch<React.SetStateAction<string>>;
+  referenceFile: ReferenceFile | null;
+  setReferenceFile: React.Dispatch<React.SetStateAction<ReferenceFile | null>>;
 }
 
 const suggestionKeywords = [
@@ -63,11 +65,40 @@ const trendingKeywords = [
 
 export default function TopTab({
   keyword, setKeyword, contentType, setContentType, onAnalyze, isAnalyzing, results,
-  sortBy, setSortBy, filterCompetition, setFilterCompetition
+  sortBy, setSortBy, filterCompetition, setFilterCompetition,
+  referenceFile, setReferenceFile
 }: TopTabProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = (reader.result as string).split(',')[1];
+      setReferenceFile({
+        data: base64String,
+        mimeType: file.type,
+        name: file.name,
+        previewUrl: URL.createObjectURL(file)
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeFile = () => {
+    if (referenceFile?.previewUrl) {
+      URL.revokeObjectURL(referenceFile.previewUrl);
+    }
+    setReferenceFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     if (keyword.trim().length > 0) {
@@ -127,6 +158,49 @@ export default function TopTab({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 200)}
         />
+
+        {/* File Upload Section */}
+        <div className="mt-2 mb-4">
+          <input 
+            type="file" 
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*,video/*"
+            className="hidden"
+          />
+          
+          {!referenceFile ? (
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-[#00D8B6] transition-colors bg-slate-800/30 border border-dashed border-slate-700 rounded-lg px-3 py-2"
+            >
+              <Upload size={14} />
+              <span>Add Image/Video Reference (Optional)</span>
+            </button>
+          ) : (
+            <div className="relative inline-block group">
+              <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-700 rounded-lg p-2 pr-10">
+                <div className="w-10 h-10 rounded bg-slate-900 overflow-hidden flex items-center justify-center border border-slate-700">
+                  {referenceFile.mimeType.startsWith('image/') ? (
+                    <img src={referenceFile.previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <Film size={20} className="text-slate-500" />
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-slate-200 truncate max-w-[150px]">{referenceFile.name}</span>
+                  <span className="text-[10px] text-slate-500 uppercase">{referenceFile.mimeType.split('/')[1]}</span>
+                </div>
+                <button 
+                  onClick={removeFile}
+                  className="absolute top-1 right-1 p-1 bg-slate-900/80 text-slate-400 hover:text-red-400 rounded-full transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         
         {showSuggestions && filteredSuggestions.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-2 bg-[#111827] border border-slate-800 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">

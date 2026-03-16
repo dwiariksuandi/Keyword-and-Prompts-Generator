@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X } from 'lucide-react';
+import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { analyzeKeyword, generatePrompts, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError } from './services/gemini';
-import { CategoryResult, AppSettings, HistoryItem } from './types';
+import { CategoryResult, AppSettings, HistoryItem, ReferenceFile } from './types';
 import Settings from './components/Settings';
 import TopTab from './components/TopTab';
 import AnalysisTab from './components/AnalysisTab';
@@ -23,6 +24,7 @@ export default function App() {
   const [selectedPromptCategoryId, setSelectedPromptCategoryId] = useState<string | null>(null);
   const [keyword, setKeyword] = useState('');
   const [contentType, setContentType] = useState('Photo');
+  const [referenceFile, setReferenceFile] = useState<ReferenceFile | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<CategoryResult[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -50,6 +52,20 @@ export default function App() {
   // Filters and Sort
   const [sortBy, setSortBy] = useState("opportunity");
   const [filterCompetition, setFilterCompetition] = useState("all");
+
+  const [errorModal, setErrorModal] = useState<{show: boolean, title: string, message: string}>({
+    show: false,
+    title: '',
+    message: ''
+  });
+  const [toast, setToast] = useState<{show: boolean, message: string}>({show: false, message: ''});
+
+  useEffect(() => {
+    if (toast.show) {
+      const timer = setTimeout(() => setToast({ ...toast, show: false }), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast.show]);
 
   useEffect(() => {
     const savedPrefs = localStorage.getItem('app_preferences');
@@ -172,7 +188,7 @@ export default function App() {
     if (!keyword.trim()) return;
     setIsAnalyzing(true);
     try {
-      const data = await analyzeKeyword(keyword, contentType, settings);
+      const data = await analyzeKeyword(keyword, contentType, settings, referenceFile || undefined);
       const formattedResults: CategoryResult[] = data.map((item: any) => ({
         id: Math.random().toString(36).substring(7),
         categoryName: item.categoryName,
@@ -205,7 +221,11 @@ export default function App() {
       
     } catch (error) {
       console.error("Analysis failed:", error);
-      alert(handleGeminiError(error));
+      setErrorModal({
+        show: true,
+        title: 'Analisis Gagal',
+        message: handleGeminiError(error)
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -228,7 +248,11 @@ export default function App() {
       } : r));
     } catch (error) {
       console.error("Prompt generation failed:", error);
-      alert(handleGeminiError(error));
+      setErrorModal({
+        show: true,
+        title: 'Pembuatan Prompt Gagal',
+        message: handleGeminiError(error)
+      });
       setResults(prev => prev.map(r => r.id === id ? { ...r, isGeneratingPrompts: false } : r));
     }
   };
@@ -250,7 +274,11 @@ export default function App() {
       }));
     } catch (error) {
       console.error("Prompt optimization failed:", error);
-      alert(handleGeminiError(error));
+      setErrorModal({
+        show: true,
+        title: 'Optimasi Gagal',
+        message: handleGeminiError(error)
+      });
       setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isUpgrading: false } : c));
     }
   };
@@ -272,7 +300,7 @@ export default function App() {
 
   const handleCopyAllPrompts = (category: CategoryResult) => {
     navigator.clipboard.writeText(category.generatedPrompts.join('\n\n'));
-    alert('Copied to clipboard!');
+    setToast({ show: true, message: 'Berhasil disalin ke clipboard!' });
   };
 
   const handleClearHistory = () => {
@@ -417,6 +445,8 @@ export default function App() {
               setSortBy={setSortBy}
               filterCompetition={filterCompetition}
               setFilterCompetition={setFilterCompetition}
+              referenceFile={referenceFile}
+              setReferenceFile={setReferenceFile}
             />
 
             {results.length > 0 && (
@@ -486,9 +516,66 @@ export default function App() {
             onUpgrade={handleUpgradePrompts}
             promptsCount={settings.promptCount}
             setPromptsCount={(count) => setSettings(s => ({ ...s, promptCount: typeof count === 'function' ? count(s.promptCount) : count }))}
+            onShowToast={(msg) => setToast({ show: true, message: msg })}
           />
         )}
       </main>
+
+      {/* Error Modal Overlay */}
+      <AnimatePresence>
+        {errorModal.show && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setErrorModal({ ...errorModal, show: false })}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-[#111827] border border-red-500/30 rounded-2xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-6 h-6 text-red-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">{errorModal.title}</h3>
+                </div>
+                <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-4 mb-6">
+                  <p className="text-slate-300 text-sm leading-relaxed">
+                    {errorModal.message}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setErrorModal({ ...errorModal, show: false })}
+                  className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors"
+                >
+                  Tutup
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-3 bg-[#00D8B6] text-slate-900 px-6 py-3 rounded-full font-bold shadow-lg shadow-[#00D8B6]/20"
+          >
+            <CheckCircle2 className="w-5 h-5" />
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

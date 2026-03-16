@@ -1,3 +1,10 @@
+export interface ReferenceFile {
+  data: string; // base64
+  mimeType: string;
+  name: string;
+  previewUrl: string;
+}
+
 export interface CategoryResult {
   id: string;
   categoryName: string;
