@@ -101,6 +101,8 @@ export default function Settings({
             {[
               { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", desc: "Fast & Efficient (Default)" },
               { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", desc: "Best for complex tasks" },
+              { id: "gemini-2.0-flash", name: "Gemini 2 Flash", desc: "Alternative Flash model" },
+              { id: "gemini-3-flash-preview", name: "Gemini 3 Flash", desc: "Latest Flash version" },
             ].map((model) => (
               <button
                 key={model.id}
