@@ -386,6 +386,21 @@ ${getContentTypeInstructions(contentType)}
 
 CRITICAL: You MUST use Google Search to find REAL, CURRENT data, trends, and search volumes for Adobe Stock and the microstock industry. Do not rely solely on your internal knowledge; ground your analysis in actual, up-to-date market realities to avoid bias.
 
+Respond strictly with a JSON array of objects. Each object MUST follow this schema:
+{
+  "categoryName": string,
+  "mainKeywords": string[],
+  "volumeLevel": "High" | "Medium" | "Low",
+  "volumeNumber": number,
+  "competition": "High" | "Medium" | "Low",
+  "competitionScore": number (0-100),
+  "trend": "up" | "down" | "stable",
+  "trendPercent": number,
+  "difficultyScore": number (0-100),
+  "opportunityScore": number (0-100),
+  "creativeAdvice": string
+}
+
 ${keyword ? `The broad keyword context is: '${keyword}'.` : 'No specific keyword was provided.'}
 ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
 You MUST use the urlContext tool to fetch and deeply analyze the content of this URL. 
@@ -437,29 +452,8 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     model: settings.model || 'gemini-3-flash-preview',
     contents: { parts },
     config: {
-      systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to provide highly accurate, data-backed estimates for search volume and competition based on REAL, current market trends using Google Search. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA.",
+      systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to provide highly accurate, data-backed estimates for search volume and competition based on REAL, current market trends using Google Search. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
       tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            categoryName: { type: Type.STRING },
-            mainKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-            volumeLevel: { type: Type.STRING, description: "High, Medium, or Low" },
-            volumeNumber: { type: Type.INTEGER },
-            competition: { type: Type.STRING, description: "High, Medium, or Low" },
-            competitionScore: { type: Type.INTEGER },
-            trend: { type: Type.STRING, description: "up, down, or stable" },
-            trendPercent: { type: Type.INTEGER },
-            difficultyScore: { type: Type.INTEGER },
-            opportunityScore: { type: Type.INTEGER },
-            creativeAdvice: { type: Type.STRING },
-          },
-          required: ['categoryName', 'mainKeywords', 'volumeLevel', 'volumeNumber', 'competition', 'competitionScore', 'trend', 'trendPercent', 'difficultyScore', 'opportunityScore', 'creativeAdvice'],
-        },
-      },
     },
   });
 
@@ -605,6 +599,17 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       ${contentType === 'Video' ? `- SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques in the 'details/actions' section. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'.` : ''}
       - ${getVariationInstructions(settings.variationLevel)}
       - Ensure all components are perfectly suited for ${contentType} and optimized for the ${template.name} platform.
+      
+      Respond strictly with a JSON object following this schema:
+      {
+        "subjects": string[],
+        "details": string[],
+        "lightings": string[],
+        "moods": string[],
+        "styles": string[],
+        "aspects": string[]
+      }
+
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
     const parts: any[] = [{ text: promptText }];
@@ -621,21 +626,8 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. Use real-world data to inform your aesthetic choices. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA.",
+        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. Use real-world data to inform your aesthetic choices. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
         tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            subjects: { type: Type.ARRAY, items: { type: Type.STRING } },
-            details: { type: Type.ARRAY, items: { type: Type.STRING } },
-            lightings: { type: Type.ARRAY, items: { type: Type.STRING } },
-            moods: { type: Type.ARRAY, items: { type: Type.STRING } },
-            styles: { type: Type.ARRAY, items: { type: Type.STRING } },
-            aspects: { type: Type.ARRAY, items: { type: Type.STRING } },
-          },
-          required: ["subjects", "details", "lightings", "moods", "styles", "aspects"]
-        }
       }
     });
 
@@ -817,13 +809,8 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
     model: settings.model || 'gemini-3-flash-preview',
     contents: { parts },
     config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references and real-world market data. You excel at extracting aesthetic essence and applying it to new, commercially viable concepts. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA.",
+      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references and real-world market data. You excel at extracting aesthetic essence and applying it to new, commercially viable concepts. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
       tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.ARRAY,
-        items: { type: Type.STRING }
-      }
     }
   });
 
@@ -894,18 +881,8 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer. Your task is to provide technical enhancement layers that improve prompt quality without altering the original visual subject or intent. Base your enhancements on real-world commercial photography standards. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA.",
+        systemInstruction: "You are an elite AI Image Prompt Engineer. Your task is to provide technical enhancement layers that improve prompt quality without altering the original visual subject or intent. Base your enhancements on real-world commercial photography standards. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
         tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            technicals: { type: Type.ARRAY, items: { type: Type.STRING } },
-            lightings: { type: Type.ARRAY, items: { type: Type.STRING } },
-            qualities: { type: Type.ARRAY, items: { type: Type.STRING } },
-          },
-          required: ["technicals", "lightings", "qualities"]
-        }
       }
     });
 
@@ -1066,33 +1043,26 @@ export async function generateAllPromptsBatch(
       - ALGORITHM OPTIMIZATION: To rank high and sell, components must lead to high commercial utility. Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
       - NO SIMILAR CONTENT: Components must be vastly different to avoid rejection for similarity.
       - GENERATIVE AI COMPLIANCE: NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands.
+
+      Respond strictly with a JSON object following this schema:
+      {
+        "categories": [
+          {
+            "categoryName": string,
+            "subjects": string[],
+            "details": string[],
+            "lightings": string[],
+            "moods": string[],
+            "styles": string[],
+            "aspects": string[]
+          }
+        ]
+      }
+
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Use real-world data to inform your aesthetic choices.",
+        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Use real-world data to inform your aesthetic choices. Respond ONLY with valid JSON.",
         tools: [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            categories: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  categoryName: { type: Type.STRING },
-                  subjects: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  details: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  lightings: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  moods: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  styles: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  aspects: { type: Type.ARRAY, items: { type: Type.STRING } },
-                },
-                required: ["categoryName", "subjects", "details", "lightings", "moods", "styles", "aspects"]
-              }
-            }
-          },
-          required: ["categories"]
-        }
       }
     });
 
