@@ -99,8 +99,8 @@ export default function Settings({
           <h2 className="text-lg font-semibold text-white mb-4">AI Model</h2>
           <div className="grid grid-cols-2 gap-3">
             {[
+              { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", desc: "Fast & Efficient (Default)" },
               { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", desc: "Best for complex tasks" },
-              { id: "gemini-3-flash-preview", name: "Gemini 3 Flash", desc: "Fast and efficient" },
             ].map((model) => (
               <button
                 key={model.id}

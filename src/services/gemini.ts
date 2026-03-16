@@ -263,7 +263,7 @@ export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean
 export async function analyzeKeyword(keyword: string, contentType: string, settings: AppSettings) {
   const ai = getAI(settings.apiKey);
   const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-3.1-pro-preview',
+    model: settings.model || 'gemini-2.5-flash',
     contents: `Perform an exhaustive, data-driven microstock market analysis for the broad keyword: '${keyword}' targeting the asset type: '${contentType}'.
 
 Your objective is to uncover 4 to 6 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.
@@ -334,7 +334,7 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
   // For large counts, use a combinatorial approach to avoid LLM output token limits and guarantee uniqueness
   if (count > 30) {
     const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-3.1-pro-preview',
+      model: settings.model || 'gemini-2.5-flash',
       contents: `Generate a rich set of prompt components for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
       
       We need to programmatically generate ${count} unique combinations. Please provide:
@@ -411,7 +411,7 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
 
   // Standard generation for smaller counts
   const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-3.1-pro-preview',
+    model: settings.model || 'gemini-2.5-flash',
     contents: `Generate exactly ${count} highly detailed, commercial-grade image generation prompts for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
 
 CRITICAL REQUIREMENTS FOR ADOBE STOCK:
@@ -466,7 +466,7 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
     const sample = prompts.slice(0, 10);
     
     const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-3.1-pro-preview',
+      model: settings.model || 'gemini-2.5-flash',
       contents: `Analyze these sample prompts: ${JSON.stringify(sample)}.
       
       We need to optimize a massive batch of similar prompts for Adobe Stock (${contentType}).
@@ -557,7 +557,7 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
 
   // Standard optimization for smaller arrays
   const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-3.1-pro-preview',
+    model: settings.model || 'gemini-2.5-flash',
     contents: `Optimize the following list of image generation prompts to make them more detailed, commercial-grade, and highly targeted for the '${contentType}' category on microstock platforms like Adobe Stock.
 
 Original Prompts:
@@ -621,7 +621,7 @@ export async function generateAllPromptsBatch(
 
   try {
     const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-3.1-pro-preview',
+      model: settings.model || 'gemini-2.5-flash',
       contents: `Generate rich prompt components for multiple niches based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
       
       The niches are: '${categoryNames}'.

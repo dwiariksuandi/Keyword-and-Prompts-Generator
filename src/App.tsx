@@ -29,7 +29,7 @@ export default function App() {
   
   const [settings, setSettings] = useState<AppSettings>({
     apiKey: '',
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-flash',
     templateId: {
       'Photo': 'nanobanana-photo',
       'Illustration': 'nanobanana-illustration',
