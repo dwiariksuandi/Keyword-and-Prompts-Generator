@@ -1,8 +1,9 @@
-import React from 'react';
-import { History, Star, Zap, ShieldCheck, Milestone } from 'lucide-react';
-import { motion } from 'motion/react';
+import React, { useState } from 'react';
+import { History, Star, Zap, ShieldCheck, Milestone, ChevronDown, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function ChangelogTab() {
+  const [isExpanded, setIsExpanded] = useState(false);
   const versions = [
     {
       version: "v1.3.0",
@@ -98,45 +99,93 @@ export default function ChangelogTab() {
       </div>
 
       <div className="space-y-12 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-px before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent">
-        {versions.map((v, index) => (
-          <motion.div 
-            key={v.version}
-            initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: index * 0.1 }}
-            className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group"
+        {/* Current Version */}
+        <VersionCard v={versions[0]} index={0} />
+
+        {/* Previous Versions Toggle */}
+        <div className="relative flex justify-center z-20">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-3 px-8 py-3 glass-panel bg-white/5 border border-white/10 rounded-2xl text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] hover:text-accent hover:border-accent/30 transition-all"
           >
-            <div className="flex items-center justify-center w-12 h-12 rounded-2xl border border-white/10 bg-slate-900 text-slate-500 shadow-2xl shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 futuristic-glow">
-              {v.icon}
+            {isExpanded ? (
+              <>
+                <ChevronUp size={14} />
+                Hide Previous Versions
+              </>
+            ) : (
+              <>
+                <ChevronDown size={14} />
+                Show Previous Versions ({versions.length - 1})
+              </>
+            )}
+          </motion.button>
+        </div>
+
+        {/* Previous Versions */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-12 overflow-hidden"
+            >
+              {versions.slice(1).map((v, index) => (
+                <VersionCard key={v.version} v={v} index={index + 1} />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+}
+
+interface VersionCardProps {
+  v: any;
+  index: number;
+  key?: string | number;
+}
+
+function VersionCard({ v, index }: VersionCardProps) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: 0.1 }}
+      className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group"
+    >
+      <div className="flex items-center justify-center w-12 h-12 rounded-2xl border border-white/10 bg-slate-900 text-slate-500 shadow-2xl shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 futuristic-glow">
+        {v.icon}
+      </div>
+      
+      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-8 glass-panel group-hover:border-accent/30 transition-all duration-500">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl font-bold text-white font-mono">{v.version}</span>
+              <span className="text-[10px] font-bold text-accent uppercase tracking-widest bg-accent/10 px-3 py-1 rounded-lg border border-accent/20">
+                Stable
+              </span>
             </div>
-            
-            <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-8 glass-panel group-hover:border-accent/30 transition-all duration-500">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-white font-mono">{v.version}</span>
-                    <span className="text-[10px] font-bold text-accent uppercase tracking-widest bg-accent/10 px-3 py-1 rounded-lg border border-accent/20">
-                      Stable
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-medium text-slate-400">{v.title}</h3>
-                </div>
-                <time className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-lg border border-white/5 h-fit">
-                  {v.date}
-                </time>
-              </div>
-              <ul className="space-y-4">
-                {v.changes.map((change, i) => (
-                  <li key={i} className="text-slate-300 text-sm flex items-start gap-4 group/item">
-                    <div className="w-1.5 h-1.5 rounded-full bg-accent/40 mt-1.5 group-hover/item:bg-accent transition-colors" />
-                    <span className="leading-relaxed font-light">{change}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </motion.div>
-        ))}
+            <h3 className="text-sm font-medium text-slate-400">{v.title}</h3>
+          </div>
+          <time className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-lg border border-white/5 h-fit">
+            {v.date}
+          </time>
+        </div>
+        <ul className="space-y-4">
+          {v.changes.map((change: string, i: number) => (
+            <li key={i} className="text-slate-300 text-sm flex items-start gap-4 group/item">
+              <div className="w-1.5 h-1.5 rounded-full bg-accent/40 mt-1.5 group-hover/item:bg-accent transition-colors" />
+              <span className="leading-relaxed font-light">{change}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </motion.div>
   );

@@ -231,11 +231,16 @@ const getAI = (apiKey?: string) => {
 
 export function handleGeminiError(error: any): string {
   let errorString = '';
+  let statusCode = 0;
+
   if (error instanceof Error) {
     errorString = error.message;
   } else if (typeof error === 'object' && error !== null) {
     try {
       errorString = JSON.stringify(error);
+      // Try to extract status code if available in the error object
+      if ('status' in error) statusCode = (error as any).status;
+      if ('statusCode' in error) statusCode = (error as any).statusCode;
     } catch {
       errorString = String(error);
     }
@@ -243,15 +248,67 @@ export function handleGeminiError(error: any): string {
     errorString = String(error);
   }
   
+  // 429 - Resource Exhausted / Quota
   if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED') || errorString.includes('quota')) {
-    return "Error 429 (RESOURCE_EXHAUSTED). Ini terjadi karena salah satu dari 2 hal:\n\n1. Limit Per Menit (Sering Terjadi): Akun gratis dibatasi 15 request/menit. Solusi: Tunggu 1 menit dan coba lagi.\n2. Kuota Harian Habis: Solusi: Gunakan API Key dari Project Google Cloud yang BARU.\n\nJika Anda baru saja mengganti API Key dan tetap error, kemungkinan besar itu adalah Limit Per Menit (tunggu 1 menit).";
+    return "⚠️ Batas Penggunaan Terlampaui (Error 429)\n\n" +
+           "Penyebab:\n" +
+           "1. Limit Per Menit: Akun gratis dibatasi 15 request/menit.\n" +
+           "2. Kuota Harian: Anda mungkin telah mencapai batas harian Google.\n\n" +
+           "Solusi:\n" +
+           "• Tunggu 1-2 menit sebelum mencoba lagi.\n" +
+           "• Jika tetap gagal, gunakan API Key dari Project Google Cloud yang berbeda.";
   }
   
-  if (errorString.includes('API key not valid') || errorString.includes('API_KEY_INVALID')) {
-    return "API Key tidak valid. Pastikan Anda menyalin API Key dengan benar tanpa spasi tambahan.";
+  // 400/401 - Invalid API Key
+  if (errorString.includes('400') || errorString.includes('401') || errorString.includes('API key not valid') || errorString.includes('API_KEY_INVALID')) {
+    return "❌ API Key Tidak Valid (Error 400/401)\n\n" +
+           "Penyebab:\n" +
+           "• API Key salah ketik atau ada spasi tambahan.\n" +
+           "• API Key telah dihapus atau dinonaktifkan di Google AI Studio.\n\n" +
+           "Solusi:\n" +
+           "• Periksa kembali API Key Anda.\n" +
+           "• Pastikan API Key berasal dari 'Google AI Studio' (bukan Vertex AI).";
   }
 
-  return `Terjadi kesalahan: ${errorString}`;
+  // 403 - Permission Denied
+  if (errorString.includes('403') || errorString.includes('PERMISSION_DENIED')) {
+    return "🚫 Akses Ditolak (Error 403)\n\n" +
+           "Penyebab:\n" +
+           "• API Key tidak memiliki izin untuk mengakses model ini.\n" +
+           "• Project Google Cloud Anda mungkin memiliki batasan wilayah.\n\n" +
+           "Solusi:\n" +
+           "• Pastikan Generative Language API sudah diaktifkan di Google Cloud Console.\n" +
+           "• Coba buat API Key baru di project yang berbeda.";
+  }
+
+  // 404 - Not Found
+  if (errorString.includes('404') || errorString.includes('NOT_FOUND')) {
+    return "🔍 Model Tidak Ditemukan (Error 404)\n\n" +
+           "Penyebab:\n" +
+           "• Nama model yang dipilih tidak tersedia atau salah.\n\n" +
+           "Solusi:\n" +
+           "• Coba ganti model ke 'gemini-3-flash-preview' di Pengaturan.";
+  }
+
+  // Safety Blocks
+  if (errorString.includes('SAFETY') || errorString.includes('blocked')) {
+    return "🛡️ Konten Diblokir (Safety Filter)\n\n" +
+           "Penyebab:\n" +
+           "• AI mendeteksi konten yang melanggar kebijakan keamanan (misal: konten dewasa, kekerasan, atau hak cipta).\n\n" +
+           "Solusi:\n" +
+           "• Ubah kata kunci atau deskripsi Anda agar lebih umum dan tidak melanggar kebijakan.";
+  }
+
+  // 500/503 - Server Error
+  if (errorString.includes('500') || errorString.includes('503') || errorString.includes('INTERNAL') || errorString.includes('SERVICE_UNAVAILABLE')) {
+    return "☁️ Masalah Server Google (Error 500/503)\n\n" +
+           "Penyebab:\n" +
+           "• Server Google sedang sibuk atau mengalami gangguan teknis.\n\n" +
+           "Solusi:\n" +
+           "• Tunggu beberapa saat dan coba lagi. Ini biasanya bersifat sementara.";
+  }
+
+  return `⚠️ Terjadi Kesalahan Tak Terduga\n\nDetail: ${errorString.substring(0, 200)}${errorString.length > 200 ? '...' : ''}\n\nSaran: Coba muat ulang halaman atau periksa koneksi internet Anda.`;
 }
 
 function extractJSON(text: string) {
@@ -312,19 +369,19 @@ function getContentTypeInstructions(contentType: string): string {
 function getVariationInstructions(level: 'Low' | 'Medium' | 'High'): string {
   switch (level) {
     case 'Low':
-      return "VARIATION LEVEL: LOW. Focus on a cohesive set of prompts that explore a specific theme with subtle variations. The prompts should feel like a consistent series or collection.";
+      return "VARIATION LEVEL: LOW. Focus on a highly cohesive set of prompts that explore a specific, narrow theme with subtle variations in lighting or angle. The resulting images should look like they belong to the same specific photoshoot or series. Ideal for creating consistent character sets or product variations.";
     case 'High':
-      return "VARIATION LEVEL: HIGH. MAXIMUM VARIATION REQUIRED. Each prompt must explore a completely different concept, environment, lighting, and composition within the niche. Force the AI to think outside the box and avoid any repetition of ideas. This is critical to avoid 'similar content' rejection.";
+      return "VARIATION LEVEL: HIGH. MAXIMUM CREATIVE DIVERSITY REQUIRED. Each prompt must explore a radically different concept, environment, lighting setup, and composition within the niche. Force the AI to use diverse subjects, unexpected angles, and contrasting moods. This is CRITICAL for large batches to avoid 'similar content' rejection by Adobe Stock. No two prompts should share more than 20% of their descriptive DNA.";
     default:
-      return "VARIATION LEVEL: MEDIUM. Standard professional variation. Ensure a healthy mix of different subjects, angles, and lighting while staying relevant to the core theme.";
+      return "VARIATION LEVEL: MEDIUM. Standard professional variation. Ensure a balanced mix of different subjects, camera angles, and lighting styles while maintaining relevance to the core theme. Provides enough variety for a standard stock submission.";
   }
 }
 
-export async function analyzeAestheticReference(referenceFile: ReferenceFile, settings: AppSettings): Promise<AestheticAnalysis> {
+export async function analyzeAestheticReference(referenceFile: ReferenceFile, settings: AppSettings, contentType: string): Promise<AestheticAnalysis> {
   const ai = getAI(settings.apiKey);
   
-  const promptText = `Analyze the provided image reference and extract its "Aesthetic DNA" for the 'AI Art & Creativity' category. 
-  Focus on identifying the core visual elements that define its unique style and suggest how to incorporate them into high-quality image generation prompts.
+  const promptText = `Analyze the provided image reference and extract its "Aesthetic DNA" optimized for the '${contentType}' category. 
+  Focus on identifying the core visual elements that define its unique style and suggest how to incorporate them into high-quality image generation prompts for Adobe Stock.
 
   Provide your analysis in the following JSON format:
   {
@@ -336,44 +393,47 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
     "suggestions": ["suggestion 1", "suggestion 2", ...]
   }
 
-  Suggestions should be specific to the 'AI Art & Creativity' category, focusing on surrealism, abstract concepts, and innovative digital aesthetics.`;
+  Suggestions should be specific to the '${contentType}' category, focusing on commercial utility, technical precision, and high-end aesthetic standards.`;
 
-  const response = await ai.models.generateContent({
-    model: settings.model,
-    contents: [
-      { text: promptText },
-      {
-        inlineData: {
-          data: referenceFile.data,
-          mimeType: referenceFile.mimeType
+  try {
+    const response = await ai.models.generateContent({
+      model: settings.model,
+      contents: [
+        { text: promptText },
+        {
+          inlineData: {
+            data: referenceFile.data,
+            mimeType: referenceFile.mimeType
+          }
+        }
+      ],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            colorPalette: { type: Type.ARRAY, items: { type: Type.STRING } },
+            lighting: { type: Type.STRING },
+            mood: { type: Type.STRING },
+            artisticStyle: { type: Type.STRING },
+            composition: { type: Type.STRING },
+            suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
         }
       }
-    ],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          colorPalette: { type: Type.ARRAY, items: { type: Type.STRING } },
-          lighting: { type: Type.STRING },
-          mood: { type: Type.STRING },
-          artisticStyle: { type: Type.STRING },
-          composition: { type: Type.STRING },
-          suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
-        },
-        required: ["colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
-      }
-    }
-  });
+    });
 
-  const text = response.text;
-  if (!text) throw new Error('No response from Gemini');
-  
-  try {
+    const text = response.text;
+    if (!text) throw new Error('No response from Gemini');
+    
     return JSON.parse(text);
-  } catch (e) {
-    console.error("Failed to parse Aesthetic Analysis JSON:", text);
-    throw new Error("Failed to analyze the aesthetic of the reference. Please try again.");
+  } catch (error) {
+    console.error("Aesthetic analysis failed:", error);
+    if (error instanceof Error && error.message.includes('JSON')) {
+       throw new Error("Gagal memproses data estetika. Silakan coba lagi.");
+    }
+    throw new Error(handleGeminiError(error));
   }
 }
 
@@ -720,31 +780,34 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
     });
   }
 
-  const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-3-flash-preview',
-    contents: { parts: partsSmall },
-    config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. You understand lighting, composition, camera settings, and market trends perfectly based on real data. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA.",
-      tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.ARRAY,
-        items: { type: Type.STRING },
-      },
-    },
-  });
-
-  let text = response.text;
-  if (!text) throw new Error('No response from Gemini');
-  
-  // Strip markdown formatting if present
-  text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
-  
   try {
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3-flash-preview',
+      contents: { parts: partsSmall },
+      config: {
+        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. You understand lighting, composition, camera settings, and market trends perfectly based on real data. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA.",
+        tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING },
+        },
+      },
+    });
+
+    let text = response.text;
+    if (!text) throw new Error('No response from Gemini');
+    
+    // Strip markdown formatting if present
+    text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
+    
     return extractJSON(text);
-  } catch (e) {
-    console.error("Failed to parse JSON response:", text);
-    throw new Error("Failed to parse the response from the AI. Please try again.");
+  } catch (error) {
+    console.error("Prompt generation failed:", error);
+    if (error instanceof Error && error.message.includes('JSON')) {
+       throw new Error("Gagal memproses hasil prompt. Silakan coba lagi.");
+    }
+    throw new Error(handleGeminiError(error));
   }
 }
 
@@ -805,24 +868,27 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
     });
   }
 
-  const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-3-flash-preview',
-    contents: { parts },
-    config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references and real-world market data. You excel at extracting aesthetic essence and applying it to new, commercially viable concepts. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
-      tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
-    }
-  });
-
-  let text = response.text;
-  if (!text) throw new Error('No response from Gemini');
-  text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
-  
   try {
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3-flash-preview',
+      contents: { parts },
+      config: {
+        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references and real-world market data. You excel at extracting aesthetic essence and applying it to new, commercially viable concepts. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
+        tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+      }
+    });
+
+    let text = response.text;
+    if (!text) throw new Error('No response from Gemini');
+    text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
+    
     return extractJSON(text);
-  } catch (e) {
-    console.error("Failed to parse JSON response:", text);
-    throw new Error("Failed to parse the response from the AI. Please try again.");
+  } catch (error) {
+    console.error("Direct prompt generation failed:", error);
+    if (error instanceof Error && error.message.includes('JSON')) {
+       throw new Error("Gagal memproses hasil prompt. Silakan coba lagi.");
+    }
+    throw new Error(handleGeminiError(error));
   }
 }
 
@@ -976,31 +1042,34 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
     });
   }
 
-  const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-3-flash-preview',
-    contents: { parts: partsSmall },
-    config: {
-      systemInstruction: "You are a Master Neural Prompt Architect. Your specialty is 'Hyper-Optimization'—injecting extreme technical complexity and descriptive power into existing prompts while maintaining absolute fidelity to the original subject and style. You use advanced optics, lighting physics, and digital rendering terminology to elevate prompts to 'Masterpiece' status for Adobe Stock.",
-      tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.ARRAY,
-        items: { type: Type.STRING },
-      },
-    },
-  });
-
-  let text = response.text;
-  if (!text) throw new Error('No response from Gemini');
-  
-  // Strip markdown formatting if present
-  text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
-  
   try {
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3-flash-preview',
+      contents: { parts: partsSmall },
+      config: {
+        systemInstruction: "You are a Master Neural Prompt Architect. Your specialty is 'Hyper-Optimization'—injecting extreme technical complexity and descriptive power into existing prompts while maintaining absolute fidelity to the original subject and style. You use advanced optics, lighting physics, and digital rendering terminology to elevate prompts to 'Masterpiece' status for Adobe Stock.",
+        tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING },
+        },
+      },
+    });
+
+    let text = response.text;
+    if (!text) throw new Error('No response from Gemini');
+    
+    // Strip markdown formatting if present
+    text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
+    
     return extractJSON(text);
-  } catch (e) {
-    console.error("Failed to parse JSON response:", text);
-    throw new Error("Failed to parse the response from the AI. Please try again.");
+  } catch (error) {
+    console.error("Prompt optimization failed:", error);
+    if (error instanceof Error && error.message.includes('JSON')) {
+       throw new Error("Gagal memproses hasil optimasi. Silakan coba lagi.");
+    }
+    throw new Error(handleGeminiError(error));
   }
 }
 
@@ -1044,6 +1113,7 @@ export async function generateAllPromptsBatch(
       CRITICAL ADOBE STOCK RULES:
       - ALGORITHM OPTIMIZATION: To rank high and sell, components must lead to high commercial utility. Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
       - NO SIMILAR CONTENT: Components must be vastly different to avoid rejection for similarity.
+      - ${getVariationInstructions(settings.variationLevel)}
       - GENERATIVE AI COMPLIANCE: NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands.
 
       Respond strictly with a JSON object following this schema:
@@ -1144,36 +1214,39 @@ Prompts:
 ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
 `;
 
-    const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-3-flash-preview',
-      contents: promptText,
-      config: {
-        systemInstruction: "You are an elite Microstock SEO Expert and Top-Selling Adobe Stock Contributor. You know exactly how to write titles and 50 keywords that rank #1 on Adobe Stock search. You use real-world search data to inform your keywords.",
-        tools: [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              keywords: { type: Type.ARRAY, items: { type: Type.STRING } }
-            },
-            required: ["title", "keywords"]
+    try {
+      const response = await ai.models.generateContent({
+        model: settings.model || 'gemini-3-flash-preview',
+        contents: promptText,
+        config: {
+          systemInstruction: "You are an elite Microstock SEO Expert and Top-Selling Adobe Stock Contributor. You know exactly how to write titles and 50 keywords that rank #1 on Adobe Stock search. You use real-world search data to inform your keywords.",
+          tools: [{ googleSearch: {} }],
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                keywords: { type: Type.ARRAY, items: { type: Type.STRING } }
+              },
+              required: ["title", "keywords"]
+            }
           }
         }
-      }
-    });
+      });
 
-    let text = response.text;
-    if (!text) throw new Error('No response from Gemini');
-    
-    try {
+      let text = response.text;
+      if (!text) throw new Error('No response from Gemini');
+      
       const parsed = extractJSON(text);
       allMetadata = [...allMetadata, ...parsed];
-    } catch (e) {
-      console.error("Failed to parse JSON response for chunk:", text);
-      throw new Error("Failed to parse the response from the AI. Please try again.");
+    } catch (error) {
+      console.error("Metadata generation failed for chunk:", error);
+      if (error instanceof Error && error.message.includes('JSON')) {
+         throw new Error("Gagal memproses hasil metadata. Silakan coba lagi.");
+      }
+      throw new Error(handleGeminiError(error));
     }
   }
 

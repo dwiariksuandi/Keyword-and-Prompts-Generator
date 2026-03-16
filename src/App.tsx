@@ -116,6 +116,10 @@ export default function App() {
             if (t['Photo'] === 'stock') t['Photo'] = 'stock-photo';
             if (t['Photo'] === 'nanobanana') t['Photo'] = 'nanobanana-photo';
           }
+
+          if (!newSettings.variationLevel) {
+            newSettings.variationLevel = 'Medium';
+          }
         } catch (e) {
           console.error("Failed to parse saved preferences");
         }
@@ -146,10 +150,10 @@ export default function App() {
   }, [history, results, settings.autoSave]);
 
   const handleAnalyzeAesthetic = async () => {
-    if (!referenceFile || contentType !== 'AI Art & Creativity') return;
+    if (!referenceFile) return;
     setIsAnalyzingAesthetic(true);
     try {
-      const analysis = await analyzeAestheticReference(referenceFile, settings);
+      const analysis = await analyzeAestheticReference(referenceFile, settings, contentType);
       setAestheticAnalysis(analysis);
     } catch (error) {
       console.error("Aesthetic analysis failed:", error);

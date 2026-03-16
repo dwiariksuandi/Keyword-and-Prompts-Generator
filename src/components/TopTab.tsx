@@ -297,7 +297,7 @@ export default function TopTab({
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {contentType === 'AI Art & Creativity' && referenceFile.mimeType.startsWith('image/') && (
+                      {referenceFile.mimeType.startsWith('image/') && (
                         <motion.button 
                           whileHover={{ scale: 1.1, backgroundColor: 'rgba(0,255,255,0.1)' }}
                           whileTap={{ scale: 0.9 }}
@@ -359,14 +359,20 @@ export default function TopTab({
 
                         <div className="space-y-3">
                           <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Strategic Neural Insights</span>
-                          <ul className="space-y-2.5">
+                          <div className="space-y-2">
                             {aestheticAnalysis.suggestions.map((suggestion, i) => (
-                              <li key={i} className="text-[11px] text-slate-400 leading-relaxed flex items-start gap-3">
+                              <motion.button 
+                                key={i} 
+                                whileHover={{ x: 4, backgroundColor: 'rgba(0,255,255,0.05)' }}
+                                whileTap={{ scale: 0.99 }}
+                                onClick={() => setKeyword(prev => prev ? `${prev}, ${suggestion}` : suggestion)}
+                                className="w-full text-left p-3 rounded-xl border border-white/5 hover:border-accent/30 transition-all flex items-start gap-3 group"
+                              >
                                 <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0 shadow-[0_0_8px_rgba(0,255,255,0.5)]" />
-                                <span className="font-light">{suggestion}</span>
-                              </li>
+                                <span className="text-[11px] text-slate-400 group-hover:text-slate-200 font-light leading-relaxed">{suggestion}</span>
+                              </motion.button>
                             ))}
-                          </ul>
+                          </div>
                         </div>
                       </motion.div>
                     )}
