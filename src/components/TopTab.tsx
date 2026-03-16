@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap, Upload, Image as ImageIcon, Film, X, Link as LinkIcon, Loader2, Cpu, Globe, Activity, Database, Terminal } from 'lucide-react';
+import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap, Upload, Image as ImageIcon, Film, X, Link as LinkIcon, Loader2, Cpu, Globe, Activity, Database, Terminal, Palette, Layers, Box } from 'lucide-react';
 import { CategoryResult, AppSettings, ReferenceFile, AestheticAnalysis } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -173,20 +173,29 @@ export default function TopTab({
               <Globe size={16} className="text-accent" />
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Content Sector</span>
             </div>
-            <div className="flex flex-wrap gap-2.5">
-              {['Photo', 'Illustration', 'Vector', 'Background', 'Video', '3D Render', 'AI Art & Creativity'].map(type => (
+            <div className="flex flex-wrap gap-3">
+              {[
+                { id: 'Photo', label: 'PHOTO', icon: ImageIcon },
+                { id: 'Illustration', label: 'ILLUSTRATION', icon: Palette },
+                { id: 'Vector', label: 'VECTOR', icon: Layers },
+                { id: 'Background', label: 'BACKGROUND', icon: Globe },
+                { id: 'Video', label: 'VIDEO', icon: Film },
+                { id: '3D Render', label: '3D RENDER', icon: Box },
+                { id: 'AI Art & Creativity', label: 'AI CREATIVE', icon: Cpu },
+              ].map(type => (
                 <motion.button
-                  key={type}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setContentType(type)}
-                  className={`px-5 py-2.5 rounded-2xl text-[10px] font-bold tracking-widest transition-all duration-500 border ${
-                    contentType === type 
-                      ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]' 
+                  key={type.id}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setContentType(type.id)}
+                  className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[9px] font-bold tracking-[0.2em] transition-all duration-500 border ${
+                    contentType === type.id 
+                      ? 'bg-white text-black border-white shadow-[0_0_25px_rgba(255,255,255,0.15)]' 
                       : 'bg-white/5 text-slate-400 border-white/5 hover:text-white hover:bg-white/10 hover:border-white/20'
                   }`}
                 >
-                  {type.toUpperCase()}
+                  <type.icon size={14} className={contentType === type.id ? 'text-black' : 'text-accent'} />
+                  {type.label}
                 </motion.button>
               ))}
             </div>
