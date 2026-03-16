@@ -568,7 +568,7 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
   }
 }
 
-export async function optimizePrompts(prompts: string[], settings: AppSettings, contentType: string) {
+export async function optimizePrompts(prompts: string[], settings: AppSettings, contentType: string, keyword?: string, categoryName?: string, referenceFile?: ReferenceFile, referenceUrl?: string) {
   const ai = getAI(settings.apiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
@@ -582,11 +582,13 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
     // Take a small sample to understand the context
     const sample = prompts.slice(0, 10);
     
-    const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-2.5-flash',
-      contents: `Analyze these sample prompts: ${JSON.stringify(sample)}.
+    const promptText = `Analyze these sample prompts: ${JSON.stringify(sample)}.
       
       We need to optimize a massive batch of similar prompts for Adobe Stock (${contentType}).
+      ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
+      ${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration for the modifiers.` : ''}
+      ${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" (lighting, color palette, aesthetic) and apply it to the modifiers.` : ''}
+
       To do this instantly, provide a set of highly commercial, premium modifiers that we can programmatically apply to the original subjects.
       
       Provide:
@@ -597,13 +599,28 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       
       CRITICAL ADOBE STOCK RULES:
       - NO SIMILAR CONTENT: The modifiers must be distinct enough to create visually different variations of the same subject.
-      - GENERATIVE AI COMPLIANCE: Ensure all modifiers strictly avoid brands, logos, trademarked elements, and specific real-world locations.
+      - GENERATIVE AI COMPLIANCE: Ensure all modifiers strictly avoid brands, logos, trademarked elements, and specific real-world locations. Use generic terms only.
       - QUALITY: The modifiers should naturally enhance the quality and realism/detail of the final output.
       
       Ensure all modifiers are tailored for ${contentType}.
-      Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
+      Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
+
+    const parts: any[] = [{ text: promptText }];
+    if (referenceFile) {
+      parts.push({
+        inlineData: {
+          data: referenceFile.data,
+          mimeType: referenceFile.mimeType
+        }
+      });
+    }
+
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3-flash-preview',
+      contents: { parts },
       config: {
         systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Provide highly commercial, premium modifiers that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines.",
+        tools: referenceUrl ? [{ urlContext: {} }] : undefined,
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -673,9 +690,11 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
   }
 
   // Standard optimization for smaller arrays
-  const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-2.5-flash',
-    contents: `Optimize the following list of image generation prompts to make them more detailed, commercial-grade, and highly targeted for the '${contentType}' category on microstock platforms like Adobe Stock.
+  const promptTextSmall = `Optimize the following list of image generation prompts to make them more detailed, commercial-grade, and highly targeted for the '${contentType}' category on microstock platforms like Adobe Stock.
+
+${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
+${referenceUrl ? `Analyze the visual style, trends, and content from this reference URL: ${referenceUrl} and use it as inspiration for the optimization.` : ''}
+${referenceFile ? `Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference for visual style, composition, subject matter, and mood. Extract its "Visual DNA" and apply it to these prompts.` : ''}
 
 Original Prompts:
 ${JSON.stringify(prompts)}
@@ -684,8 +703,8 @@ CRITICAL REQUIREMENTS FOR OPTIMIZATION (ADOBE STOCK):
 1. Enhance Technical Precision: Add specific lighting, camera angles, lens types, and aesthetic quality appropriate for a ${contentType}.
 2. Improve Commercial Utility: Ensure concepts are highly usable for designers and agencies. Add elements like 'copy space', 'authentic lifestyle', 'modern aesthetics', or 'clean backgrounds' where appropriate.
 3. NO SIMILAR CONTENT: Ensure the optimized prompts are distinct enough from each other to avoid generating repetitive images.
-4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings.
-5. QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
+4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
+5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
 6. Maintain Original Intent: Keep the core subject and action of the original prompt, but elevate its quality and marketability.
 7. STRICT Template Alignment: You MUST strictly format each optimized prompt using this exact template structure:
 "${template.template}"
@@ -693,9 +712,24 @@ Replace the bracketed placeholders with your optimized content. Do not add conve
 
 Respond strictly with a JSON array of strings, where each string is the optimized version of the corresponding original prompt. The output array must have exactly the same length as the input array.
 Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
-${settings.includeNegative ? 'Append a strong negative prompt at the end of each optimized prompt (e.g., "--no text, watermark, deformed, blurry, logos, bad anatomy, extra limbs").' : ''}`,
+${settings.includeNegative ? 'Append a strong negative prompt at the end of each optimized prompt (e.g., "--no text, watermark, deformed, blurry, logos, bad anatomy, extra limbs").' : ''}`;
+
+  const partsSmall: any[] = [{ text: promptTextSmall }];
+  if (referenceFile) {
+    partsSmall.push({
+      inlineData: {
+        data: referenceFile.data,
+        mimeType: referenceFile.mimeType
+      }
+    });
+  }
+
+  const response = await ai.models.generateContent({
+    model: settings.model || 'gemini-3-flash-preview',
+    contents: { parts: partsSmall },
     config: {
-      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in optimizing and refining image generation prompts to produce flawless, authentic, and highly usable stock photography and illustrations that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines.",
+      systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in optimizing and refining image generation prompts to produce flawless, authentic, and highly usable stock photography and illustrations that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. You excel at extracting aesthetic essence from references and applying it to new concepts.",
+      tools: referenceUrl ? [{ urlContext: {} }] : undefined,
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.ARRAY,

@@ -331,7 +331,15 @@ export default function App() {
     setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isUpgrading: true } : c));
     
     try {
-      const optimizedPrompts = await optimizePrompts(category.generatedPrompts, settings, category.contentType);
+      const optimizedPrompts = await optimizePrompts(
+        category.generatedPrompts, 
+        settings, 
+        category.contentType,
+        keyword || undefined,
+        category.categoryName,
+        referenceFile || undefined,
+        referenceUrl || undefined
+      );
       
       setResults(prev => prev.map(c => {
         if (c.id === categoryId) {
