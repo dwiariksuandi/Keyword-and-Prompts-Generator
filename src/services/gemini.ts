@@ -413,7 +413,8 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       6. 5 aspect ratios (e.g., "16:9", "4:3", "3:2", "1:1", "9:16")
       
       CRITICAL ADOBE STOCK RULES:
-      - NO SIMILAR CONTENT: The components must be vastly different from each other to avoid generating repetitive images. Do not just change colors or minor details. Vary the camera angles, compositions, and core actions.
+      - ALGORITHM OPTIMIZATION: To rank high and sell, concepts must have high commercial utility. Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
+      - NO SIMILAR CONTENT: The components must be vastly different from each other to avoid generating repetitive images. Adobe Stock rejects batches of similar images. Vary the camera angles, compositions, and core actions.
       - NO TEXT/TYPOGRAPHY: Absolutely no text, words, letters, signatures, or watermarks should be mentioned or implied in the components. The output must be purely visual.
       - GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms (e.g., "generic modern luxury car" instead of "Tesla").
       - QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
@@ -510,9 +511,9 @@ Extract its "Visual DNA" (lighting, color palette, mood, composition, subject ma
 The niche '${categoryName}' should be used as a SECONDARY IDEA or context to adapt the primary visual DNA from the file into a highly commercial stock asset.` : ''}
 
 CRITICAL REQUIREMENTS FOR ADOBE STOCK:
-1. Commercial Utility: Ensure concepts are highly usable for designers and agencies. Include concepts with 'copy space', 'authentic lifestyle', 'modern aesthetics', or 'clean backgrounds' where appropriate.
+1. ALGORITHM OPTIMIZATION & Commercial Utility: Ensure concepts are highly usable for designers and agencies. You MUST include concepts with 'copy space', 'authentic lifestyle', 'diverse representation', 'modern aesthetics', or 'clean backgrounds' where appropriate.
 2. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for a ${contentType} on the ${template.name} platform.
-3. NO SIMILAR CONTENT: Do not generate prompts that are practically identical. Each prompt MUST have a distinct composition, camera angle, subject, or core action.
+3. NO SIMILAR CONTENT: Adobe Stock rejects batches of similar images. Do not generate prompts that are practically identical. Each prompt MUST have a distinct composition, camera angle, subject, or core action.
 4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
 5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
 6. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks. The image must be clean and free of any literal text.
@@ -589,9 +590,9 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
   DO NOT make literal copies; instead, create new scenes heavily inspired by this aesthetic and concept.` : ''}
 
   CRITICAL REQUIREMENTS FOR ADOBE STOCK:
-  1. Commercial Utility: Ensure concepts are highly usable for designers and agencies. Include 'copy space' where relevant.
+  1. ALGORITHM OPTIMIZATION & Commercial Utility: Ensure concepts are highly usable for designers and agencies. You MUST include concepts with 'copy space', 'authentic lifestyle', 'diverse representation', 'modern aesthetics', or 'clean backgrounds' where appropriate.
   2. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for the ${template.name} platform.
-  3. NO SIMILAR CONTENT: Each prompt MUST have a distinct composition, camera angle, subject, or core action. Avoid repetitive concepts.
+  3. NO SIMILAR CONTENT: Adobe Stock rejects batches of similar images. Each prompt MUST have a distinct composition, camera angle, subject, or core action. Avoid repetitive concepts.
   4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only (e.g., "generic modern smartphone").
   5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
   6. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks.
@@ -864,7 +865,8 @@ export async function generateAllPromptsBatch(
       6. 5 aspect ratios (e.g., "16:9", "4:3", "1:1").
       
       CRITICAL ADOBE STOCK RULES:
-      - NO SIMILAR CONTENT: Components must be vastly different.
+      - ALGORITHM OPTIMIZATION: To rank high and sell, components must lead to high commercial utility. Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
+      - NO SIMILAR CONTENT: Components must be vastly different to avoid rejection for similarity.
       - GENERATIVE AI COMPLIANCE: NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands.
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
       config: {
@@ -961,11 +963,12 @@ export async function generateAdobeStockMetadata(
     
     ${getContentTypeInstructions(contentType)}
 
-CRITICAL: Use Google Search to find the highest-converting, most searched keywords for these specific visual concepts on Adobe Stock and similar platforms.
-
-For EACH prompt, provide:
-1. title: A descriptive, commercial title (max 200 characters). Must be in English.
-2. keywords: Exactly 40-50 highly relevant keywords. Order them by relevance (most important first). Must be in English. No spammy words.
+CRITICAL ADOBE STOCK SEO ALGORITHM RULES:
+1. TITLE: Write a natural, descriptive title (5-10 words, max 200 chars). Include the main subject, action, and setting. Do not keyword stuff the title. Must be in English.
+2. KEYWORDS: Provide exactly 40-50 highly relevant keywords. Must be in English.
+3. KEYWORD ORDER IS CRITICAL: The Adobe Stock search algorithm heavily weighs the FIRST 10 KEYWORDS. Place the most accurate, descriptive, and important keywords at the very beginning of the array.
+4. KEYWORD TYPES: Include who, what, where, action, mood, and technical concepts (e.g., 'copy space', 'background', 'authentic').
+5. COMPLIANCE: NO trademarks, NO brand names, NO camera brands (like Nikon, Sony). No spammy words.
 
 Prompts:
 ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
