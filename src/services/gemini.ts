@@ -2,27 +2,34 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { AppSettings, PromptTemplate } from '../types';
 
 export const promptTemplates: PromptTemplate[] = [
-  // Photo Templates
+  // --- PHOTO ---
+  {
+    id: "nanobanana-photo",
+    name: "Nano Banana Pro (Photo)",
+    template: "Breathtaking {style} photorealistic image of {subject}, {details}. Shot on medium format camera, 50mm lens, f/1.8. {lighting}, {mood} atmosphere. Cinematic composition, hyper-detailed textures, 8k resolution, editorial commercial photography, award-winning masterpiece, no text.",
+    description: "Advanced multimodal prompt for Nano Banana Pro AI",
+    contentTypes: ["Photo"]
+  },
   {
     id: "midjourney-photo",
     name: "Midjourney v6 (Photo)",
     template: "{style} {subject}, {details}, {lighting}, {mood} atmosphere, professional quality, high detail, no text, no watermark, commercial photography. --ar {aspect} --style raw --v 6.0",
     description: "Optimized for Midjourney v6 with style raw",
-    contentTypes: ["Photo", "Background"]
+    contentTypes: ["Photo"]
   },
   {
     id: "dalle-photo",
     name: "DALL-E 3 (Photo)",
     template: "A {style} image of {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. High resolution, photorealistic details, commercial stock photography style, no text, no logos.",
     description: "Natural language prompts for DALL-E 3",
-    contentTypes: ["Photo", "Background"]
+    contentTypes: ["Photo"]
   },
   {
     id: "stable-photo",
     name: "Stable Diffusion XL (Photo)",
     template: "{subject}, {style}, {details}, {lighting}, {mood}, masterpiece, best quality, highly detailed, 8k uhd, commercial stock photo, clean background",
     description: "Tag-based prompts for SDXL",
-    contentTypes: ["Photo", "Background"]
+    contentTypes: ["Photo"]
   },
   {
     id: "stock-photo",
@@ -31,15 +38,68 @@ export const promptTemplates: PromptTemplate[] = [
     description: "Optimized for stock photography sites",
     contentTypes: ["Photo"]
   },
+
+  // --- BACKGROUND ---
   {
-    id: "nanobanana-photo",
-    name: "Nano Banana Pro",
-    template: "Generate a stunning {style} visual of {subject}. Key elements: {details}. Lighting setup: {lighting}. Overall mood: {mood}. Ultra-high definition, cinematic composition, award-winning quality, commercial stock asset, no text.",
-    description: "Advanced multimodal prompt for Nano Banana Pro AI",
-    contentTypes: ["Photo"]
+    id: "nanobanana-background",
+    name: "Nano Banana Pro (Background)",
+    template: "High-end commercial {style} background featuring {subject}, {details}. {lighting}, {mood} color palette. 8k resolution, seamless composition, ample copy space, subtle depth of field, premium stock photography background, clean and modern aesthetic, out of focus elements.",
+    description: "Premium background generation for Nano Banana Pro",
+    contentTypes: ["Background"]
+  },
+  {
+    id: "midjourney-background",
+    name: "Midjourney v6 (Background)",
+    template: "Abstract {style} background of {subject}, {details}, {lighting}, {mood} atmosphere, ample copy space, minimalist composition, commercial background asset, 8k, highly detailed. --ar {aspect} --style raw --v 6.0",
+    description: "Optimized for Midjourney v6 backgrounds",
+    contentTypes: ["Background"]
+  },
+  {
+    id: "dalle-background",
+    name: "DALL-E 3 (Background)",
+    template: "A clean, modern {style} background image featuring {subject}. {details}. {lighting}, {mood} atmosphere. Designed with ample negative space for text overlays, commercial stock background style, high resolution.",
+    description: "Natural language background prompts for DALL-E 3",
+    contentTypes: ["Background"]
   },
 
-  // Illustration Templates
+  // --- VECTOR ---
+  {
+    id: "nanobanana-vector",
+    name: "Nano Banana Pro (Vector)",
+    template: "Professional {style} vector illustration of {subject}, {details}. Flat design, clean SVG style, {lighting}, {mood} color palette. Minimalist curves, no gradients, solid colors, commercial UI/UX asset, isolated on white background, award-winning vector art.",
+    description: "Advanced vector prompt for Nano Banana Pro",
+    contentTypes: ["Vector"]
+  },
+  {
+    id: "midjourney-vector",
+    name: "Midjourney v6 (Vector Style)",
+    template: "Flat {style} vector illustration of {subject}, {details}, {lighting}, {mood}, clean lines, solid colors, minimal shading, white background, commercial quality, no text. --ar {aspect} --v 6.0",
+    description: "Midjourney prompts designed to look like vectors",
+    contentTypes: ["Vector"]
+  },
+  {
+    id: "recraft-vector",
+    name: "Recraft (Vector)",
+    template: "Vector art of {subject}, {details}, {lighting}, {mood}, {style}, clean SVG style, flat colors, commercial design, no text.",
+    description: "Optimized for Recraft vector generation",
+    contentTypes: ["Vector"]
+  },
+  {
+    id: "leonardo-vector",
+    name: "Leonardo AI (Vector)",
+    template: "Vector illustration of {subject}, {details}, {lighting}, {mood}, {style}, flat design, vibrant colors, clean edges, commercial vector asset, white background.",
+    description: "Optimized for Leonardo AI vector style",
+    contentTypes: ["Vector"]
+  },
+
+  // --- ILLUSTRATION ---
+  {
+    id: "nanobanana-illustration",
+    name: "Nano Banana Pro (Illustration)",
+    template: "Masterpiece digital {style} illustration of {subject}, {details}. {lighting}, {mood} atmosphere. Intricate details, vibrant colors, commercial editorial illustration, trending on ArtStation, 8k resolution.",
+    description: "High-end illustration prompt for Nano Banana Pro",
+    contentTypes: ["Illustration"]
+  },
   {
     id: "midjourney-niji",
     name: "Midjourney Niji (Illustration)",
@@ -59,88 +119,72 @@ export const promptTemplates: PromptTemplate[] = [
     name: "Adobe Firefly (Illustration)",
     template: "{subject}, {details}, {lighting}, {mood}, {style} illustration, highly detailed, commercial use, clean background, vibrant colors",
     description: "Optimized for Adobe Firefly",
-    contentTypes: ["Illustration", "Vector"]
+    contentTypes: ["Illustration"]
   },
 
-  // Vector Templates
-  {
-    id: "midjourney-vector",
-    name: "Midjourney v6 (Vector Style)",
-    template: "Flat vector illustration of {subject}, {details}, {lighting}, {mood}, clean lines, solid colors, minimal shading, white background, commercial quality, no text. --ar {aspect} --v 6.0",
-    description: "Midjourney prompts designed to look like vectors",
-    contentTypes: ["Vector"]
-  },
-  {
-    id: "recraft-vector",
-    name: "Recraft (Vector)",
-    template: "Vector art of {subject}, {details}, {lighting}, {mood}, {style}, clean SVG style, flat colors, commercial design, no text.",
-    description: "Optimized for Recraft vector generation",
-    contentTypes: ["Vector"]
-  },
-  {
-    id: "leonardo-vector",
-    name: "Leonardo AI (Vector)",
-    template: "Vector illustration of {subject}, {details}, {lighting}, {mood}, flat design, vibrant colors, clean edges, commercial vector asset, white background.",
-    description: "Optimized for Leonardo AI vector style",
-    contentTypes: ["Vector"]
-  },
-
-  // Video Templates
+  // --- VIDEO ---
   {
     id: "veo-video",
     name: "Veo (Video)",
-    template: "Cinematic video of {subject}, {details}. {lighting}, {mood} atmosphere. Shot on 35mm lens, 4k resolution, smooth motion, high quality commercial footage.",
+    template: "Cinematic {style} video of {subject}, {details}. {lighting}, {mood} atmosphere. Shot on 35mm lens, 4k resolution, smooth motion, high quality commercial footage.",
     description: "Optimized for Google Veo",
     contentTypes: ["Video"]
   },
   {
     id: "sora-video",
     name: "Sora (Video)",
-    template: "A highly detailed, photorealistic video of {subject}. {details}. The camera moves smoothly, capturing the {lighting} and {mood} atmosphere. 8k resolution, commercial stock footage style.",
+    template: "A highly detailed, photorealistic {style} video of {subject}. {details}. The camera moves smoothly, capturing the {lighting} and {mood} atmosphere. 8k resolution, commercial stock footage style.",
     description: "Natural language prompts for OpenAI Sora",
     contentTypes: ["Video"]
   },
   {
     id: "wan-video",
     name: "WAN (Video)",
-    template: "High quality video of {subject}, {details}, {lighting}, {mood}, cinematic lighting, photorealistic, 4k resolution, smooth camera movement, commercial stock footage.",
+    template: "High quality {style} video of {subject}, {details}, {lighting}, {mood}, cinematic lighting, photorealistic, 4k resolution, smooth camera movement, commercial stock footage.",
     description: "Optimized for WAN Video AI",
     contentTypes: ["Video"]
   },
   {
     id: "kling-video",
     name: "Kling (Video)",
-    template: "{subject}, {details}, {lighting}, {mood}, cinematic motion, 4k, ultra realistic, professional stock video, clean composition.",
+    template: "{subject}, {details}, {lighting}, {mood}, {style}, cinematic motion, 4k, ultra realistic, professional stock video, clean composition.",
     description: "Optimized for Kling AI",
     contentTypes: ["Video"]
   },
   {
     id: "runway-video",
     name: "Runway Gen-2 (Video)",
-    template: "{subject}, {details}, {lighting}, {mood}, cinematic, highly detailed, 4k, photorealistic, slow motion, commercial stock footage.",
+    template: "{subject}, {details}, {lighting}, {mood}, {style}, cinematic, highly detailed, 4k, photorealistic, slow motion, commercial stock footage.",
     description: "Tag-based prompts for Runway Gen-2",
     contentTypes: ["Video"]
   },
 
-  // 3D Render Templates
+  // --- 3D RENDER ---
+  {
+    id: "nanobanana-3d",
+    name: "Nano Banana Pro (3D Render)",
+    template: "Award-winning {style} 3D render of {subject}, {details}. {lighting}, {mood} atmosphere. Created in Unreal Engine 5, path tracing, global illumination, hyper-realistic textures, 8k resolution, commercial 3D asset, clean background.",
+    description: "Premium 3D render prompt for Nano Banana Pro",
+    contentTypes: ["3D Render"]
+  },
   {
     id: "midjourney-3d",
     name: "Midjourney v6 (3D Render)",
-    template: "3D render of {subject}, {details}, {lighting}, {mood}, Octane Render, Unreal Engine 5, ray tracing, highly detailed, commercial quality, clean background. --ar {aspect} --v 6.0",
+    template: "{style} 3D render of {subject}, {details}, {lighting}, {mood}, Octane Render, Unreal Engine 5, ray tracing, highly detailed, commercial quality, clean background. --ar {aspect} --v 6.0",
     description: "Optimized for 3D style in Midjourney",
     contentTypes: ["3D Render"]
   },
   {
     id: "dalle-3d",
     name: "DALL-E 3 (3D Render)",
-    template: "A high-quality 3D render of {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. Created in Blender, Octane Render style, commercial stock 3D asset, no text.",
+    template: "A high-quality {style} 3D render of {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. Created in Blender, Octane Render style, commercial stock 3D asset, no text.",
     description: "Natural language 3D prompts for DALL-E 3",
     contentTypes: ["3D Render"]
   },
   {
     id: "leonardo-3d",
     name: "Leonardo AI (3D Render)",
-    template: "3D illustration of {subject}, {details}, {lighting}, {mood}, isometric view, clay render style, soft lighting, pastel colors, commercial 3D asset, clean background.",
+    template: "3D illustration of {subject}, {details}, {lighting}, {mood}, {style}, isometric view, clay render style, soft lighting, pastel colors, commercial 3D asset, clean background.",
     description: "Optimized for Leonardo AI 3D style",
     contentTypes: ["3D Render"]
   }

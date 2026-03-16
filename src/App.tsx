@@ -31,12 +31,12 @@ export default function App() {
     apiKey: '',
     model: 'gemini-3.1-pro-preview',
     templateId: {
-      'Photo': 'midjourney-photo',
-      'Illustration': 'midjourney-niji',
-      'Vector': 'midjourney-vector',
-      'Background': 'midjourney-photo',
+      'Photo': 'nanobanana-photo',
+      'Illustration': 'nanobanana-illustration',
+      'Vector': 'nanobanana-vector',
+      'Background': 'nanobanana-background',
       'Video': 'veo-video',
-      '3D Render': 'midjourney-3d'
+      '3D Render': 'nanobanana-3d'
     },
     promptCount: 100,
     language: 'en',
@@ -66,12 +66,12 @@ export default function App() {
             const oldId = newSettings.templateId;
             // Map old generic IDs to specific new ones if needed, or just use defaults
             newSettings.templateId = {
-              'Photo': oldId === 'midjourney' ? 'midjourney-photo' : oldId === 'dalle' ? 'dalle-photo' : oldId === 'stable' ? 'stable-photo' : 'midjourney-photo',
-              'Illustration': oldId === 'midjourney' ? 'midjourney-niji' : oldId === 'dalle' ? 'dalle-illustration' : 'firefly-illustration',
-              'Vector': oldId === 'midjourney' ? 'midjourney-vector' : 'recraft-vector',
-              'Background': oldId === 'midjourney' ? 'midjourney-photo' : oldId === 'dalle' ? 'dalle-photo' : oldId === 'stable' ? 'stable-photo' : 'midjourney-photo',
+              'Photo': oldId === 'midjourney' ? 'midjourney-photo' : oldId === 'dalle' ? 'dalle-photo' : oldId === 'stable' ? 'stable-photo' : 'nanobanana-photo',
+              'Illustration': oldId === 'midjourney' ? 'midjourney-niji' : oldId === 'dalle' ? 'dalle-illustration' : 'nanobanana-illustration',
+              'Vector': oldId === 'midjourney' ? 'midjourney-vector' : 'nanobanana-vector',
+              'Background': oldId === 'midjourney' ? 'midjourney-background' : oldId === 'dalle' ? 'dalle-background' : oldId === 'stable' ? 'stable-photo' : 'nanobanana-background',
               'Video': 'veo-video',
-              '3D Render': oldId === 'midjourney' ? 'midjourney-3d' : oldId === 'dalle' ? 'dalle-3d' : 'midjourney-3d'
+              '3D Render': oldId === 'midjourney' ? 'midjourney-3d' : oldId === 'dalle' ? 'dalle-3d' : 'nanobanana-3d'
             };
           } else if (newSettings.templateId) {
             // Also migrate existing objects that might have old IDs
@@ -79,13 +79,13 @@ export default function App() {
             if (t['Photo'] === 'midjourney') t['Photo'] = 'midjourney-photo';
             if (t['Illustration'] === 'midjourney') t['Illustration'] = 'midjourney-niji';
             if (t['Vector'] === 'midjourney') t['Vector'] = 'midjourney-vector';
-            if (t['Background'] === 'midjourney') t['Background'] = 'midjourney-photo';
+            if (t['Background'] === 'midjourney') t['Background'] = 'midjourney-background';
             if (t['Video'] === 'midjourney') t['Video'] = 'veo-video';
             if (t['3D Render'] === 'midjourney') t['3D Render'] = 'midjourney-3d';
             
             if (t['Photo'] === 'dalle') t['Photo'] = 'dalle-photo';
             if (t['Illustration'] === 'dalle') t['Illustration'] = 'dalle-illustration';
-            if (t['Background'] === 'dalle') t['Background'] = 'dalle-photo';
+            if (t['Background'] === 'dalle') t['Background'] = 'dalle-background';
             if (t['3D Render'] === 'dalle') t['3D Render'] = 'dalle-3d';
             
             if (t['Photo'] === 'stable') t['Photo'] = 'stable-photo';

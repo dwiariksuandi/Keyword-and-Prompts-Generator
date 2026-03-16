@@ -26,12 +26,12 @@ export default function Settings({
 
   // Ensure templateId is an object with defaults
   const defaultTemplates: Record<string, string> = {
-    'Photo': 'midjourney-photo',
-    'Illustration': 'midjourney-niji',
-    'Vector': 'midjourney-vector',
-    'Background': 'midjourney-photo',
+    'Photo': 'nanobanana-photo',
+    'Illustration': 'nanobanana-illustration',
+    'Vector': 'nanobanana-vector',
+    'Background': 'nanobanana-background',
     'Video': 'veo-video',
-    '3D Render': 'midjourney-3d'
+    '3D Render': 'nanobanana-3d'
   };
 
   const currentTemplateIds = typeof settings.templateId === 'string' 
