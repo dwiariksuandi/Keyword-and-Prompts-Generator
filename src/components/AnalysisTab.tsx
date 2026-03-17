@@ -247,16 +247,45 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                         </motion.span>
                       ))}
                     </div>
+
+                    {category.visualTrends && category.visualTrends.length > 0 && (
+                      <div className="mt-6 space-y-4 sm:space-y-5">
+                        <h4 className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Visual Trends</h4>
+                        <div className="flex flex-wrap gap-2 sm:gap-3">
+                          {category.visualTrends.map((trend, idx) => (
+                            <span
+                              key={idx}
+                              className="bg-purple-500/10 text-purple-300 text-[10px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-purple-500/20 font-medium tracking-wide"
+                            >
+                              {trend}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="bg-accent/5 rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-accent/10 relative overflow-hidden group/advice">
-                    <div className="absolute top-0 left-0 w-1 sm:w-1.5 h-full bg-accent/20 group-hover/advice:bg-accent transition-all duration-500" />
-                    <h4 className="text-[9px] sm:text-[10px] font-bold text-accent uppercase tracking-[0.3em] mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
-                      <Sparkles size={14} sm:size={16} /> Strategic Directive
-                    </h4>
-                    <p className="text-base sm:text-lg text-slate-300 leading-relaxed italic font-light">
-                      "{category.creativeAdvice}"
-                    </p>
+                  <div className="space-y-6">
+                    <div className="bg-accent/5 rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-accent/10 relative overflow-hidden group/advice">
+                      <div className="absolute top-0 left-0 w-1 sm:w-1.5 h-full bg-accent/20 group-hover/advice:bg-accent transition-all duration-500" />
+                      <h4 className="text-[9px] sm:text-[10px] font-bold text-accent uppercase tracking-[0.3em] mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
+                        <Sparkles size={14} className="sm:w-4 sm:h-4" /> Strategic Directive
+                      </h4>
+                      <p className="text-base sm:text-lg text-slate-300 leading-relaxed italic font-light">
+                        "{category.creativeAdvice}"
+                      </p>
+                    </div>
+
+                    {category.buyerPersona && (
+                      <div className="bg-white/5 rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-white/10 relative overflow-hidden">
+                        <h4 className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
+                          <Target size={14} className="sm:w-4 sm:h-4" /> Target Buyer Persona
+                        </h4>
+                        <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-light">
+                          {category.buyerPersona}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

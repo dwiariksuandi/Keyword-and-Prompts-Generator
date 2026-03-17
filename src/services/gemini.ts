@@ -557,6 +557,8 @@ Respond strictly with a JSON array of objects. Each object MUST follow this sche
   "trendPercent": number,
   "difficultyScore": number (0-100),
   "opportunityScore": number (0-100),
+  "buyerPersona": string,
+  "visualTrends": string[],
   "creativeAdvice": string
 }
 
@@ -571,7 +573,9 @@ This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for this analysi
 5. Use Google Search to cross-reference these extracted themes with current market demand on Adobe Stock to find profitable angles based on the URL's core concept.` : ''}
 ${!keyword && !referenceUrl && referenceFile ? 'Please derive the niche opportunities primarily from the visual content of the provided reference.' : ''}
 
-Your objective is to uncover 4 to 6 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.
+Your objective is to uncover 5 to 8 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.
+
+CRITICAL ANALYSIS REQUIREMENT: Identify specific "Content Gaps" in the current market. What are buyers searching for that yields outdated, low-quality, or irrelevant results? Base your niches on these gaps.
 
 ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: I have provided an ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference. 
 This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for this analysis.
@@ -582,7 +586,7 @@ This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for t
 
 CRITICAL ADOBE STOCK RULES:
 - GENERATIVE AI COMPLIANCE: The niches MUST NOT rely on trademarked/copyrighted elements, specific brands, recognizable characters, or real known restricted places/buildings. Focus on generic, commercially safe concepts (e.g., "generic modern smartphone" instead of "iPhone").
-- NO SIMILAR CONTENT: Ensure the 4 to 6 niches are distinct from each other, while still adhering to the main idea if a reference URL/file is provided.
+- NO SIMILAR CONTENT: Ensure the 5 to 8 niches are distinct from each other, while still adhering to the main idea if a reference URL/file is provided.
 
 For each niche, you MUST provide realistic, data-backed market metrics based on your search:
 1. categoryName: A highly specific, commercial niche name (e.g., "Gen Z Sustainable Office Lifestyle" instead of "Business People").
@@ -592,7 +596,9 @@ For each niche, you MUST provide realistic, data-backed market metrics based on 
 5. trend & trendPercent: Current market trajectory based on real-world news/seasons (e.g., +45% due to recent events).
 6. difficultyScore: 0-100. How hard is it for a new contributor to rank on page 1?
 7. opportunityScore: 0-100. The ultimate metric. High volume + Low competition = High Opportunity (80-100).
-8. creativeAdvice: Highly specific art direction based on current design trends. What exact visual elements, lighting, colors, or compositions are missing in the current market for this niche? ${referenceUrl ? 'Ensure the advice heavily incorporates the aesthetic and concepts from the reference URL.' : ''} ${referenceFile ? 'Ensure the advice heavily incorporates the aesthetic and concepts from the reference file.' : ''}
+8. buyerPersona: A specific description of the target buyer (e.g., "Tech startup marketing teams", "Eco-conscious lifestyle bloggers"). Who is actively searching for this?
+9. visualTrends: An array of 3-5 specific visual trends currently dominating this niche (e.g., ["Muted earth tones", "Candid documentary style", "Harsh flash photography"]).
+10. creativeAdvice: Highly specific art direction based on current design trends. What exact visual elements, lighting, colors, or compositions are missing in the current market for this niche? ${referenceUrl ? 'Ensure the advice heavily incorporates the aesthetic and concepts from the reference URL.' : ''} ${referenceFile ? 'Ensure the advice heavily incorporates the aesthetic and concepts from the reference file.' : ''}
 
 CRITICAL: Ensure mathematical and logical consistency. If competition is 95/100 (oversaturated), the opportunity score MUST be low (under 40) unless the volume is exceptionally massive and growing rapidly. Prioritize finding "Blue Ocean" niches (High Opportunity).
 Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;

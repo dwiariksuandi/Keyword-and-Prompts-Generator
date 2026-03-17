@@ -43,6 +43,8 @@ export interface CategoryResult {
   difficultyScore: number;
   opportunityScore: number;
   creativeAdvice: string;
+  buyerPersona?: string;
+  visualTrends?: string[];
   generatedPrompts: string[];
   promptScores?: PromptScore[];
   isGeneratingPrompts: boolean;

@@ -237,6 +237,8 @@ export default function App() {
         trendPercent: item.trendPercent,
         difficultyScore: item.difficultyScore,
         opportunityScore: item.opportunityScore,
+        buyerPersona: item.buyerPersona,
+        visualTrends: item.visualTrends,
         creativeAdvice: item.creativeAdvice,
         generatedPrompts: [],
         isGeneratingPrompts: false,
