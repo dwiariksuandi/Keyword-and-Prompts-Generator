@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap, Upload, Image as ImageIcon, Film, X, Link as LinkIcon, Loader2, Cpu, Globe, Activity, Database, Terminal, Palette, Layers, Box } from 'lucide-react';
+import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap, Upload, Image as ImageIcon, Film, X, Link as LinkIcon, Loader2, Cpu, Globe, Activity, Database, Terminal, Palette, Layers, Box, ChevronDown, ChevronUp, Type } from 'lucide-react';
 import { CategoryResult, AppSettings, ReferenceFile, AestheticAnalysis } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
+import FormField from './FormField';
 
 interface TopTabProps {
   keyword: string;
@@ -81,6 +82,7 @@ export default function TopTab({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [isAestheticExpanded, setIsAestheticExpanded] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -204,190 +206,144 @@ export default function TopTab({
 
         {/* Main Input Area */}
         <div className="p-6 sm:p-10 space-y-8 sm:space-y-10 relative">
-          <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-accent/20 to-blue-500/20 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
-            <textarea 
-              className="relative w-full h-40 sm:h-48 bg-black/40 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-8 text-white placeholder-slate-600 resize-none outline-none focus:border-accent/40 focus:ring-0 transition-all font-light text-lg sm:text-xl leading-relaxed shadow-inner"
-              placeholder="Describe your creative concept or enter neural keywords..."
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-            />
-            
-            <AnimatePresence>
-              {showSuggestions && filteredSuggestions.length > 0 && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute top-full left-0 right-0 mt-4 glass-panel rounded-[2.5rem] shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar border-white/10 backdrop-blur-2xl"
-                >
-                  {!keyword.trim() && (
-                    <div className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3 border-b border-white/5 bg-white/5">
-                      <TrendingUp size={14} className="text-accent" /> Trending Neural Patterns
-                    </div>
-                  )}
-                  {filteredSuggestions.map((suggestion, i) => (
-                    <button
-                      key={i}
-                      className="w-full text-left px-8 py-5 text-sm text-slate-300 hover:bg-white/5 hover:text-accent transition-all border-b border-white/5 last:border-0 flex items-center gap-5 group"
-                      onClick={() => {
-                        setKeyword(suggestion);
-                        setIsFocused(false);
-                        setShowSuggestions(false);
-                      }}
-                    >
-                      <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-accent/30 group-hover:bg-accent/5 transition-all">
-                        <Search size={14} className="text-slate-600 group-hover:text-accent transition-colors" />
+          <FormField
+            label="Primary Concept / Keywords"
+            icon={<Type size={14} />}
+            description="Describe your creative concept or enter neural keywords to generate prompts."
+            error={!keyword.trim() && !referenceFile && !referenceUrl.trim() ? "Please provide a keyword, reference file, or URL to begin analysis." : undefined}
+          >
+            <div className="relative group mt-2">
+              <div className="absolute -inset-1 bg-gradient-to-r from-accent/20 to-blue-500/20 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
+              <textarea 
+                className="relative w-full h-40 sm:h-48 bg-black/40 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-8 text-white placeholder-slate-600 resize-none outline-none focus:border-accent/40 focus:ring-0 transition-all font-light text-lg sm:text-xl leading-relaxed shadow-inner"
+                placeholder="Describe your creative concept or enter neural keywords..."
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+              />
+              
+              <AnimatePresence>
+                {showSuggestions && filteredSuggestions.length > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute top-full left-0 right-0 mt-4 glass-panel rounded-[2.5rem] shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar border-white/10 backdrop-blur-2xl"
+                  >
+                    {!keyword.trim() && (
+                      <div className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3 border-b border-white/5 bg-white/5">
+                        <TrendingUp size={14} className="text-accent" /> Trending Neural Patterns
                       </div>
-                      <span className="font-light tracking-wide">{suggestion}</span>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                    )}
+                    {filteredSuggestions.map((suggestion, i) => (
+                      <button
+                        key={i}
+                        className="w-full text-left px-8 py-5 text-sm text-slate-300 hover:bg-white/5 hover:text-accent transition-all border-b border-white/5 last:border-0 flex items-center gap-5 group"
+                        onClick={() => {
+                          setKeyword(suggestion);
+                          setIsFocused(false);
+                          setShowSuggestions(false);
+                        }}
+                      >
+                        <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-accent/30 group-hover:bg-accent/5 transition-all">
+                          <Search size={14} className="text-slate-600 group-hover:text-accent transition-colors" />
+                        </div>
+                        <span className="font-light tracking-wide">{suggestion}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </FormField>
 
           {/* Reference Tools Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10">
             {/* File Upload */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 ml-2 sm:ml-4">
-                <Activity size={14} className="text-accent" />
-                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em]">Visual DNA Analysis</label>
-              </div>
-              <input 
-                type="file" 
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*,video/*"
-                className="hidden"
-              />
-              
-              {!referenceFile ? (
-                <motion.button 
-                  whileHover={{ scale: 1.01, backgroundColor: 'rgba(255,255,255,0.08)' }}
-                  whileTap={{ scale: 0.99 }}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full h-14 sm:h-16 flex items-center justify-center gap-4 text-[9px] font-bold text-slate-400 hover:text-white hover:border-white/30 transition-all bg-white/5 border border-dashed border-white/10 rounded-2xl px-6 uppercase tracking-[0.2em]"
-                >
-                  <Upload size={18} className="text-accent" />
-                  <span>Upload Reference Asset</span>
-                </motion.button>
-              ) : (
-                <div className="space-y-3">
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="relative bg-white/5 border border-accent/30 rounded-2xl p-3 sm:p-4 flex items-center gap-4 group"
+            <FormField
+              label="Visual DNA Analysis"
+              icon={<Activity size={14} />}
+              description="Upload an image or video to extract aesthetic properties."
+            >
+              <div className="mt-2">
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*,video/*"
+                  className="hidden"
+                />
+                
+                {!referenceFile ? (
+                  <motion.button 
+                    whileHover={{ scale: 1.01, backgroundColor: 'rgba(255,255,255,0.08)' }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full h-14 sm:h-16 flex items-center justify-center gap-4 text-[9px] font-bold text-slate-400 hover:text-white hover:border-white/30 transition-all bg-white/5 border border-dashed border-white/10 rounded-2xl px-6 uppercase tracking-[0.2em]"
                   >
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-black/40 overflow-hidden flex items-center justify-center border border-white/10 shrink-0 shadow-lg">
-                      {referenceFile.mimeType.startsWith('image/') ? (
-                        <img src={referenceFile.previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                      ) : (
-                        <Film size={24} className="text-slate-500" />
-                      )}
-                    </div>
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-xs font-bold text-white truncate">{referenceFile.name}</span>
-                      <span className="text-[9px] text-slate-500 uppercase tracking-[0.2em] mt-1 flex items-center gap-2">
-                        <div className="w-1 h-1 rounded-full bg-accent animate-pulse" />
-                        {referenceFile.mimeType.split('/')[1]} • Neural Ready
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      {referenceFile.mimeType.startsWith('image/') && (
+                    <Upload size={18} className="text-accent" />
+                    <span>Upload Reference Asset</span>
+                  </motion.button>
+                ) : (
+                  <div className="space-y-3">
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="relative bg-white/5 border border-accent/30 rounded-2xl p-3 sm:p-4 flex items-center gap-4 group"
+                    >
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-black/40 overflow-hidden flex items-center justify-center border border-white/10 shrink-0 shadow-lg">
+                        {referenceFile.mimeType.startsWith('image/') ? (
+                          <img src={referenceFile.previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <Film size={24} className="text-slate-500" />
+                        )}
+                      </div>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="text-xs font-bold text-white truncate">{referenceFile.name}</span>
+                        <span className="text-[9px] text-slate-500 uppercase tracking-[0.2em] mt-1 flex items-center gap-2">
+                          <div className="w-1 h-1 rounded-full bg-accent animate-pulse" />
+                          {referenceFile.mimeType.split('/')[1]} • Neural Ready
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        {referenceFile.mimeType.startsWith('image/') && (
+                          <motion.button 
+                            whileHover={{ scale: 1.1, backgroundColor: 'rgba(0,255,255,0.1)' }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => {
+                              setIsAestheticExpanded(true);
+                              onAnalyzeAesthetic();
+                            }}
+                            disabled={isAnalyzingAesthetic}
+                            className="p-2 text-accent hover:bg-accent/10 rounded-xl transition-all border border-transparent hover:border-accent/30"
+                            title="Analyze Aesthetic"
+                          >
+                            {isAnalyzingAesthetic ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                          </motion.button>
+                        )}
                         <motion.button 
-                          whileHover={{ scale: 1.1, backgroundColor: 'rgba(0,255,255,0.1)' }}
+                          whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,0,0,0.1)' }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={onAnalyzeAesthetic}
-                          disabled={isAnalyzingAesthetic}
-                          className="p-2 text-accent hover:bg-accent/10 rounded-xl transition-all border border-transparent hover:border-accent/30"
-                          title="Analyze Aesthetic"
+                          onClick={() => { removeFile(); setAestheticAnalysis(null); }}
+                          className="p-2 text-slate-500 hover:text-rose-400 rounded-xl transition-all border border-transparent hover:border-rose-400/30"
                         >
-                          {isAnalyzingAesthetic ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                          <X size={16} />
                         </motion.button>
-                      )}
-                      <motion.button 
-                        whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,0,0,0.1)' }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => { removeFile(); setAestheticAnalysis(null); }}
-                        className="p-2 text-slate-500 hover:text-rose-400 rounded-xl transition-all border border-transparent hover:border-rose-400/30"
-                      >
-                        <X size={16} />
-                      </motion.button>
-                    </div>
-                  </motion.div>
-
-                  <AnimatePresence>
-                    {aestheticAnalysis && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="bg-accent/5 border border-accent/20 rounded-2xl p-6 space-y-4 overflow-hidden shadow-[0_0_30px_rgba(0,255,255,0.1)]"
-                      >
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-[9px] font-bold text-accent uppercase tracking-[0.3em] flex items-center gap-2">
-                            <Terminal size={14} /> Aesthetic DNA Decoded
-                          </h3>
-                          <button onClick={() => setAestheticAnalysis(null)} className="text-slate-500 hover:text-white transition-colors">
-                            <X size={14} />
-                          </button>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-6">
-                          <div className="space-y-1">
-                            <span className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">Content Type</span>
-                            <p className="text-xs text-accent font-bold leading-relaxed">{aestheticAnalysis.detectedContentType || 'Analyzing...'}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">Artistic Style</span>
-                            <p className="text-xs text-slate-200 font-light leading-relaxed">{aestheticAnalysis.artisticStyle}</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <span className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">Chromatic Profile</span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {aestheticAnalysis.colorPalette.map((color, i) => (
-                              <span key={i} className="px-2 py-1 bg-white/5 rounded-lg text-[9px] text-slate-400 border border-white/10 font-mono uppercase tracking-wider">{color}</span>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <span className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">Strategic Neural Insights</span>
-                          <div className="space-y-1.5">
-                            {aestheticAnalysis.suggestions.map((suggestion, i) => (
-                              <motion.button 
-                                key={i} 
-                                whileHover={{ x: 2, backgroundColor: 'rgba(0,255,255,0.05)' }}
-                                whileTap={{ scale: 0.99 }}
-                                onClick={() => setKeyword(prev => prev ? `${prev}, ${suggestion}` : suggestion)}
-                                className="w-full text-left p-2.5 rounded-xl border border-white/5 hover:border-accent/30 transition-all flex items-start gap-2.5 group"
-                              >
-                                <div className="w-1 h-1 rounded-full bg-accent mt-1.5 shrink-0 shadow-[0_0_8px_rgba(0,255,255,0.5)]" />
-                                <span className="text-[10px] text-slate-400 group-hover:text-slate-200 font-light leading-relaxed">{suggestion}</span>
-                              </motion.button>
-                            ))}
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+              </div>
+            </FormField>
 
             {/* URL Reference */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 ml-2 sm:ml-4">
-                <Database size={14} className="text-accent" />
-                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em]">Market Source Protocol</label>
-              </div>
-              <div className="relative group">
+            <FormField
+              label="Market Source Protocol"
+              icon={<Database size={14} />}
+              description="Provide a URL to analyze visual trends and extract keywords."
+            >
+              <div className="relative group mt-2">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                   <LinkIcon size={16} className="text-slate-500 group-focus-within:text-accent transition-colors" />
                 </div>
@@ -403,7 +359,10 @@ export default function TopTab({
                     <motion.button 
                       whileHover={{ scale: 1.1, backgroundColor: 'rgba(0,255,255,0.1)' }}
                       whileTap={{ scale: 0.9 }}
-                      onClick={onAnalyzeAesthetic}
+                      onClick={() => {
+                        setIsAestheticExpanded(true);
+                        onAnalyzeAesthetic();
+                      }}
                       disabled={isAnalyzingAesthetic}
                       className="p-2 text-accent hover:bg-accent/10 rounded-xl transition-all border border-transparent hover:border-accent/30"
                       title="Analyze URL Aesthetic"
@@ -421,7 +380,7 @@ export default function TopTab({
                   </div>
                 )}
               </div>
-            </div>
+            </FormField>
           </div>
 
           {/* Action Buttons */}
@@ -464,6 +423,147 @@ export default function TopTab({
           </div>
         </div>
       </motion.div>
+
+      {/* Dedicated Aesthetic Analysis Section */}
+      <AnimatePresence>
+        {aestheticAnalysis && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: 20, height: 0 }}
+            className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6"
+          >
+            <div className="bg-black/40 backdrop-blur-xl border border-accent/20 rounded-[2rem] overflow-hidden shadow-[0_0_40px_rgba(0,255,255,0.05)]">
+              {/* Header / Toggle */}
+              <div 
+                className="p-6 sm:p-8 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors"
+                onClick={() => setIsAestheticExpanded(!isAestheticExpanded)}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20">
+                    <Terminal size={24} className="text-accent" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-white tracking-wide">Aesthetic DNA Decoded</h3>
+                    <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-[0.2em] mt-1">
+                      {aestheticAnalysis.detectedContentType || 'Analysis Complete'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setAestheticAnalysis(null); }} 
+                    className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-400/10 rounded-xl transition-all"
+                    title="Dismiss Analysis"
+                  >
+                    <X size={18} />
+                  </button>
+                  <div className="w-px h-8 bg-white/10" />
+                  <div className="p-2 text-slate-400">
+                    {isAestheticExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </div>
+                </div>
+              </div>
+
+              {/* Collapsible Content */}
+              <AnimatePresence>
+                {isAestheticExpanded && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                  >
+                    <div className="px-6 sm:px-8 pb-8 pt-2 border-t border-white/5">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                        {/* Artistic Style */}
+                        <div className="space-y-3 lg:col-span-2">
+                          <div className="flex items-center gap-2">
+                            <Palette size={14} className="text-accent" />
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Artistic Style</span>
+                          </div>
+                          <p className="text-sm text-slate-200 font-light leading-relaxed bg-white/5 p-4 rounded-2xl border border-white/5">
+                            {aestheticAnalysis.artisticStyle}
+                          </p>
+                        </div>
+
+                        {/* Lighting */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Zap size={14} className="text-amber-400" />
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Lighting</span>
+                          </div>
+                          <p className="text-sm text-slate-200 font-light leading-relaxed bg-white/5 p-4 rounded-2xl border border-white/5">
+                            {aestheticAnalysis.lighting}
+                          </p>
+                        </div>
+
+                        {/* Mood */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Activity size={14} className="text-rose-400" />
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Mood</span>
+                          </div>
+                          <p className="text-sm text-slate-200 font-light leading-relaxed bg-white/5 p-4 rounded-2xl border border-white/5">
+                            {aestheticAnalysis.mood}
+                          </p>
+                        </div>
+
+                        {/* Composition */}
+                        <div className="space-y-3 lg:col-span-2">
+                          <div className="flex items-center gap-2">
+                            <Layers size={14} className="text-emerald-400" />
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Composition</span>
+                          </div>
+                          <p className="text-sm text-slate-200 font-light leading-relaxed bg-white/5 p-4 rounded-2xl border border-white/5">
+                            {aestheticAnalysis.composition}
+                          </p>
+                        </div>
+
+                        {/* Chromatic Profile */}
+                        <div className="space-y-3 lg:col-span-2">
+                          <div className="flex items-center gap-2">
+                            <Box size={14} className="text-indigo-400" />
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Chromatic Profile</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 bg-white/5 p-4 rounded-2xl border border-white/5">
+                            {aestheticAnalysis.colorPalette.map((color, i) => (
+                              <span key={i} className="px-3 py-1.5 bg-black/40 rounded-xl text-[10px] text-slate-300 border border-white/10 font-mono uppercase tracking-wider">
+                                {color}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Strategic Neural Insights */}
+                        <div className="space-y-3 lg:col-span-4">
+                          <div className="flex items-center gap-2">
+                            <Target size={14} className="text-accent" />
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Strategic Neural Insights (Click to Add)</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {aestheticAnalysis.suggestions.map((suggestion, i) => (
+                              <motion.button 
+                                key={i} 
+                                whileHover={{ scale: 1.02, backgroundColor: 'rgba(0,255,255,0.08)' }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => setKeyword(prev => prev ? `${prev}, ${suggestion}` : suggestion)}
+                                className="text-left p-4 rounded-2xl border border-white/10 hover:border-accent/40 transition-all flex items-start gap-3 group bg-white/5"
+                              >
+                                <div className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0 shadow-[0_0_8px_rgba(0,255,255,0.5)] group-hover:scale-150 transition-transform" />
+                                <span className="text-xs text-slate-300 group-hover:text-white font-light leading-relaxed">{suggestion}</span>
+                              </motion.button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {results.length > 0 && (

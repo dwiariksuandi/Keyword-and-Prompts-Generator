@@ -231,16 +231,25 @@ const getAI = (apiKey?: string) => {
 
 export function handleGeminiError(error: any): string {
   let errorString = '';
-  let statusCode = 0;
+  let errorCode = 0;
+  let errorMessage = '';
 
   if (error instanceof Error) {
     errorString = error.message;
   } else if (typeof error === 'object' && error !== null) {
     try {
       errorString = JSON.stringify(error);
-      // Try to extract status code if available in the error object
-      if ('status' in error) statusCode = (error as any).status;
-      if ('statusCode' in error) statusCode = (error as any).statusCode;
+      // Try to extract status code/message if available in the error object
+      if ('status' in error) errorCode = (error as any).status;
+      if ('statusCode' in error) errorCode = (error as any).statusCode;
+      
+      // Check if it's a JSON string that can be parsed
+      const parsed = typeof error === 'string' ? JSON.parse(error) : error;
+      if (parsed?.error) {
+        errorCode = parsed.error.code || errorCode;
+        errorMessage = parsed.error.message || '';
+        errorString = errorMessage || errorString;
+      }
     } catch {
       errorString = String(error);
     }
@@ -248,8 +257,15 @@ export function handleGeminiError(error: any): string {
     errorString = String(error);
   }
   
+  // Specific: URL Limit Error (20 URLs limit)
+  if (errorString.includes('urls to lookup exceeds the limit') || errorString.includes('21 > 20')) {
+    return "⚠️ Terlalu Banyak URL (Error 400)\n\n" +
+           "Penyebab: Permintaan mengandung terlalu banyak URL untuk dianalisis (maksimal 20).\n\n" +
+           "Solusi: Kurangi jumlah URL dalam prompt atau gunakan satu URL referensi saja.";
+  }
+
   // 429 - Resource Exhausted / Quota
-  if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED') || errorString.includes('quota')) {
+  if (errorCode === 429 || errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED') || errorString.includes('quota')) {
     return "⚠️ Batas Penggunaan Terlampaui (Error 429)\n\n" +
            "Penyebab:\n" +
            "1. Limit Per Menit: Akun gratis dibatasi 15 request/menit.\n" +
@@ -259,19 +275,32 @@ export function handleGeminiError(error: any): string {
            "• Jika tetap gagal, gunakan API Key dari Project Google Cloud yang berbeda.";
   }
   
-  // 400/401 - Invalid API Key
-  if (errorString.includes('400') || errorString.includes('401') || errorString.includes('API key not valid') || errorString.includes('API_KEY_INVALID')) {
-    return "❌ API Key Tidak Valid (Error 400/401)\n\n" +
+  // 401 - Unauthorized (Definitely API Key)
+  if (errorCode === 401 || errorString.includes('401') || errorString.includes('API_KEY_INVALID')) {
+    return "❌ API Key Tidak Valid (Error 401)\n\n" +
            "Penyebab:\n" +
-           "• API Key salah ketik atau ada spasi tambahan.\n" +
+           "• API Key salah atau tidak memiliki izin.\n" +
            "• API Key telah dihapus atau dinonaktifkan di Google AI Studio.\n\n" +
            "Solusi:\n" +
            "• Periksa kembali API Key Anda.\n" +
-           "• Pastikan API Key berasal dari 'Google AI Studio' (bukan Vertex AI).";
+           "• Pastikan API Key berasal dari 'Google AI Studio'.";
+  }
+
+  // 400 - Bad Request (Could be API Key or something else)
+  if (errorCode === 400 || errorString.includes('400')) {
+    if (errorString.includes('API key not valid') || errorString.includes('invalid API key')) {
+      return "❌ API Key Tidak Valid (Error 400)\n\n" +
+             "Penyebab:\n" +
+             "• API Key salah ketik atau ada spasi tambahan.\n\n" +
+             "Solusi:\n" +
+             "• Periksa kembali API Key Anda.";
+    }
+    // Generic 400
+    return `⚠️ Permintaan Tidak Valid (Error 400)\n\nDetail: ${errorString.substring(0, 300)}`;
   }
 
   // 403 - Permission Denied
-  if (errorString.includes('403') || errorString.includes('PERMISSION_DENIED')) {
+  if (errorCode === 403 || errorString.includes('403') || errorString.includes('PERMISSION_DENIED')) {
     return "🚫 Akses Ditolak (Error 403)\n\n" +
            "Penyebab:\n" +
            "• API Key tidak memiliki izin untuk mengakses model ini.\n" +
@@ -396,7 +425,9 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
     "suggestions": ["suggestion 1", "suggestion 2", ...]
   }
 
-  Suggestions should be specific to the '${contentType}' category, focusing on commercial utility, technical precision, and high-end aesthetic standards.`;
+  Suggestions should be specific to the '${contentType}' category, focusing on commercial utility, technical precision, and high-end aesthetic standards.
+  
+  Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -445,8 +476,8 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
 export async function analyzeUrlAesthetic(url: string, settings: AppSettings, contentType: string): Promise<AestheticAnalysis> {
   const ai = getAI(settings.apiKey);
   
-  const promptText = `Analyze the content and visual style of this URL: ${url}
-  You MUST use the urlContext tool to fetch and deeply analyze the content.
+  const promptText = `Analyze the content and visual style of this specific URL: ${url}
+  You MUST use the Google Search tool to fetch and deeply analyze the content of this URL.
   
   Extract its "Aesthetic DNA" optimized for the '${contentType}' category. 
   Focus on identifying the core visual elements that define its unique style and suggest how to incorporate them into high-quality image generation prompts for Adobe Stock.
@@ -464,14 +495,16 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
     "suggestions": ["suggestion 1", "suggestion 2", ...]
   }
 
-  Suggestions should be specific to the '${contentType}' category, focusing on commercial utility, technical precision, and high-end aesthetic standards.`;
+  Suggestions should be specific to the '${contentType}' category, focusing on commercial utility, technical precision, and high-end aesthetic standards.
+  
+  Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
   try {
     const response = await ai.models.generateContent({
       model: settings.model || 'gemini-3-flash-preview',
       contents: [{ text: promptText }],
       config: {
-        tools: [{ urlContext: {} }],
+        tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -529,7 +562,7 @@ Respond strictly with a JSON array of objects. Each object MUST follow this sche
 
 ${keyword ? `The broad keyword context is: '${keyword}'.` : 'No specific keyword was provided.'}
 ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-You MUST use the urlContext tool to fetch and deeply analyze the content of this URL. 
+You MUST use the Google Search tool to fetch and deeply analyze the content of this URL. 
 This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for this analysis.
 1. Identify the specific content type or niche of the asset in the URL (e.g., "Niche Background", "Video Background", "Photo Landscape", "Technology", "Lifestyle", "Abstract Art", etc.).
 2. Extract the core visual themes, color palettes, lighting styles, subject matter, and underlying concepts from the URL.
@@ -580,7 +613,7 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     contents: { parts },
     config: {
       systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to provide highly accurate, data-backed estimates for search volume and competition based on REAL, current market trends using Google Search. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
-      tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+      tools: [{ googleSearch: {} }],
       thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
     },
   });
@@ -612,7 +645,7 @@ export async function scorePrompts(prompts: string[], settings: AppSettings, con
   let allScores: PromptScore[] = [];
 
   for (const chunk of chunks) {
-    const promptText = `Evaluate the quality of the following ${chunk.length} image generation prompts for Adobe Stock. 
+    const promptText = `Analyze the selected prompts and provide specific suggestions for improving their quality, focusing on technical details like lighting, composition, and resolution. Evaluate the quality of the following ${chunk.length} image generation prompts for Adobe Stock. 
     Target Asset Type: '${contentType}'
     Niche: '${categoryName}'
 
@@ -621,7 +654,7 @@ export async function scorePrompts(prompts: string[], settings: AppSettings, con
     CRITICAL EVALUATION CRITERIA (Score 0-100 for each):
     1. Keyword Density: Are the keywords relevant and well-distributed? (Avoid stuffing, but ensure essential terms are present).
     2. Clarity: Is the prompt easy for an AI to understand? Is the subject clear?
-    3. Specificity: Does it provide enough detail (lighting, composition, textures) to generate a high-quality, unique image?
+    3. Specificity: Does it provide enough detail (lighting, composition, textures, resolution) to generate a high-quality, unique image?
     4. Adobe Stock Adherence: Does it follow commercial utility rules (copy space, diversity, authentic lifestyle) and AI compliance (no brands, no text)?
 
     Prompts to evaluate:
@@ -638,8 +671,10 @@ export async function scorePrompts(prompts: string[], settings: AppSettings, con
     - feedback: (A concise summary of the evaluation)
     - keywordFeedback: (Specific suggestions for keyword usage and density)
     - clarityFeedback: (Specific suggestions for improving clarity and subject definition)
-    - specificityFeedback: (Specific suggestions for adding technical details like lighting, composition, and textures)
-    - adherenceFeedback: (Specific suggestions for improving Adobe Stock commercial utility and AI compliance)`;
+    - specificityFeedback: (Specific suggestions for adding technical details like lighting, composition, textures, and resolution)
+    - adherenceFeedback: (Specific suggestions for improving Adobe Stock commercial utility and AI compliance)
+    
+    Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
     const response = await ai.models.generateContent({
       model: settings.model || 'gemini-3-flash-preview',
@@ -701,11 +736,13 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated components reflect REAL market demand and current design trends.
 
       ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-      You MUST use the urlContext tool to deeply analyze the visual style, trends, topic, lighting, and keywords from this URL. 
+      You MUST use the Google Search tool to deeply analyze the visual style, trends, topic, lighting, and keywords from this URL. 
       This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
       1. Identify the specific content type, niche, and CORE TOPIC of the asset in the URL.
       2. Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter, and thematic keywords).
-      The niche '${categoryName}' should be used as a SECONDARY context to adapt the primary visual DNA and topic from the URL into a highly commercial stock asset.` : ''}
+      The niche '${categoryName}' should be used as a SECONDARY context to adapt the primary visual DNA and topic from the URL into a highly commercial stock asset.
+      
+      ADOBE STOCK ALGORITHM OPTIMIZATION: Ensure the resulting prompts are "tepat sasaran" (perfectly targeted) to the URL's aesthetic DNA while maximizing commercial appeal (copy space, authentic lifestyle).` : ''}
       ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference.
       This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
       1. Extract its "Visual DNA": style, topic, lighting, and key visual elements.
@@ -714,9 +751,9 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       We need to programmatically generate ${count} unique combinations. Please provide:
       1. 30 highly distinct subjects (e.g., "a young professional woman", "a modern office desk", "a diverse team of engineers"). MUST be diverse in age, ethnicity, and core concept.
       2. 30 specific and varied details/actions/camera angles. You MUST rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
-      3. 15 distinct lighting styles (e.g., "soft morning sunlight", "dramatic studio lighting", "neon cyberpunk glow").
+      3. 20 distinct and trending lighting styles based on current market analysis (e.g., "soft morning sunlight", "dramatic studio lighting", "neon cyberpunk glow", "chiaroscuro", "golden hour backlighting", "cinematic rim lighting").
       4. 15 mood/atmosphere descriptions (e.g., "energetic and focused", "calm and serene", "mysterious and dark").
-      5. 10 artistic styles/mediums (e.g., "photorealistic", "cinematic photography", "3D render", "flat vector illustration").
+      5. 20 diverse artistic styles/mediums based on current visual trends (e.g., "photorealistic", "cinematic photography", "3D render", "flat vector illustration", "synthwave aesthetic", "minimalist line art", "hyper-detailed digital painting").
       6. 5 aspect ratios (e.g., "16:9", "4:3", "3:2", "1:1", "9:16")
       
       CRITICAL ADOBE STOCK RULES:
@@ -756,8 +793,13 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. Use real-world data to inform your aesthetic choices. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
-        tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+        systemInstruction: `You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. 
+        CORE ENGINE: You are operating on the ${settings.model || 'gemini-3-flash-preview'} model.
+        SYNTHESIS BLUEPRINT: You are generating components for the ${template.name} platform using its specific structural logic.
+        ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}
+        ADOBE STOCK ALGORITHM: Prioritize high-demand commercial themes, authentic representation, and technical excellence.
+        Respond ONLY with valid JSON.`,
+        tools: [{ googleSearch: {} }],
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
       }
     });
@@ -810,10 +852,11 @@ ${getContentTypeInstructions(contentType)}
 CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated prompts reflect REAL market demand and current design trends.
 
 ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-You MUST use the urlContext tool to analyze this URL. 
+You MUST use the Google Search tool to analyze this URL. 
 LOGIC: Use this URL as the PRIMARY SOURCE for style, topic, lighting, and thematic keywords.
 The niche '${categoryName}' provides additional context. 
 TASK: Generate prompts that are "tepat sasaran" (perfectly targeted) according to the URL's essence.
+ADOBE STOCK ALGORITHM: Maximize commercial utility (copy space, authentic lifestyle, diverse representation).
 ADOBE STOCK SAFETY: Do not replicate specific characters, but capture the exact visual and conceptual DNA.` : ''}
 ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'}.
 LOGIC: Use this file as the PRIMARY SOURCE for style, topic, lighting, and thematic keywords.
@@ -827,7 +870,8 @@ CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 1. ALGORITHM OPTIMIZATION & Commercial Utility: Ensure concepts are highly usable for designers and agencies. You MUST include concepts with 'copy space', 'authentic lifestyle', 'diverse representation', 'modern aesthetics', or 'clean backgrounds' where appropriate.
 2. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for a ${contentType} on the ${template.name} platform.
 3. NO SIMILAR CONTENT: Adobe Stock rejects batches of similar images. Do not generate prompts that are practically identical. Each prompt MUST have a distinct composition, camera angle, subject, or core action.
-   - VARIATION STRATEGY: Rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
+   - VARIATION STRATEGY: You MUST explicitly rotate through a wide range of camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level, over-the-shoulder) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
+   - LIGHTING & STYLE DIVERSITY: Ensure each prompt uses a unique combination of trending lighting conditions (e.g., golden hour, cinematic rim lighting, neon glow, soft diffused, harsh shadows) and artistic styles relevant to the market.
 4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
 5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
 6. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks. The image must be clean and free of any literal text.
@@ -855,8 +899,12 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts: partsSmall },
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. You understand lighting, composition, camera settings, and market trends perfectly based on real data. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA.",
-        tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+        systemInstruction: `You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. 
+        CORE ENGINE: ${settings.model || 'gemini-3-flash-preview'}.
+        SYNTHESIS BLUEPRINT: ${template.name}.
+        ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
+        ADOBE STOCK ALGORITHM: Focus on high-demand commercial utility and technical perfection.`,
+        tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.ARRAY,
@@ -897,10 +945,11 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
 
   ${keyword ? `The core theme/keyword is: '${keyword}'.` : ''}
   ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-  You MUST use the urlContext tool to analyze this URL. 
+  You MUST use the Google Search tool to analyze this URL. 
   LOGIC: Use this URL as the PRIMARY SOURCE for style, topic, lighting, and thematic keywords.
   Identify the specific content type, niche, and CORE TOPIC of the asset in the URL.
   TASK: Apply the style, topic, lighting, and keywords from the URL to the subject matter. 
+  ADOBE STOCK ALGORITHM: Ensure prompts are "tepat sasaran" (perfectly targeted) to the URL's aesthetic while maintaining high commercial utility.
   ADOBE STOCK SAFETY: Capture the 'vibe' and conceptual DNA without infringing on IP.` : ''}
   ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'}.
   LOGIC: Use this file as the PRIMARY SOURCE for style, topic, lighting, and thematic keywords.
@@ -942,8 +991,13 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references and real-world market data. You excel at extracting aesthetic essence and applying it to new, commercially viable concepts. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
-        tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+        systemInstruction: `You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references and real-world market data. 
+        CORE ENGINE: ${settings.model || 'gemini-3-flash-preview'}.
+        SYNTHESIS BLUEPRINT: ${template.name}.
+        ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
+        ADOBE STOCK ALGORITHM: Extract aesthetic essence and apply it to commercially viable concepts.
+        Respond ONLY with valid JSON.`,
+        tools: [{ googleSearch: {} }],
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
       }
     });
@@ -984,11 +1038,13 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
 
       ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
       ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-      You MUST use the urlContext tool to deeply analyze the visual style, topic, lighting, and keywords from this URL. 
+      You MUST use the Google Search tool to deeply analyze the visual style, topic, lighting, and keywords from this URL. 
       This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
       1. Identify the specific content type, niche, and CORE TOPIC of the asset in the URL.
       2. Use it as the absolute benchmark for style, lighting, camera settings, and overall aesthetic.
-      3. ALIGNMENT: If the original prompts deviate significantly from the topic or style of this URL, you MUST adjust them to be "on target" with the URL's essence while maintaining the original intent where possible.` : ''}
+      3. ALIGNMENT: If the original prompts deviate significantly from the topic or style of this URL, you MUST adjust them to be "on target" with the URL's essence while maintaining the original intent where possible.
+      
+      ADOBE STOCK ALGORITHM: Ensure the technical upgrade maximizes commercial appeal (copy space, authentic lifestyle, technical perfection).` : ''}
       ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided reference file.
       This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
       1. Extract the visual DNA: style, topic, lighting, and key visual elements.
@@ -1023,8 +1079,12 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
         model: settings.model || 'gemini-3-flash-preview',
         contents: { parts },
         config: {
-          systemInstruction: "You are a Master Neural Prompt Architect. Your specialty is 'Hyper-Optimization'—injecting extreme technical complexity and descriptive power into existing prompts while maintaining absolute fidelity to the original subject and style. You use advanced optics, lighting physics, and digital rendering terminology to elevate prompts to 'Masterpiece' status for Adobe Stock.",
-          tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+          systemInstruction: `You are a Master Neural Prompt Architect. Your specialty is 'Hyper-Optimization'—injecting extreme technical complexity and descriptive power into existing prompts while maintaining absolute fidelity to the original subject and style. 
+          CORE ENGINE: ${settings.model || 'gemini-3-flash-preview'}.
+          SYNTHESIS BLUEPRINT: ${template.name}.
+          ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
+          ADOBE STOCK ALGORITHM: Use advanced optics, lighting physics, and digital rendering terminology to elevate prompts to 'Masterpiece' status for Adobe Stock.`,
+          tools: [{ googleSearch: {} }],
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
@@ -1090,11 +1150,13 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
   CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
 
   ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-  You MUST use the urlContext tool to deeply analyze the visual style, topic, lighting, and keywords from this URL. 
+  You MUST use the Google Search tool to deeply analyze the visual style, topic, lighting, and keywords from this URL. 
   This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
   1. Identify the specific content type, niche, and CORE TOPIC of the asset in the URL.
   2. Use it as the absolute benchmark for style, lighting, camera settings, and overall aesthetic.
-  3. ALIGNMENT: You MUST optimize the prompts to be "on target" with the URL's style, topic, lighting, and keywords. If the original prompt subject differs slightly, align it with the URL's essence to ensure a cohesive commercial set.` : ''}
+  3. ALIGNMENT: You MUST optimize the prompts to be "on target" with the URL's style, topic, lighting, and keywords. If the original prompt subject differs slightly, align it with the URL's essence to ensure a cohesive commercial set.
+  
+  ADOBE STOCK ALGORITHM: Ensure the hyper-technical optimization maximizes commercial utility and technical rating.` : ''}
   ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided reference file.
   This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
   1. Extract the visual DNA: style, topic, lighting, and key visual elements.
@@ -1139,8 +1201,12 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts: partsSmall },
       config: {
-        systemInstruction: "You are a Master Neural Prompt Architect. Your specialty is 'Hyper-Optimization'—injecting extreme technical complexity and descriptive power into existing prompts while maintaining absolute fidelity to the original subject and style. You use advanced optics, lighting physics, and digital rendering terminology to elevate prompts to 'Masterpiece' status for Adobe Stock.",
-        tools: referenceUrl ? [{ urlContext: {} }, { googleSearch: {} }] : [{ googleSearch: {} }],
+        systemInstruction: `You are a Master Neural Prompt Architect. Your specialty is 'Hyper-Optimization'—injecting extreme technical complexity and descriptive power into existing prompts while maintaining absolute fidelity to the original subject and style. 
+        CORE ENGINE: ${settings.model || 'gemini-3-flash-preview'}.
+        SYNTHESIS BLUEPRINT: ${template.name}.
+        ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
+        ADOBE STOCK ALGORITHM: Use advanced optics, lighting physics, and digital rendering terminology to elevate prompts to 'Masterpiece' status for Adobe Stock.`,
+        tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.ARRAY,
@@ -1226,7 +1292,11 @@ export async function generateAllPromptsBatch(
 
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
       config: {
-        systemInstruction: "You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Use real-world data to inform your aesthetic choices. Respond ONLY with valid JSON.",
+        systemInstruction: `You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. 
+        CORE ENGINE: ${settings.model || 'gemini-3-flash-preview'}.
+        SYNTHESIS BLUEPRINT: ${template.name}.
+        ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
+        ADOBE STOCK ALGORITHM: Use real-world data to inform your aesthetic choices. Respond ONLY with valid JSON.`,
         tools: [{ googleSearch: {} }],
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
       }
@@ -1313,7 +1383,9 @@ ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
         model: settings.model || 'gemini-3-flash-preview',
         contents: promptText,
         config: {
-          systemInstruction: "You are an elite Microstock SEO Expert and Top-Selling Adobe Stock Contributor. You know exactly how to write titles and 50 keywords that rank #1 on Adobe Stock search. You use real-world search data to inform your keywords.",
+          systemInstruction: `You are an elite Microstock SEO Expert and Top-Selling Adobe Stock Contributor. 
+          CORE ENGINE: ${settings.model || 'gemini-3-flash-preview'}.
+          ADOBE STOCK ALGORITHM: You know exactly how to write titles and 50 keywords that rank #1 on Adobe Stock search. You use real-world search data to inform your keywords.`,
           tools: [{ googleSearch: {} }],
           responseMimeType: 'application/json',
           responseSchema: {
