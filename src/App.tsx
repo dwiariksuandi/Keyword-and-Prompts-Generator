@@ -350,7 +350,10 @@ export default function App() {
         settings, 
         result.contentType,
         referenceFile || undefined,
-        referenceUrl || undefined
+        referenceUrl || undefined,
+        result.buyerPersona,
+        result.visualTrends,
+        result.creativeAdvice
       );
 
       // Score the prompts

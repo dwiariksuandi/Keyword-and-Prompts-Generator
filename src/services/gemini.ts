@@ -6,8 +6,8 @@ export const promptTemplates: PromptTemplate[] = [
   {
     id: "nanobanana-photo",
     name: "Nano Banana Pro (Photo)",
-    template: "Breathtaking {style} photorealistic image of {subject}, {details}. Shot on medium format camera, 50mm lens, f/1.8. {lighting}, {mood} atmosphere. Cinematic composition, hyper-detailed textures, 8k resolution, editorial commercial photography, award-winning masterpiece, no text.",
-    description: "Advanced multimodal prompt for Nano Banana Pro AI",
+    template: "{subject}, {details}, {lighting}, {mood} atmosphere, {style}. Shot on medium format camera, 50mm lens, f/1.8. Cinematic composition, hyper-detailed textures, 8k resolution, no text.",
+    description: "Advanced multimodal prompt for Nano Banana Pro AI using [Subject] + [Action] + [Location] + [Composition] + [Style]",
     contentTypes: ["Photo"]
   },
   {
@@ -43,8 +43,8 @@ export const promptTemplates: PromptTemplate[] = [
   {
     id: "nanobanana-background",
     name: "Nano Banana Pro (Background)",
-    template: "High-end commercial {style} background featuring {subject}, {details}. {lighting}, {mood} color palette. 8k resolution, seamless composition, ample copy space, subtle depth of field, premium stock photography background, clean and modern aesthetic, out of focus elements.",
-    description: "Premium background generation for Nano Banana Pro",
+    template: "{subject}, {details}, {lighting}, {mood} color palette, {style}. 8k resolution, seamless composition, ample copy space, subtle depth of field, clean and modern aesthetic, out of focus elements.",
+    description: "Premium background generation for Nano Banana Pro using [Subject] + [Action] + [Location] + [Composition] + [Style]",
     contentTypes: ["Background"]
   },
   {
@@ -66,8 +66,8 @@ export const promptTemplates: PromptTemplate[] = [
   {
     id: "nanobanana-vector",
     name: "Nano Banana Pro (Vector)",
-    template: "Professional {style} vector illustration of {subject}, {details}. Flat design, clean SVG style, {lighting}, {mood} color palette. Minimalist curves, no gradients, solid colors, commercial UI/UX asset, isolated on white background, award-winning vector art.",
-    description: "Advanced vector prompt for Nano Banana Pro",
+    template: "{subject}, {details}, {lighting}, {mood} color palette, {style}. Flat design, clean SVG style, minimalist curves, no gradients, solid colors, isolated on white background.",
+    description: "Advanced vector prompt for Nano Banana Pro using [Subject] + [Action] + [Location] + [Composition] + [Style]",
     contentTypes: ["Vector"]
   },
   {
@@ -96,15 +96,15 @@ export const promptTemplates: PromptTemplate[] = [
   {
     id: "nanobanana-illustration",
     name: "Nano Banana Pro (Illustration)",
-    template: "Masterpiece digital {style} illustration of {subject}, {details}. {lighting}, {mood} atmosphere. Intricate details, vibrant colors, commercial editorial illustration, trending on ArtStation, 8k resolution.",
-    description: "High-end illustration prompt for Nano Banana Pro",
+    template: "{subject}, {details}, {lighting}, {mood} atmosphere, {style}. Intricate details, vibrant colors, commercial editorial illustration, 8k resolution.",
+    description: "High-end illustration prompt for Nano Banana Pro using [Subject] + [Action] + [Location] + [Composition] + [Style]",
     contentTypes: ["Illustration"]
   },
   {
     id: "nanobanana-ai-art",
     name: "Nano Banana Pro (AI Art)",
-    template: "Surreal and conceptual {style} AI art piece titled '{subject}', {details}. {lighting}, {mood} color palette. Intricate generative patterns, fluid forms, digital dreamscape, high-concept creativity, trending on ArtStation and Behance, 8k resolution, masterpiece.",
-    description: "Conceptual and creative AI art prompt for Nano Banana Pro",
+    template: "{subject}, {details}, {lighting}, {mood} color palette, {style}. Intricate generative patterns, fluid forms, digital dreamscape, high-concept creativity, 8k resolution.",
+    description: "Conceptual and creative AI art prompt for Nano Banana Pro using [Subject] + [Action] + [Location] + [Composition] + [Style]",
     contentTypes: ["AI Art & Creativity"]
   },
   {
@@ -153,9 +153,9 @@ export const promptTemplates: PromptTemplate[] = [
   // --- VIDEO ---
   {
     id: "veo-video",
-    name: "Veo (Video)",
-    template: "Cinematic {style} video of {subject}, {details}. {lighting}, {mood} atmosphere. Shot on 35mm lens, 4k resolution, smooth motion, high quality commercial footage.",
-    description: "Optimized for Google Veo",
+    name: "Veo 3.1 (Video)",
+    template: "{style} shot of {subject}, {details}, {lighting}, {mood} atmosphere. SFX: appropriate ambient sounds. 4k resolution, smooth motion.",
+    description: "Optimized for Google Veo 3.1 using [Cinematography] + [Subject] + [Action] + [Context] + [Style & Ambiance]",
     contentTypes: ["Video"]
   },
   {
@@ -191,8 +191,8 @@ export const promptTemplates: PromptTemplate[] = [
   {
     id: "nanobanana-3d",
     name: "Nano Banana Pro (3D Render)",
-    template: "Award-winning {style} 3D render of {subject}, {details}. {lighting}, {mood} atmosphere. Created in Unreal Engine 5, path tracing, global illumination, hyper-realistic textures, 8k resolution, commercial 3D asset, clean background.",
-    description: "Premium 3D render prompt for Nano Banana Pro",
+    template: "{subject}, {details}, {lighting}, {mood} atmosphere, {style}. Created in Unreal Engine 5, path tracing, global illumination, hyper-realistic textures, 8k resolution, clean background.",
+    description: "Premium 3D render prompt for Nano Banana Pro using [Subject] + [Action] + [Location] + [Composition] + [Style]",
     contentTypes: ["3D Render"]
   },
   {
@@ -377,21 +377,63 @@ export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean
 function getContentTypeInstructions(contentType: string): string {
   switch (contentType) {
     case 'Photo':
-      return "Focus on elite photographic parameters: specific camera bodies (e.g., Hasselblad H6D, Sony A7R V), precise lens optics (e.g., 85mm f/1.2 G Master, 35mm f/1.4 Summilux), advanced lighting physics (volumetric lighting, global illumination, ray-traced shadows), and professional post-processing (color grading, high dynamic range). Emphasize hyper-realism, authentic skin textures, and commercial editorial standards.";
+      return `NANO BANANA PROMPTING FRAMEWORK:
+      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
+      - Be specific: Provide concrete details on subject, lighting, and composition.
+      - Use positive framing: Describe what you want, not what you don't want.
+      - Control the camera: Use photographic terms like "low angle" and "aerial view".
+      - Design your lighting: Specify Studio setups (e.g., "three-point softbox setup") or Dramatic effects (e.g., "Chiaroscuro lighting with harsh, high contrast", "Golden hour backlighting creating long shadows").
+      - Choose camera, lens, and focus: Dictate hardware (e.g., "GoPro", "Fujifilm", "disposable camera") and Lens (e.g., "low-angle shot with a shallow depth of field (f/1.8)", "wide-angle lens", "macro lens").
+      - Define color grading and film stock: e.g., "1980s color film, slightly grainy", "Cinematic color grading with muted teal tones".
+      - Emphasize materiality and texture: Define physical makeup (e.g., "minimalist ceramic coffee mug").
+      - Text rendering: If text is needed, use quotes (e.g., "Happy Birthday") and choose a font (e.g., "bold, white, sans-serif font").`;
     case 'Illustration':
-      return "Focus on sophisticated illustrative techniques: complex brushwork, layered textures, intricate line art, and advanced color theory. Mention specific mediums like 'digital oil painting', 'meticulous watercolor', or 'hyper-detailed 2D vector art'. Emphasize stylistic depth, emotional resonance, and modern commercial illustration trends.";
+      return `NANO BANANA PROMPTING FRAMEWORK:
+      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
+      - Focus on sophisticated illustrative techniques: complex brushwork, layered textures, intricate line art, and advanced color theory.
+      - Define color grading and film stock: Set the emotional tone through color palettes.
+      - Emphasize materiality and texture: Define the physical makeup of the illustration (e.g., "cel animation style", "plushie style", "claymation style").
+      - Text rendering: If text is needed, use quotes (e.g., "URBAN EXPLORER") and choose a font.
+      - Be specific and use positive framing.`;
     case 'Vector':
-      return "Focus on high-end vector aesthetics: perfect geometric precision, complex gradients (mesh gradients), isometric perspectives, and clean SVG-compliant paths. Emphasize scalability, minimalist elegance, and elite UI/UX design standards.";
+      return `NANO BANANA PROMPTING FRAMEWORK:
+      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
+      - Focus on high-end vector aesthetics: perfect geometric precision, complex gradients (mesh gradients), isometric perspectives, and clean SVG-compliant paths.
+      - Emphasize scalability, minimalist elegance, and elite UI/UX design standards.
+      - Text rendering: If text is needed, use quotes and choose a font (e.g., "Century Gothic 12px font").`;
     case 'Background':
-      return "Focus on atmospheric and textural depth: multi-layered bokeh, complex procedural textures, subtle light leaks, and expansive copy space. Emphasize high-end commercial utility, depth of field, and premium aesthetic minimalism.";
+      return `NANO BANANA PROMPTING FRAMEWORK:
+      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
+      - Focus on atmospheric and textural depth: multi-layered bokeh, complex procedural textures, subtle light leaks, and expansive copy space.
+      - Design your lighting: Specify Dramatic effects (e.g., "Chiaroscuro lighting", "Golden hour backlighting").
+      - Choose camera, lens, and focus: Use "wide-angle lens" for vast scale or "macro lens" for intricate details.
+      - Define color grading and film stock: e.g., "Cinematic color grading with muted teal tones".`;
     case 'Video':
-      return "Focus on cinematic mastery: complex camera choreography (e.g., 'dynamic parallax tracking', 'stabilized gimbal orbit', 'high-speed phantom camera slow-motion'), specific frame rates (24fps, 60fps, 120fps), and cinematic lighting setups (Rembrandt lighting, teal and orange grading). Emphasize fluid motion, professional storytelling, and ultra-high-definition stock footage standards.";
+      return `VEO 3.1 PROMPTING FRAMEWORK:
+      Formula: [Cinematography] + [Subject] + [Action] + [Context] + [Style & Ambiance]
+      - Cinematography: Define camera movement (Dolly shot, tracking shot, crane shot, aerial view, slow pan, POV shot), Composition (Wide shot, close-up, extreme close-up, low angle, two-shot), and Lens & focus (Shallow depth of field, wide-angle lens, soft focus, macro lens, deep focus).
+      - Directing the soundstage: Veo 3.1 generates audio. Include Dialogue (e.g., A woman says, "We have to leave now."), Sound effects (e.g., SFX: thunder cracks in the distance), and Ambient noise (e.g., Ambient noise: the quiet hum of a starship bridge).
+      - Be specific and use positive framing (e.g., "desolate landscape with no buildings or roads" instead of "no man-made structures").
+      - Focus on cinematic mastery and professional storytelling.`;
     case '3D Render':
-      return "Focus on state-of-the-art rendering: Unreal Engine 5.4 Path Tracing, OctaneRender, physically based rendering (PBR) materials, subsurface scattering (SSS), and global illumination. Mention complex material properties like 'anisotropic metal' or 'refractive glass'. Emphasize hyper-realistic lighting and architectural-grade detail.";
+      return `NANO BANANA PROMPTING FRAMEWORK:
+      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
+      - Focus on state-of-the-art rendering: Unreal Engine 5.4 Path Tracing, OctaneRender, physically based rendering (PBR) materials, subsurface scattering (SSS), and global illumination.
+      - Design your lighting: Specify Studio setups (e.g., "three-point softbox setup") to evenly light a product.
+      - Emphasize materiality and texture: Define physical makeup (e.g., "anisotropic metal", "refractive glass", "high-fidelity 3D armchair render").
+      - Choose camera, lens, and focus: Dictate the exact camera type and lens perspective.`;
     case 'AI Art & Creativity':
-      return "Focus on boundary-pushing conceptualism: generative patterns, fluid organic forms, surrealist dreamscapes, and innovative digital alchemy. Emphasize high-concept artistic vision, unique visual metaphors, and trending digital art aesthetics on platforms like ArtStation and Behance.";
+      return `NANO BANANA PROMPTING FRAMEWORK:
+      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
+      - Focus on boundary-pushing conceptualism: generative patterns, fluid organic forms, surrealist dreamscapes, and innovative digital alchemy.
+      - Design your lighting: Specify Dramatic effects (e.g., "Chiaroscuro lighting with harsh, high contrast").
+      - Define color grading and film stock: Set the emotional tone with unique color palettes.
+      - Emphasize materiality and texture: Define the physical makeup of the abstract elements.`;
     default:
-      return "Focus on high-fidelity, commercially elite visual descriptors appropriate for this specific asset class.";
+      return `NANO BANANA PROMPTING FRAMEWORK:
+      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
+      - Focus on high-fidelity, commercially elite visual descriptors appropriate for this specific asset class.
+      - Design your lighting, choose your camera/lens, define color grading, and emphasize materiality.`;
   }
 }
 
@@ -726,7 +768,18 @@ export async function scorePrompts(prompts: string[], settings: AppSettings, con
   return allScores;
 }
 
-export async function generatePrompts(keyword: string, categoryName: string, count: number, settings: AppSettings, contentType: string, referenceFile?: ReferenceFile, referenceUrl?: string) {
+export async function generatePrompts(
+  keyword: string, 
+  categoryName: string, 
+  count: number, 
+  settings: AppSettings, 
+  contentType: string, 
+  referenceFile?: ReferenceFile, 
+  referenceUrl?: string,
+  buyerPersona?: string,
+  visualTrends?: string[],
+  creativeAdvice?: string
+) {
   const ai = getAI(settings.apiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
@@ -740,6 +793,10 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
       ${getContentTypeInstructions(contentType)}
 
       CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated components reflect REAL market demand and current design trends.
+
+      ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\n      Tailor the subjects, environments, and overall vibe to appeal directly to this specific audience and their commercial needs.` : ''}
+      ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\n      Integrate these specific aesthetic trends into the lighting, color grading, and styling of the prompts.` : ''}
+      ${creativeAdvice ? `STRATEGIC DIRECTIVE: ${creativeAdvice}\n      Ensure the prompts execute on this specific creative advice.` : ''}
 
       ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
       You MUST use the Google Search tool to deeply analyze the visual style, trends, topic, lighting, and keywords from this URL. 
@@ -756,14 +813,15 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
 
       We need to programmatically generate ${count} unique combinations. Please provide:
       1. 30 highly distinct subjects (e.g., "a young professional woman", "a modern office desk", "a diverse team of engineers"). MUST be diverse in age, ethnicity, and core concept.
-      2. 30 specific and varied details/actions/camera angles. You MUST rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
+      2. 30 specific and varied details/actions/camera angles. ${contentType === 'Video' ? 'Include Cinematography (Camera movement, Composition, Lens & focus) and Action.' : 'Include Action, Location/context, and Composition.'} You MUST rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
       3. 20 distinct and trending lighting styles based on current market analysis (e.g., "soft morning sunlight", "dramatic studio lighting", "neon cyberpunk glow", "chiaroscuro", "golden hour backlighting", "cinematic rim lighting").
-      4. 15 mood/atmosphere descriptions (e.g., "energetic and focused", "calm and serene", "mysterious and dark").
+      4. 15 mood/atmosphere descriptions (e.g., "energetic and focused", "calm and serene", "mysterious and dark"). ${contentType === 'Video' ? 'Include Soundstage details (Dialogue, SFX, Ambient noise).' : ''}
       5. 20 diverse artistic styles/mediums based on current visual trends (e.g., "photorealistic", "cinematic photography", "3D render", "flat vector illustration", "synthwave aesthetic", "minimalist line art", "hyper-detailed digital painting").
       6. 5 aspect ratios (e.g., "16:9", "4:3", "3:2", "1:1", "9:16")
       
       CRITICAL ADOBE STOCK RULES:
       - ALGORITHM OPTIMIZATION: To rank high and sell, concepts must have high commercial utility. Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
+      - KEYWORD DENSITY & SEO: Integrate high-value, descriptive keywords naturally into the components. Do not just list words. The components should read as natural, descriptive phrases that inherently contain strong keywords (e.g., instead of "office, business, woman", use "confident young female executive in a modern glass-walled corporate office").
       - NO SIMILAR CONTENT: The components must be vastly different from each other to avoid generating repetitive images. Adobe Stock rejects batches of similar images. 
         - VARIATION STRATEGY: Rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
       - NO TEXT/TYPOGRAPHY: Absolutely no text, words, letters, signatures, or watermarks should be mentioned or implied in the components. The output must be purely visual.
@@ -840,6 +898,10 @@ export async function generatePrompts(keyword: string, categoryName: string, cou
           .replace(/{aspect}/g, aspect);
           
         prompt += negativePrompt;
+        
+        // Ensure single line
+        prompt = prompt.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        
         generatedPrompts.add(prompt);
         attempts++;
       }
@@ -857,6 +919,10 @@ ${getContentTypeInstructions(contentType)}
 
 CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated prompts reflect REAL market demand and current design trends.
 
+${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\nTailor the subjects, environments, and overall vibe to appeal directly to this specific audience and their commercial needs.` : ''}
+${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\nIntegrate these specific aesthetic trends into the lighting, color grading, and styling of the prompts.` : ''}
+${creativeAdvice ? `STRATEGIC DIRECTIVE: ${creativeAdvice}\nEnsure the prompts execute on this specific creative advice.` : ''}
+
 ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
 You MUST use the Google Search tool to analyze this URL. 
 LOGIC: Use this URL as the PRIMARY SOURCE for style, topic, lighting, and thematic keywords.
@@ -870,12 +936,16 @@ The niche '${categoryName}' provides additional context.
 TASK: Generate prompts that precisely match the visual and conceptual DNA of the file.` : ''}
 
 ${contentType === 'AI Art & Creativity' ? `SPECIAL AI ART INSTRUCTION: For this category, prioritize surrealism, abstract concepts, and innovative digital aesthetics. If a reference is provided, deeply analyze its 'Aesthetic Soul'—not just the subject, but the emotional resonance, the texture of the light, and the complexity of the forms. Incorporate these into the prompts to create something that feels like a creative evolution of the reference.` : ''}
-${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'. Specify frame rates like '60fps' for slow motion or '24fps' for a cinematic look. Ensure the action described is dynamic and visually engaging.` : ''}
+${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'. Specify frame rates like '60fps' for slow motion or '24fps' for a cinematic look. Ensure the action described is dynamic and visually engaging. Include Soundstage details (Dialogue, SFX, Ambient noise).` : ''}
 
 CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 1. ALGORITHM OPTIMIZATION & Commercial Utility: Ensure concepts are highly usable for designers and agencies. You MUST include concepts with 'copy space', 'authentic lifestyle', 'diverse representation', 'modern aesthetics', or 'clean backgrounds' where appropriate.
-2. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for a ${contentType} on the ${template.name} platform.
-3. NO SIMILAR CONTENT: Adobe Stock rejects batches of similar images. Do not generate prompts that are practically identical. Each prompt MUST have a distinct composition, camera angle, subject, or core action.
+2. KEYWORD DENSITY & SEO: Weave 5-7 highly relevant, commercial keywords naturally into the descriptive flow of EACH prompt. 
+   - DO NOT keyword stuff (e.g., do not just add a list of words at the end).
+   - Instead, integrate them into the visual description (e.g., "A successful corporate business team collaborating in a modern sunlit office..."). 
+   - Ensure the keywords accurately describe the visual elements so the AI generates them.
+3. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for a ${contentType} on the ${template.name} platform.
+4. NO SIMILAR CONTENT: Adobe Stock rejects batches of similar images. Do not generate prompts that are practically identical. Each prompt MUST have a distinct composition, camera angle, subject, or core action.
    - VARIATION STRATEGY: You MUST explicitly rotate through a wide range of camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level, over-the-shoulder) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
    - LIGHTING & STYLE DIVERSITY: Ensure each prompt uses a unique combination of trending lighting conditions (e.g., golden hour, cinematic rim lighting, neon glow, soft diffused, harsh shadows) and artistic styles relevant to the market.
 4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
@@ -885,6 +955,7 @@ CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 8. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
 "${template.template}"
 Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
+9. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
 
 Respond strictly with a JSON array of strings, where each string is a complete, ready-to-use image generation prompt tailored for a ${contentType}.
 Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
@@ -926,7 +997,11 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
     // Strip markdown formatting if present
     text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
     
-    return extractJSON(text);
+    const parsed = extractJSON(text);
+    if (Array.isArray(parsed)) {
+      return parsed.map(p => typeof p === 'string' ? p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() : p);
+    }
+    return parsed;
   } catch (error) {
     console.error("Prompt generation failed:", error);
     if (error instanceof Error && error.message.includes('JSON')) {
@@ -962,12 +1037,16 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
   TASK: Apply the style, topic, lighting, and keywords from the file to the subject matter.` : ''}
 
 ${contentType === 'AI Art & Creativity' ? `SPECIAL AI ART INSTRUCTION: For this category, prioritize surrealism, abstract concepts, and innovative digital aesthetics. If a reference is provided, deeply analyze its 'Aesthetic Soul'—not just the subject, but the emotional resonance, the texture of the light, and the complexity of the forms. Incorporate these into the prompts to create something that feels like a creative evolution of the reference.` : ''}
-${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'. Specify frame rates like '60fps' for slow motion or '24fps' for a cinematic look. Ensure the action described is dynamic and visually engaging.` : ''}
+${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'. Specify frame rates like '60fps' for slow motion or '24fps' for a cinematic look. Ensure the action described is dynamic and visually engaging. Include Soundstage details (Dialogue, SFX, Ambient noise).` : ''}
 
   CRITICAL REQUIREMENTS FOR ADOBE STOCK:
   1. ALGORITHM OPTIMIZATION & Commercial Utility: Ensure concepts are highly usable for designers and agencies. You MUST include concepts with 'copy space', 'authentic lifestyle', 'diverse representation', 'modern aesthetics', or 'clean backgrounds' where appropriate.
-  2. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for the ${template.name} platform.
-  3. NO SIMILAR CONTENT: Adobe Stock rejects batches of similar images. Each prompt MUST have a distinct composition, camera angle, subject, or core action. Avoid repetitive concepts.
+  2. KEYWORD DENSITY & SEO: Weave 5-7 highly relevant, commercial keywords naturally into the descriptive flow of EACH prompt. 
+     - DO NOT keyword stuff (e.g., do not just add a list of words at the end).
+     - Instead, integrate them into the visual description (e.g., "A successful corporate business team collaborating in a modern sunlit office..."). 
+     - Ensure the keywords accurately describe the visual elements so the AI generates them.
+  3. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for the ${template.name} platform.
+  4. NO SIMILAR CONTENT: Adobe Stock rejects batches of similar images. Each prompt MUST have a distinct composition, camera angle, subject, or core action. Avoid repetitive concepts.
      - VARIATION STRATEGY: Rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
   4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only (e.g., "generic modern smartphone").
   5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
@@ -976,6 +1055,7 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
   8. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
   "${template.template}"
   Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
+  9. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
 
   Respond strictly with a JSON array of strings, where each string is a complete, ready-to-use image generation prompt tailored for a ${contentType}.
   Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
@@ -1012,7 +1092,11 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
     if (!text) throw new Error('No response from Gemini');
     text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
     
-    return extractJSON(text);
+    const parsed = extractJSON(text);
+    if (Array.isArray(parsed)) {
+      return parsed.map(p => typeof p === 'string' ? p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() : p);
+    }
+    return parsed;
   } catch (error) {
     console.error("Direct prompt generation failed:", error);
     if (error instanceof Error && error.message.includes('JSON')) {
@@ -1139,6 +1223,7 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
           .replace(/{aspect}/g, "16:9");
           
         prompt += negativePrompt;
+        prompt = prompt.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
         optimizedPrompts.add(prompt);
       }
       return Array.from(optimizedPrompts);
@@ -1187,6 +1272,7 @@ CRITICAL REQUIREMENTS:
 4. POWERFUL MODIFIERS: Use terms like "8K UHD", "hyper-detailed textures", "physically based rendering (PBR)", "ray-traced reflections", and "cinematic color grading".
 5. STRICT Template Alignment: Format each prompt using this exact structure:
 "${template.template}"
+6. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
 
 Respond strictly with a JSON array of strings.
 Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
@@ -1228,7 +1314,11 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
     // Strip markdown formatting if present
     text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
     
-    return extractJSON(text);
+    const parsed = extractJSON(text);
+    if (Array.isArray(parsed)) {
+      return parsed.map(p => typeof p === 'string' ? p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() : p);
+    }
+    return parsed;
   } catch (error) {
     console.error("Prompt optimization failed:", error);
     if (error instanceof Error && error.message.includes('JSON')) {
@@ -1338,6 +1428,10 @@ export async function generateAllPromptsBatch(
           .replace(/{aspect}/g, aspect);
           
         prompt += negativePrompt;
+        
+        // Ensure single line
+        prompt = prompt.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        
         generatedPrompts.add(prompt);
         attempts++;
       }
