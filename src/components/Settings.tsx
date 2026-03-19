@@ -351,27 +351,50 @@ export default function Settings({
                 </button>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
-                    <AlertCircle size={18} className="text-slate-400" />
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
+                      <AlertCircle size={18} className="text-slate-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white tracking-tight">Negative Vectors</h3>
+                      <p className="text-xs text-slate-500 font-light">Include exclusion parameters for SDXL.</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white tracking-tight">Negative Vectors</h3>
-                    <p className="text-xs text-slate-500 font-light">Include exclusion parameters for SDXL.</p>
-                  </div>
+                  <button
+                    onClick={() => setSettings({ ...settings, includeNegative: !settings.includeNegative })}
+                    className={`w-14 h-7 rounded-full transition-all relative p-1 ${
+                      settings.includeNegative ? "bg-accent" : "bg-slate-800"
+                    }`}
+                  >
+                    <motion.div
+                      animate={{ x: settings.includeNegative ? 28 : 0 }}
+                      className="w-5 h-5 rounded-full bg-white shadow-lg"
+                    />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setSettings({ ...settings, includeNegative: !settings.includeNegative })}
-                  className={`w-14 h-7 rounded-full transition-all relative p-1 ${
-                    settings.includeNegative ? "bg-accent" : "bg-slate-800"
-                  }`}
-                >
+                
+                {settings.includeNegative && (
                   <motion.div
-                    animate={{ x: settings.includeNegative ? 28 : 0 }}
-                    className="w-5 h-5 rounded-full bg-white shadow-lg"
-                  />
-                </button>
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="pl-14"
+                  >
+                    <label className="block text-xs font-medium text-slate-400 mb-2">
+                      Custom Negative Prompt (Adobe Stock Guidelines)
+                    </label>
+                    <textarea
+                      value={settings.customNegativePrompt || ''}
+                      onChange={(e) => setSettings({ ...settings, customNegativePrompt: e.target.value })}
+                      className="w-full h-24 bg-slate-900/50 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent resize-none transition-all"
+                      placeholder="--no text, watermark, deformed..."
+                    />
+                    <p className="text-[10px] text-slate-500 mt-2">
+                      Default includes comprehensive Adobe Stock guidelines (IP, Quality, Anatomy).
+                    </p>
+                  </motion.div>
+                )}
               </div>
             </div>
           </div>

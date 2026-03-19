@@ -889,7 +889,7 @@ export async function generatePrompts(
     try {
       const components = extractJSON(text);
       const generatedPrompts = new Set<string>();
-      const negativePrompt = settings.includeNegative ? ' --no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy' : '';
+      const negativePrompt = settings.includeNegative ? ` ${settings.customNegativePrompt || '--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy'}` : '';
       
       // Generate combinations, ensuring uniqueness
       let attempts = 0;
@@ -1223,7 +1223,7 @@ export async function optimizePrompts(
       
       const layers = extractJSON(text);
       const optimizedPrompts = new Set<string>();
-      const negativePrompt = settings.includeNegative ? ' --no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy' : '';
+      const negativePrompt = settings.includeNegative ? ` ${settings.customNegativePrompt || '--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy'}` : '';
       
       for (const originalPrompt of prompts) {
         let cleanPrompt = originalPrompt.split('--no')[0].trim();
@@ -1445,7 +1445,7 @@ export async function generateAllPromptsBatch(
     if (!text) throw new Error('No response from Gemini');
     
     const data = extractJSON(text);
-    const negativePrompt = settings.includeNegative ? ' --no text, watermark, deformed, blurry, logos' : '';
+    const negativePrompt = settings.includeNegative ? ` ${settings.customNegativePrompt || '--no text, watermark, deformed, blurry, logos'}` : '';
     
     const resultsMap = new Map<string, string[]>();
     

@@ -48,6 +48,7 @@ export default function App() {
     promptCount: 100,
     language: 'en',
     includeNegative: false,
+    customNegativePrompt: '--no text, typography, words, letters, watermark, signature, logos, brands, trademark, copyright, recognizable characters, real people, celebrity, deformed, bad anatomy, extra limbs, missing fingers, mutated hands, poorly drawn face, asymmetrical eyes, blurry, out of focus, noise, artifacts, low resolution, pixelated, overexposed, underexposed, artificial look, plastic skin',
     autoSave: true,
     variationLevel: 'Medium'
   });

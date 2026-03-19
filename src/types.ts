@@ -78,6 +78,7 @@ export interface AppSettings {
   promptCount: number;
   language: string;
   includeNegative: boolean;
+  customNegativePrompt?: string;
   autoSave: boolean;
   variationLevel: 'Low' | 'Medium' | 'High';
 }
