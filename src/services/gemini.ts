@@ -833,7 +833,9 @@ export async function generatePrompts(
       
       CRITICAL ADOBE STOCK RULES:
       - ALGORITHM OPTIMIZATION: To rank high and sell, concepts must have high commercial utility. Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
-      - KEYWORD DENSITY & SEO: Integrate high-value, descriptive keywords naturally into the components. Do not just list words. The components should read as natural, descriptive phrases that inherently contain strong keywords (e.g., instead of "office, business, woman", use "confident young female executive in a modern glass-walled corporate office").
+      - KEYWORD WEAVING & DENSITY STRATEGY: To maximize search visibility without keyword stuffing, you MUST weave 5-8 high-value commercial synonyms and LSI (Latent Semantic Indexing) keywords naturally across the components (subject, details, lighting, mood, style). 
+        - Do NOT repeat the exact same words. Use varied adjectives and nouns (e.g., instead of repeating "business", use "corporate, executive, professional, commercial, enterprise").
+        - The combined final prompt should read as a natural, highly descriptive sentence that inherently contains a dense cluster of unique, searchable stock keywords.
       - NO SIMILAR CONTENT: The components must be vastly different from each other to avoid generating repetitive images. Adobe Stock rejects batches of similar images. 
         - VARIATION STRATEGY: Rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
       - NO TEXT/TYPOGRAPHY: Absolutely no text, words, letters, signatures, or watermarks should be mentioned or implied in the components. The output must be purely visual.
@@ -952,22 +954,21 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
 
 CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 1. ALGORITHM OPTIMIZATION & Commercial Utility: Ensure concepts are highly usable for designers and agencies. You MUST include concepts with 'copy space', 'authentic lifestyle', 'diverse representation', 'modern aesthetics', or 'clean backgrounds' where appropriate.
-2. KEYWORD DENSITY & SEO: Weave 5-7 highly relevant, commercial keywords naturally into the descriptive flow of EACH prompt. 
-   - DO NOT keyword stuff (e.g., do not just add a list of words at the end).
-   - Instead, integrate them into the visual description (e.g., "A successful corporate business team collaborating in a modern sunlit office..."). 
-   - Ensure the keywords accurately describe the visual elements so the AI generates them.
+2. KEYWORD WEAVING & DENSITY STRATEGY: To maximize search visibility without keyword stuffing, you MUST weave 5-8 high-value commercial synonyms and LSI (Latent Semantic Indexing) keywords naturally across the descriptive flow of EACH prompt. 
+   - DO NOT repeat the exact same words. Use varied adjectives and nouns (e.g., instead of repeating "business", use "corporate, executive, professional, commercial, enterprise").
+   - The combined final prompt should read as a natural, highly descriptive sentence that inherently contains a dense cluster of unique, searchable stock keywords.
 3. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for a ${contentType} on the ${template.name} platform.
 4. NO SIMILAR CONTENT: Adobe Stock rejects batches of similar images. Do not generate prompts that are practically identical. Each prompt MUST have a distinct composition, camera angle, subject, or core action.
    - VARIATION STRATEGY: You MUST explicitly rotate through a wide range of camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level, over-the-shoulder) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
    - LIGHTING & STYLE DIVERSITY: Ensure each prompt uses a unique combination of trending lighting conditions (e.g., golden hour, cinematic rim lighting, neon glow, soft diffused, harsh shadows) and artistic styles relevant to the market.
-4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
-5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
-6. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks. The image must be clean and free of any literal text.
-7. ${getVariationInstructions(settings.variationLevel)}
-8. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
+5. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
+6. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
+7. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks. The image must be clean and free of any literal text.
+8. ${getVariationInstructions(settings.variationLevel)}
+9. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
 "${template.template}"
 Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
-9. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
+10. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
 
 Respond strictly with a JSON array of strings, where each string is a complete, ready-to-use image generation prompt tailored for a ${contentType}.
 Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
@@ -1290,7 +1291,7 @@ export async function optimizePrompts(
   
   YOUR TASK: Perform a "Hyper-Technical Optimization" by:
   1. Injecting Extreme Technical Precision: Use advanced camera settings, elite rendering engines, and complex lighting physics that match the reference's quality.
-  2. Enhancing Descriptive Power: Use sophisticated vocabulary to describe textures, materials, and atmospheric effects derived from the reference.
+  2. Enhancing Descriptive Power & Keyword Weaving: Use sophisticated vocabulary to describe textures, materials, and atmospheric effects derived from the reference. You MUST weave 5-8 high-value commercial synonyms and LSI keywords naturally into the upgraded prompt to maximize search visibility without keyword stuffing.
   3. Optimizing for Adobe Stock Algorithms: Ensure the prompt structure maximizes commercial appeal and technical rating.
   4. Targeted Alignment: Ensure the resulting prompts are "tepat sasaran" (perfectly targeted) according to the reference's style, topic, and keywords.
 
@@ -1406,6 +1407,9 @@ export async function generateAllPromptsBatch(
       
       CRITICAL ADOBE STOCK RULES:
       - ALGORITHM OPTIMIZATION: To rank high and sell, components must lead to high commercial utility. Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
+      - KEYWORD WEAVING & DENSITY STRATEGY: To maximize search visibility without keyword stuffing, you MUST weave 5-8 high-value commercial synonyms and LSI (Latent Semantic Indexing) keywords naturally across the components (subject, details, lighting, mood, style). 
+        - Do NOT repeat the exact same words. Use varied adjectives and nouns (e.g., instead of repeating "business", use "corporate, executive, professional, commercial, enterprise").
+        - The combined final prompt should read as a natural, highly descriptive sentence that inherently contains a dense cluster of unique, searchable stock keywords.
       - NO SIMILAR CONTENT: Components must be vastly different to avoid rejection for similarity.
       - ${getVariationInstructions(settings.variationLevel)}
       - GENERATIVE AI COMPLIANCE: NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands.
