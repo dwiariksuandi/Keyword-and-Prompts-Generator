@@ -307,7 +307,15 @@ export default function App() {
 
       // Score the prompts
       try {
-        const scores = await scorePrompts(prompts, settings, contentType, quickResult.categoryName);
+        const scores = await scorePrompts(
+          prompts, 
+          settings, 
+          contentType, 
+          quickResult.categoryName,
+          quickResult.buyerPersona,
+          quickResult.visualTrends,
+          quickResult.creativeAdvice
+        );
         setResults(prev => prev.map(r => r.id === quickResult.id ? { ...r, promptScores: scores, isGeneratingPrompts: false } : r));
       } catch (scoreError) {
         console.error("Scoring failed:", scoreError);
@@ -357,7 +365,15 @@ export default function App() {
       );
 
       // Score the prompts
-      const scores = await scorePrompts(prompts, settings, result.contentType, result.categoryName);
+      const scores = await scorePrompts(
+        prompts, 
+        settings, 
+        result.contentType, 
+        result.categoryName,
+        result.buyerPersona,
+        result.visualTrends,
+        result.creativeAdvice
+      );
 
       setResults(prev => prev.map(r => r.id === id ? { 
         ...r, 
@@ -390,11 +406,22 @@ export default function App() {
         keyword || undefined,
         category.categoryName,
         referenceFile || undefined,
-        referenceUrl || undefined
+        referenceUrl || undefined,
+        category.buyerPersona,
+        category.visualTrends,
+        category.creativeAdvice
       );
       
       // Re-score the optimized prompts
-      const scores = await scorePrompts(optimizedPrompts, settings, category.contentType, category.categoryName);
+      const scores = await scorePrompts(
+        optimizedPrompts, 
+        settings, 
+        category.contentType, 
+        category.categoryName,
+        category.buyerPersona,
+        category.visualTrends,
+        category.creativeAdvice
+      );
 
       setResults(prev => prev.map(c => {
         if (c.id === categoryId) {
@@ -477,7 +504,15 @@ export default function App() {
         const result = updatedResults[i];
         if (result.generatedPrompts.length > 0) {
           try {
-            const scores = await scorePrompts(result.generatedPrompts, settings, result.contentType, result.categoryName);
+            const scores = await scorePrompts(
+              result.generatedPrompts, 
+              settings, 
+              result.contentType, 
+              result.categoryName,
+              result.buyerPersona,
+              result.visualTrends,
+              result.creativeAdvice
+            );
             setResults(prev => prev.map(r => r.id === result.id ? { ...r, promptScores: scores, isGeneratingPrompts: false } : r));
           } catch (scoreError) {
             console.error(`Scoring failed for ${result.categoryName}:`, scoreError);

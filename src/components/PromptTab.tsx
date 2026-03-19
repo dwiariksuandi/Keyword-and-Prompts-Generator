@@ -173,6 +173,28 @@ export default function PromptTab({
                         </span>
                       ))}
                     </div>
+                    {(category.buyerPersona || category.visualTrends || category.creativeAdvice) && (
+                      <div className="flex flex-col gap-2 mt-4 p-4 bg-black/20 rounded-xl border border-white/5">
+                        {category.buyerPersona && (
+                          <div className="text-xs text-slate-400">
+                            <span className="font-bold text-accent uppercase tracking-widest text-[9px] mr-2">Buyer Persona:</span>
+                            {category.buyerPersona}
+                          </div>
+                        )}
+                        {category.visualTrends && category.visualTrends.length > 0 && (
+                          <div className="text-xs text-slate-400">
+                            <span className="font-bold text-accent uppercase tracking-widest text-[9px] mr-2">Visual Trends:</span>
+                            {category.visualTrends.join(', ')}
+                          </div>
+                        )}
+                        {category.creativeAdvice && (
+                          <div className="text-xs text-slate-400">
+                            <span className="font-bold text-accent uppercase tracking-widest text-[9px] mr-2">Creative Advice:</span>
+                            {category.creativeAdvice}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-3 sm:gap-4">

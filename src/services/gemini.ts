@@ -680,7 +680,15 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
   }
 }
 
-export async function scorePrompts(prompts: string[], settings: AppSettings, contentType: string, categoryName: string): Promise<PromptScore[]> {
+export async function scorePrompts(
+  prompts: string[], 
+  settings: AppSettings, 
+  contentType: string, 
+  categoryName: string,
+  buyerPersona?: string,
+  visualTrends?: string[],
+  creativeAdvice?: string
+): Promise<PromptScore[]> {
   const ai = getAI(settings.apiKey);
   
   // Chunking to avoid token limits (max 15 per request for scoring)
@@ -696,6 +704,9 @@ export async function scorePrompts(prompts: string[], settings: AppSettings, con
     const promptText = `Analyze the selected prompts and provide specific suggestions for improving their quality, focusing on technical details like lighting, composition, and resolution. Evaluate the quality of the following ${chunk.length} image generation prompts for Adobe Stock. 
     Target Asset Type: '${contentType}'
     Niche: '${categoryName}'
+    ${buyerPersona ? `Buyer Persona: '${buyerPersona}'` : ''}
+    ${visualTrends && visualTrends.length > 0 ? `Visual Trends: '${visualTrends.join(', ')}'` : ''}
+    ${creativeAdvice ? `Creative Advice: '${creativeAdvice}'` : ''}
 
     ${getContentTypeInstructions(contentType)}
 
@@ -704,6 +715,7 @@ export async function scorePrompts(prompts: string[], settings: AppSettings, con
     2. Clarity: Is the prompt easy for an AI to understand? Is the subject clear?
     3. Specificity: Does it provide enough detail (lighting, composition, textures, resolution) to generate a high-quality, unique image?
     4. Adobe Stock Adherence: Does it follow commercial utility rules (copy space, diversity, authentic lifestyle) and AI compliance (no brands, no text)?
+    5. Market Alignment: Does the prompt align with the Buyer Persona, Visual Trends, and Creative Advice provided for this niche?
 
     Prompts to evaluate:
     ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
@@ -716,11 +728,11 @@ export async function scorePrompts(prompts: string[], settings: AppSettings, con
     - clarity: (0-100)
     - specificity: (0-100)
     - adherence: (0-100)
-    - feedback: (A concise summary of the evaluation)
+    - feedback: (A concise summary of the evaluation, including market alignment)
     - keywordFeedback: (Specific suggestions for keyword usage and density)
     - clarityFeedback: (Specific suggestions for improving clarity and subject definition)
     - specificityFeedback: (Specific suggestions for adding technical details like lighting, composition, textures, and resolution)
-    - adherenceFeedback: (Specific suggestions for improving Adobe Stock commercial utility and AI compliance)
+    - adherenceFeedback: (Specific suggestions for improving Adobe Stock commercial utility, AI compliance, and market alignment)
     
     Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
@@ -1106,7 +1118,18 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
   }
 }
 
-export async function optimizePrompts(prompts: string[], settings: AppSettings, contentType: string, keyword?: string, categoryName?: string, referenceFile?: ReferenceFile, referenceUrl?: string) {
+export async function optimizePrompts(
+  prompts: string[], 
+  settings: AppSettings, 
+  contentType: string, 
+  keyword?: string, 
+  categoryName?: string, 
+  referenceFile?: ReferenceFile, 
+  referenceUrl?: string,
+  buyerPersona?: string,
+  visualTrends?: string[],
+  creativeAdvice?: string
+) {
   const ai = getAI(settings.apiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
@@ -1127,6 +1150,10 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
       CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
 
       ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
+      ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\n      Ensure the technical enhancements appeal directly to this specific audience.` : ''}
+      ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\n      Integrate these specific aesthetic trends into the technical upgrade.` : ''}
+      ${creativeAdvice ? `STRATEGIC DIRECTIVE: ${creativeAdvice}\n      Ensure the enhancements execute on this specific creative advice.` : ''}
+
       ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
       You MUST use the Google Search tool to deeply analyze the visual style, topic, lighting, and keywords from this URL. 
       This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
@@ -1240,6 +1267,11 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings, 
 
   CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
 
+  ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
+  ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\n  Ensure the technical enhancements appeal directly to this specific audience.` : ''}
+  ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\n  Integrate these specific aesthetic trends into the technical upgrade.` : ''}
+  ${creativeAdvice ? `STRATEGIC DIRECTIVE: ${creativeAdvice}\n  Ensure the enhancements execute on this specific creative advice.` : ''}
+
   ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
   You MUST use the Google Search tool to deeply analyze the visual style, topic, lighting, and keywords from this URL. 
   This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
@@ -1345,6 +1377,12 @@ export async function generateAllPromptsBatch(
   const itemsNeeded = Math.max(5, Math.ceil(Math.sqrt(countPerCategory) * 1.5));
 
   const categoryNames = categories.map(c => c.categoryName).join("', '");
+  const categoryDetails = categories.map(c => 
+    `- Niche: ${c.categoryName}
+      Buyer Persona: ${c.buyerPersona || 'N/A'}
+      Visual Trends: ${c.visualTrends ? c.visualTrends.join(', ') : 'N/A'}
+      Creative Advice: ${c.creativeAdvice || 'N/A'}`
+  ).join('\n    ');
 
   try {
     const response = await ai.models.generateContent({
@@ -1353,9 +1391,10 @@ export async function generateAllPromptsBatch(
       
       ${getContentTypeInstructions(contentType)}
 
-      The niches are: '${categoryNames}'.
+      The niches and their market analysis are:
+      ${categoryDetails}
       
-      CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for these niches. Ensure your generated components reflect REAL market demand and current design trends.
+      CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for these niches. Ensure your generated components reflect REAL market demand and current design trends, specifically tailoring the subjects, environments, and overall vibe to appeal directly to the Buyer Persona and Creative Advice provided for each niche.
 
       For EACH niche, provide:
       1. ${itemsNeeded} highly distinct subjects.
