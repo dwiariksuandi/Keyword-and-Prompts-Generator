@@ -1359,9 +1359,9 @@ export async function generateAllPromptsBatch(
 
       For EACH niche, provide:
       1. ${itemsNeeded} highly distinct subjects.
-      2. ${itemsNeeded} specific and varied details/actions/camera angles.
+      2. ${itemsNeeded} specific and varied details/actions/camera angles. ${contentType === 'Video' ? 'Include Cinematography (Camera movement, Composition, Lens & focus) and Action.' : 'Include Action, Location/context, and Composition.'}
       3. ${itemsNeeded} distinct lighting styles.
-      4. ${itemsNeeded} mood/atmosphere descriptions.
+      4. ${itemsNeeded} mood/atmosphere descriptions. ${contentType === 'Video' ? 'Include Soundstage details (Dialogue, SFX, Ambient noise).' : ''}
       5. ${itemsNeeded} artistic styles/mediums.
       6. 5 aspect ratios (e.g., "16:9", "4:3", "1:1").
       
