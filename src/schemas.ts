@@ -48,11 +48,14 @@ export type AestheticAnalysis = z.infer<typeof AestheticAnalysisSchema>;
 
 export const PromptSchema = z.object({
   subjects: z.array(z.string()),
-  details: z.array(z.string()),
+  actions: z.array(z.string()),
+  contexts: z.array(z.string()),
+  cinematography: z.array(z.string()),
   lightings: z.array(z.string()),
   moods: z.array(z.string()),
   styles: z.array(z.string()),
   aspects: z.array(z.string()),
+  soundstage: z.array(z.string()).optional(),
 });
 export type Prompt = z.infer<typeof PromptSchema>;
 

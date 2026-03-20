@@ -1022,33 +1022,41 @@ export async function generatePrompts(
 
       We need to programmatically generate ${count} unique combinations. Please provide:
       1. 30 highly distinct subjects (e.g., "a young professional woman", "a modern office desk", "a diverse team of engineers"). MUST be diverse in age, ethnicity, and core concept.
-      2. 30 specific and varied details/actions/camera angles. ${contentType === 'Video' ? 'Include Cinematography (Camera movement, Composition, Lens & focus) and Action.' : 'Include Action, Location/context, and Composition.'} You MUST rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
-      3. 20 distinct and trending lighting styles based on current market analysis (e.g., "soft morning sunlight", "dramatic studio lighting", "neon cyberpunk glow", "chiaroscuro", "golden hour backlighting", "cinematic rim lighting").
-      4. 15 mood/atmosphere descriptions (e.g., "energetic and focused", "calm and serene", "mysterious and dark"). ${contentType === 'Video' ? 'Include Soundstage details (Dialogue, SFX, Ambient noise).' : ''}
-      5. 20 diverse artistic styles/mediums based on current visual trends (e.g., "photorealistic", "cinematic photography", "3D render", "flat vector illustration", "synthwave aesthetic", "minimalist line art", "hyper-detailed digital painting").
-      6. 5 aspect ratios (e.g., "16:9", "4:3", "3:2", "1:1", "9:16")
+      2. 30 specific and varied actions. (e.g., "posing with a confident stance", "typing on a laptop", "walking through a park").
+      3. 30 specific and varied contexts/locations/background elements. (e.g., "cluttered office late at night", "sun-drenched minimalist living room", "bustling city street").
+      4. 30 specific and varied cinematography/composition/camera techniques. ${contentType === 'Video' ? 'Include Camera movement (e.g., dolly shot, tracking shot, crane shot, slow pan, POV shot), Composition (e.g., wide shot, close-up, extreme close-up, low angle, two-shot), and Lens/focus (e.g., shallow depth of field, macro lens, deep focus).' : 'Include Composition (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down) and Camera angles (e.g., low angle, high angle, bird\'s eye view, dutch angle, macro, eye level).'}
+      5. 20 distinct and trending lighting styles (e.g., "soft morning sunlight", "dramatic studio lighting", "neon cyberpunk glow", "chiaroscuro", "golden hour backlighting", "cinematic rim lighting").
+      6. 15 mood/atmosphere descriptions (e.g., "energetic and focused", "calm and serene", "mysterious and dark").
+      7. 20 diverse artistic styles/mediums/materiality/texture descriptions (e.g., "photorealistic", "cinematic photography", "3D render", "flat vector illustration", "minimalist line art", "hyper-detailed digital painting", "pronounced grain", "high saturation", "brushed metal texture", "soft fabric texture").
+      8. 5 aspect ratios (e.g., "16:9", "4:3", "3:2", "1:1", "9:16")
+      ${contentType === 'Video' ? '9. 15 Soundstage details (Dialogue, SFX, Ambient noise) (e.g., "SFX: thunder cracks in the distance", "Ambient noise: the quiet hum of a starship bridge", "A woman says, \\"We have to leave now.\\"").' : ''}
       
       CRITICAL ADOBE STOCK RULES:
       - ZERO HALLUCINATION & ZERO SUBJECT DRIFT: You MUST NOT invent new subjects, objects, or core concepts that are not explicitly requested by the user's input or the reference material. The core semantic meaning MUST remain identical to the user's intent.
       - ALGORITHM OPTIMIZATION: To rank high and sell, concepts must have high commercial utility. Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
-      - KEYWORD WEAVING & DENSITY STRATEGY: To maximize search visibility without keyword stuffing, you MUST weave 5-8 high-value commercial synonyms and LSI (Latent Semantic Indexing) keywords naturally across the components (subject, details, lighting, mood, style). 
+      - KEYWORD WEAVING & DENSITY STRATEGY: To maximize search visibility without keyword stuffing, you MUST weave 5-8 high-value commercial synonyms and LSI (Latent Semantic Indexing) keywords naturally across the components (subject, action, context, cinematography, lighting, mood, style). 
         - Do NOT repeat the exact same words. Use varied adjectives and nouns (e.g., instead of repeating "business", use "corporate, executive, professional, commercial, enterprise").
         - The combined final prompt should read as a natural, highly descriptive sentence that inherently contains a dense cluster of unique, searchable stock keywords.
       - NO SIMILAR CONTENT: The components must be vastly different from each other to avoid generating repetitive images. Adobe Stock rejects batches of similar images. 
-        - VARIATION STRATEGY: Rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
       - NO TEXT/TYPOGRAPHY: Absolutely no text, words, letters, signatures, or watermarks should be mentioned or implied in the components. The output must be purely visual.
       - GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms (e.g., "generic modern luxury car" instead of "Tesla").
       - QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
-      ${contentType === 'Video' ? `- SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques in the 'details/actions' section. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'.` : ''}
+      ${contentType === 'Video' ? `- SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques in the 'cinematography' section. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'.` : ''}
       - ${getVariationInstructions(settings.variationLevel)}
       - Ensure all components are perfectly suited for ${contentType} and optimized for the ${template.name} platform.
       
       Respond strictly with a JSON object following this schema:
       {
         "subjects": string[],
-        "details": string[],
+        "actions": string[],
+        "contexts": string[],
+        "cinematography": string[],
         "lightings": string[],
         "moods": string[],
+        "styles": string[],
+        "aspects": string[],
+        ${contentType === 'Video' ? '"soundstage": string[],' : ''}
+      }        "moods": string[],
         "styles": string[],
         "aspects": string[]
       }
@@ -1098,7 +1106,9 @@ export async function generatePrompts(
       
       while (generatedPrompts.size < count && attempts < maxAttempts) {
         const subject = validatedData.subjects[Math.floor(Math.random() * validatedData.subjects.length)] || "subject";
-        const detail = validatedData.details[Math.floor(Math.random() * validatedData.details.length)] || "detail";
+        const action = validatedData.actions[Math.floor(Math.random() * validatedData.actions.length)] || "action";
+        const context = validatedData.contexts[Math.floor(Math.random() * validatedData.contexts.length)] || "context";
+        const cinematography = validatedData.cinematography[Math.floor(Math.random() * validatedData.cinematography.length)] || "cinematography";
         const lighting = validatedData.lightings[Math.floor(Math.random() * validatedData.lightings.length)] || "lighting";
         const mood = validatedData.moods[Math.floor(Math.random() * validatedData.moods.length)] || "mood";
         const style = validatedData.styles[Math.floor(Math.random() * validatedData.styles.length)] || "style";
@@ -1106,12 +1116,19 @@ export async function generatePrompts(
         
         let prompt = template.template
           .replace(/{subject}/g, subject)
-          .replace(/{details}/g, detail)
+          .replace(/{action}/g, action)
+          .replace(/{context}/g, context)
+          .replace(/{cinematography}/g, cinematography)
           .replace(/{lighting}/g, lighting)
           .replace(/{mood}/g, mood)
           .replace(/{style}/g, style)
           .replace(/{aspect}/g, aspect);
-          
+        
+        if (contentType === 'Video' && validatedData.soundstage) {
+          const soundstage = validatedData.soundstage[Math.floor(Math.random() * validatedData.soundstage.length)] || "Ambient noise: quiet";
+          prompt += ` ${soundstage}`;
+        }
+        
         prompt += negativePrompt;
         
         // Ensure single line
@@ -1503,10 +1520,32 @@ export async function optimizePrompts(
       const parsed = extractJSON(text);
       
       // Validate with Zod and Critic Agent
-      const validatedData = await criticizeAnalysis(PromptSchema.parse({ subjects: Array.isArray(parsed) ? parsed : parsed }), PromptSchema, settings) as Prompt;
+      const validatedData = await criticizeAnalysis(PromptSchema.parse(parsed), PromptSchema, settings) as Prompt;
       
-      const optimizedPrompts = validatedData.subjects.map((p: string) => {
-        let prompt = p;
+      const optimizedPrompts = validatedData.subjects.map((subject: string, index: number) => {
+        const action = validatedData.actions[index % validatedData.actions.length] || "action";
+        const context = validatedData.contexts[index % validatedData.contexts.length] || "context";
+        const cinematography = validatedData.cinematography[index % validatedData.cinematography.length] || "cinematography";
+        const lighting = validatedData.lightings[index % validatedData.lightings.length] || "lighting";
+        const mood = validatedData.moods[index % validatedData.moods.length] || "mood";
+        const style = validatedData.styles[index % validatedData.styles.length] || "style";
+        const aspect = validatedData.aspects[index % validatedData.aspects.length] || "16:9";
+        
+        let prompt = template.template
+          .replace(/{subject}/g, subject)
+          .replace(/{action}/g, action)
+          .replace(/{context}/g, context)
+          .replace(/{cinematography}/g, cinematography)
+          .replace(/{lighting}/g, lighting)
+          .replace(/{mood}/g, mood)
+          .replace(/{style}/g, style)
+          .replace(/{aspect}/g, aspect);
+        
+        if (contentType === 'Video' && validatedData.soundstage) {
+          const soundstage = validatedData.soundstage[index % validatedData.soundstage.length] || "Ambient noise: quiet";
+          prompt += ` ${soundstage}`;
+        }
+        
         if (settings.includeNegative) {
           prompt += ` ${settings.customNegativePrompt || '--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy'}`;
         }
