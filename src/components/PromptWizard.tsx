@@ -16,12 +16,12 @@ interface PromptWizardProps {
 
 export default function PromptWizard({ keyword, setKeyword, contentType, setContentType, onGenerate, isGenerating, settings }: PromptWizardProps) {
   const [step, setStep] = useState(1);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<{ keyword: string; relevanceScore: number }[]>([]);
 
   useEffect(() => {
     const handler = setTimeout(async () => {
       if (keyword.trim().length > 2) {
-        const results = await fetchTrendingKeywords(keyword, settings);
+        const results = await fetchTrendingKeywords(keyword, settings, contentType);
         setSuggestions(results);
       } else {
         setSuggestions([]);
@@ -82,10 +82,11 @@ export default function PromptWizard({ keyword, setKeyword, contentType, setCont
                 {suggestions.map((s, i) => (
                   <button
                     key={i}
-                    onClick={() => setKeyword(prev => prev ? `${prev}, ${s}` : s)}
-                    className="px-3 py-1 bg-white/5 hover:bg-accent/20 rounded-full text-xs text-slate-300 hover:text-accent transition-all border border-white/5"
+                    onClick={() => setKeyword(prev => prev ? `${prev}, ${s.keyword}` : s.keyword)}
+                    className="px-3 py-1 bg-white/5 hover:bg-accent/20 rounded-full text-xs text-slate-300 hover:text-accent transition-all border border-white/5 flex items-center gap-2"
                   >
-                    {s}
+                    {s.keyword}
+                    <span className="text-[9px] text-slate-500">({s.relevanceScore})</span>
                   </button>
                 ))}
               </div>

@@ -86,14 +86,14 @@ export default function TopTab({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
-  const [realtimeSuggestions, setRealtimeSuggestions] = useState<string[]>([]);
+  const [realtimeSuggestions, setRealtimeSuggestions] = useState<{ keyword: string; relevanceScore: number }[]>([]);
   const [isAestheticExpanded, setIsAestheticExpanded] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handler = setTimeout(async () => {
       if (keyword.trim().length > 2) {
-        const results = await fetchTrendingKeywords(keyword, settings);
+        const results = await fetchTrendingKeywords(keyword, settings, contentType);
         setRealtimeSuggestions(results);
       } else {
         setRealtimeSuggestions([]);
@@ -101,12 +101,15 @@ export default function TopTab({
     }, 500); // 500ms debounce
 
     return () => clearTimeout(handler);
-  }, [keyword, settings]);
+  }, [keyword, settings, contentType]);
 
   useEffect(() => {
-    const allSuggestions = [...suggestionKeywords, ...realtimeSuggestions];
-    const filtered = allSuggestions.filter(s => s.toLowerCase().includes(keyword.toLowerCase()));
-    setFilteredSuggestions(filtered.slice(0, 10));
+    const allSuggestions = [
+      ...suggestionKeywords.map(s => ({ keyword: s, relevanceScore: 5 })),
+      ...realtimeSuggestions
+    ];
+    const filtered = allSuggestions.filter(s => s.keyword.toLowerCase().includes(keyword.toLowerCase()));
+    setFilteredSuggestions(filtered.sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, 10));
   }, [keyword, realtimeSuggestions]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -270,20 +273,23 @@ export default function TopTab({
                     {filteredSuggestions.map((suggestion, i) => (
                       <button
                         key={i}
-                        className="w-full text-left px-8 py-5 text-sm text-slate-300 hover:bg-white/5 hover:text-accent transition-all border-b border-white/5 last:border-0 flex items-center gap-5 group"
+                        className="w-full text-left px-8 py-5 text-sm text-slate-300 hover:bg-white/5 hover:text-accent transition-all border-b border-white/5 last:border-0 flex items-center justify-between group"
                         onClick={() => {
                           const parts = keyword.split(',');
                           parts.pop(); // Remove the partial last part
-                          const newKeyword = [...parts, suggestion].map(p => p.trim()).filter(Boolean).join(', ');
+                          const newKeyword = [...parts, suggestion.keyword].map(p => p.trim()).filter(Boolean).join(', ');
                           setKeyword(newKeyword + ', ');
                           setIsFocused(false);
                           setShowSuggestions(false);
                         }}
                       >
-                        <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-accent/30 group-hover:bg-accent/5 transition-all">
-                          <Search size={14} className="text-slate-600 group-hover:text-accent transition-colors" />
+                        <div className="flex items-center gap-5">
+                          <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-accent/30 group-hover:bg-accent/5 transition-all">
+                            <Search size={14} className="text-slate-600 group-hover:text-accent transition-colors" />
+                          </div>
+                          {suggestion.keyword}
                         </div>
-                        <span className="font-light tracking-wide">{suggestion}</span>
+                        <span className="text-[10px] bg-white/5 px-2 py-1 rounded text-slate-500 group-hover:text-accent">Score: {suggestion.relevanceScore}</span>
                       </button>
                     ))}
                   </motion.div>

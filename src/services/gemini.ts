@@ -444,14 +444,17 @@ export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean
   }
 }
 
-export async function fetchTrendingKeywords(keyword: string, settings: AppSettings): Promise<string[]> {
+export async function fetchTrendingKeywords(keyword: string, settings: AppSettings, contentType: string): Promise<{ keyword: string; relevanceScore: number }[]> {
   const ai = getAI(settings.apiKey);
   
-  const promptText = `Analyze the keyword '${keyword}' and provide 5-10 highly relevant, trending, and commercially valuable microstock keyword suggestions for Adobe Stock. 
+  const promptText = `Analyze the keyword '${keyword}' for the content type '${contentType}' and provide 5-10 highly relevant, trending, and commercially valuable microstock keyword suggestions for the GLOBAL market on Adobe Stock.
+
+  CRITICAL: 
+  1. Use Google Search to ensure these keywords are currently trending or in high demand globally.
+  2. Ensure commercial safety: Exclude recognizable celebrity faces, copyrighted logos, or trademarked architectural designs.
+  3. Contextualize for '${contentType}': Provide keywords specifically relevant to this technical format (e.g., for Video: motion, frame rate; for Vector: flat, scalable).
   
-  CRITICAL: Use Google Search to ensure these keywords are currently trending or in high demand.
-  
-  Respond strictly with a JSON array of strings.`;
+  Respond strictly with a JSON array of objects, each with 'keyword' (string) and 'relevanceScore' (number 1-10).`;
 
   try {
     const response = await ai.models.generateContent({
@@ -462,7 +465,14 @@ export async function fetchTrendingKeywords(keyword: string, settings: AppSettin
         responseMimeType: 'application/json',
         responseSchema: {
           type: "ARRAY",
-          items: { type: "STRING" },
+          items: {
+            type: "OBJECT",
+            properties: {
+              keyword: { type: "STRING" },
+              relevanceScore: { type: "NUMBER" }
+            },
+            required: ["keyword", "relevanceScore"]
+          },
         },
       },
     });
@@ -472,7 +482,7 @@ export async function fetchTrendingKeywords(keyword: string, settings: AppSettin
     logger.log({
       timestamp: new Date().toISOString(),
       functionName: 'fetchTrendingKeywords',
-      input: { keyword },
+      input: { keyword, contentType },
       output: null,
       status: 'error',
       latencyMs: 0,
