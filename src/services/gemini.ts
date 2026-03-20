@@ -1,5 +1,34 @@
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
+import { KeywordAnalysisSchema, AestheticAnalysisSchema } from '../schemas';
 import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult } from '../types';
+import { logger } from './logger';
+
+// ... (rest of the file)
+
+async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings): Promise<T> {
+  const ai = getAI(settings.apiKey);
+  const prompt = `Validate the following JSON data against its schema and logic. 
+  Ensure all fields are present, types are correct, and the content is logical and grounded.
+  If the data is valid, return it as is. If it's invalid, return a corrected version.
+  
+  Data: ${JSON.stringify(data)}
+  
+  Respond ONLY with valid JSON.`;
+
+  const response = await ai.models.generateContent({
+    model: settings.model || 'gemini-3-flash-preview',
+    contents: [{ text: prompt }],
+    config: {
+      responseMimeType: "application/json",
+    }
+  });
+
+  const text = response.text;
+  if (!text) throw new Error('Critic agent returned no response');
+  
+  const parsed = extractJSON(text);
+  return schema.parse(parsed);
+}
 
 export const promptTemplates: PromptTemplate[] = [
   // --- PHOTO ---
@@ -473,6 +502,7 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
   
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
+  const startTime = Date.now();
   try {
     const response = await ai.models.generateContent({
       model: settings.model || 'gemini-3-flash-preview',
@@ -511,6 +541,9 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
     
     const parsed = JSON.parse(text);
     
+    // Validate with Zod and Critic Agent
+    const validatedData = await criticizeAnalysis(AestheticAnalysisSchema.parse(parsed), AestheticAnalysisSchema, settings);
+    
     // Extract grounding sources
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     if (chunks) {
@@ -519,12 +552,30 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
         .map((chunk: any) => ({ uri: chunk.web.uri, title: chunk.web.title }));
       
       if (sources.length > 0) {
-        parsed.groundingSources = sources;
+        validatedData.groundingSources = sources;
       }
     }
     
-    return parsed;
+    logger.log({
+      timestamp: new Date().toISOString(),
+      functionName: 'analyzeAestheticReference',
+      input: { referenceFile: referenceFile.name, contentType },
+      output: validatedData,
+      status: 'success',
+      latencyMs: Date.now() - startTime
+    });
+    
+    return validatedData;
   } catch (error) {
+    logger.log({
+      timestamp: new Date().toISOString(),
+      functionName: 'analyzeAestheticReference',
+      input: { referenceFile: referenceFile.name, contentType },
+      output: null,
+      status: 'error',
+      latencyMs: Date.now() - startTime,
+      error: error instanceof Error ? error.message : String(error)
+    });
     console.error("Aesthetic analysis failed:", error);
     if (error instanceof Error && error.message.includes('JSON')) {
        throw new Error("Gagal memproses data estetika. Silakan coba lagi.");
@@ -561,6 +612,7 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
   
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
+  const startTime = Date.now();
   try {
     const response = await ai.models.generateContent({
       model: settings.model || 'gemini-3-flash-preview',
@@ -591,6 +643,9 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
     
     const parsed = JSON.parse(text);
     
+    // Validate with Zod and Critic Agent
+    const validatedData = await criticizeAnalysis(AestheticAnalysisSchema.parse(parsed), AestheticAnalysisSchema, settings);
+    
     // Extract grounding sources
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     if (chunks) {
@@ -599,12 +654,30 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
         .map((chunk: any) => ({ uri: chunk.web.uri, title: chunk.web.title }));
       
       if (sources.length > 0) {
-        parsed.groundingSources = sources;
+        validatedData.groundingSources = sources;
       }
     }
     
-    return parsed;
+    logger.log({
+      timestamp: new Date().toISOString(),
+      functionName: 'analyzeUrlAesthetic',
+      input: { url, contentType },
+      output: validatedData,
+      status: 'success',
+      latencyMs: Date.now() - startTime
+    });
+    
+    return validatedData;
   } catch (error) {
+    logger.log({
+      timestamp: new Date().toISOString(),
+      functionName: 'analyzeUrlAesthetic',
+      input: { url, contentType },
+      output: null,
+      status: 'error',
+      latencyMs: Date.now() - startTime,
+      error: error instanceof Error ? error.message : String(error)
+    });
     console.error("URL Aesthetic analysis failed:", error);
     if (error instanceof Error && error.message.includes('JSON')) {
        throw new Error("Gagal memproses data estetika URL. Silakan coba lagi.");
@@ -729,8 +802,12 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
   // Strip markdown formatting if present
   text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
   
+  const startTime = Date.now();
   try {
     const parsed = extractJSON(text);
+    
+    // Validate with Zod and Critic Agent
+    const validatedData = await criticizeAnalysis(KeywordAnalysisSchema.parse(parsed), KeywordAnalysisSchema, settings);
     
     // Extract grounding sources
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
@@ -741,18 +818,36 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
       
       if (sources.length > 0) {
         // Attach grounding sources to each category result
-        if (Array.isArray(parsed)) {
-          parsed.forEach(item => {
+        if (Array.isArray(validatedData)) {
+          validatedData.forEach(item => {
             item.groundingSources = sources;
           });
         }
       }
     }
     
-    return parsed;
+    logger.log({
+      timestamp: new Date().toISOString(),
+      functionName: 'analyzeKeyword',
+      input: { keyword, contentType },
+      output: validatedData,
+      status: 'success',
+      latencyMs: Date.now() - startTime
+    });
+    
+    return validatedData;
   } catch (e) {
-    console.error("Failed to parse JSON response:", text);
-    throw new Error("Failed to parse the response from the AI. Please try again.");
+    logger.log({
+      timestamp: new Date().toISOString(),
+      functionName: 'analyzeKeyword',
+      input: { keyword, contentType },
+      output: null,
+      status: 'error',
+      latencyMs: Date.now() - startTime,
+      error: e instanceof Error ? e.message : String(e)
+    });
+    console.error("Failed to parse or validate JSON response:", text, e);
+    throw new Error("Failed to parse or validate the response from the AI. Please try again.");
   }
 }
 
