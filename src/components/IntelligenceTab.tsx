@@ -19,9 +19,10 @@ interface IntelligenceTabProps {
   results: CategoryResult[];
   onAnalyzeCompetitor: (category: CategoryResult) => void;
   isAnalyzing: boolean;
+  onSelectTrend: (niche: string) => void;
 }
 
-export default function IntelligenceTab({ results, onAnalyzeCompetitor, isAnalyzing }: IntelligenceTabProps) {
+export default function IntelligenceTab({ results, onAnalyzeCompetitor, isAnalyzing, onSelectTrend }: IntelligenceTabProps) {
   const isStale = (timestamp: string) => {
     const lastUpdate = new Date(timestamp).getTime();
     const now = new Date().getTime();
@@ -276,10 +277,13 @@ export default function IntelligenceTab({ results, onAnalyzeCompetitor, isAnalyz
                     </div>
 
                     <div className="mt-8 pt-8 border-t border-emerald-400/10">
-                      <div className="p-4 bg-emerald-400 text-slate-900 rounded-2xl text-center">
+                      <button 
+                        onClick={() => onSelectTrend(category.categoryName)}
+                        className="w-full p-4 bg-emerald-400 hover:bg-emerald-300 text-slate-900 rounded-2xl text-center transition-all"
+                      >
                         <div className="text-[10px] font-bold uppercase tracking-widest mb-1">Takeover Strategy</div>
                         <div className="text-xs font-bold">Apply Intel to Prompts</div>
-                      </div>
+                      </button>
                     </div>
                   </div>
                 </section>

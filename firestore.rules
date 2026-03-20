@@ -29,7 +29,9 @@ service cloud.firestore {
 
     function isSharedWithMe() {
       return isAuthenticated() && 
+             resource != null &&
              resource.data.isShared == true && 
+             resource.data.sharedWith is list &&
              request.auth.token.email in resource.data.sharedWith;
     }
 

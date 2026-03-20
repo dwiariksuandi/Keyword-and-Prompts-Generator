@@ -148,6 +148,19 @@ export interface PromptTemplate {
   contentTypes: string[];
 }
 
+export interface TrendForecast {
+  id: string;
+  niche: string;
+  predictionDate: string;
+  confidence: number;
+  growthPotential: number;
+  reasoning: string;
+  recommendedKeywords: string[];
+  visualStyle: string;
+  marketGap: string;
+  isHighPriority: boolean;
+}
+
 export interface AppSettings {
   apiKey: string;
   model: string;

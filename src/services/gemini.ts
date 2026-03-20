@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { KeywordAnalysisSchema, AestheticAnalysisSchema, PromptSchema, PromptDirectSchema, type Prompt, type PromptDirect } from '../schemas';
-import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult, CompetitorAnalysis, GlobalTrend, SalesRecord } from '../types';
+import { KeywordAnalysisSchema, AestheticAnalysisSchema, PromptSchema, PromptDirectSchema, TrendForecastSchema, type Prompt, type PromptDirect } from '../schemas';
+import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult, CompetitorAnalysis, GlobalTrend, SalesRecord, TrendForecast } from '../types';
 import { logger } from './logger';
 
 function zodToJsonSchemaNoSchema(schema: any) {
@@ -2343,6 +2343,52 @@ ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
   }
 
   return allMetadata;
+}
+
+export async function forecastSeasonalTrends(settings: AppSettings, historicalSales: SalesRecord[]): Promise<TrendForecast[]> {
+  const ai = getAI(settings.apiKey);
+  const currentDate = new Date().toISOString();
+  
+  const promptText = `As an Elite Market Analyst for Adobe Stock, perform an ADVANCED TREND FORECASTING for the next 3-6 months.
+  
+  Current Date: ${currentDate}
+  User's Historical Sales Performance: ${JSON.stringify(historicalSales.slice(0, 50))}
+  
+  TASK:
+  1. Identify 5-8 high-potential niches that will explode in demand 3-6 months from now (considering seasonal cycles, global events, and emerging tech).
+  2. Use Google Search to ground your predictions in real-world upcoming events (e.g., holidays, sports events, tech launches).
+  3. If the user has historical sales, prioritize niches that align with their strengths but also suggest new high-growth areas.
+  4. For each niche, provide:
+     - id: A unique string ID.
+     - niche: The name of the niche.
+     - predictionDate: The month/period of peak demand.
+     - confidence: 1-100 score.
+     - growthPotential: 1-100 score.
+     - reasoning: Why this will trend.
+     - marketGap: What is currently missing in the stock market for this niche.
+     - visualStyle: The specific aesthetic that will be in demand.
+     - recommendedKeywords: 5-10 high-KEI keywords.
+     - isHighPriority: Boolean if this is a "must-produce" niche.
+  
+  Respond strictly with a JSON array following the provided schema.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3.1-pro-preview',
+      contents: [{ text: promptText }],
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: 'application/json',
+        responseSchema: zodToJsonSchemaNoSchema(TrendForecastSchema) as any,
+        thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
+      }
+    });
+
+    return extractJSON(response.text || '[]');
+  } catch (error) {
+    console.error("Trend forecasting failed:", error);
+    return [];
+  }
 }
 
 export async function analyzeGlobalTrends(userNiches: string[], settings: AppSettings): Promise<{ niche: string, growthRate: number, isExploding: boolean, alertMessage: string }[]> {

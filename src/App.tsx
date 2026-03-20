@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, polishMetadata, generateImagePreview, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt, refinePrompts, analyzeCompetitorIntel, analyzeGlobalTrends, predictSalesPotential } from './services/gemini';
+import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, polishMetadata, generateImagePreview, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt, refinePrompts, analyzeCompetitorIntel, analyzeGlobalTrends, predictSalesPotential, forecastSeasonalTrends } from './services/gemini';
 import { validateAdobeMetadata } from './services/validator';
-import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis, SalesRecord, GlobalTrend, TrendAlert } from './types';
+import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis, SalesRecord, GlobalTrend, TrendAlert, TrendForecast } from './types';
 import Settings from './components/Settings';
 import TopTab from './components/TopTab';
 import AnalysisTab from './components/AnalysisTab';
@@ -16,6 +16,7 @@ import GuideTab from './components/GuideTab';
 import PipelineTab from './components/PipelineTab';
 import IntelligenceTab from './components/IntelligenceTab';
 import SalesTrackerTab from './components/SalesTrackerTab';
+import TrendForecastTab from './components/TrendForecastTab';
 import { ResultRow } from './components/ResultRow';
 import { Eye, LogIn, LogOut, User as UserIcon, Cloud, CloudOff, ShieldAlert, Users, TrendingUp, DollarSign } from 'lucide-react';
 import { 
@@ -39,13 +40,14 @@ import {
   User 
 } from './firebase';
 
-type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline" | "wizard" | "intelligence" | "sales";
+type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline" | "wizard" | "intelligence" | "sales" | "forecast";
 
 const WORKFLOW_STEPS = [
   { id: 'top', label: '01. RESEARCH', description: 'Cari Niche Menguntungkan' },
   { id: 'intelligence', label: '02. INTEL', description: 'Bedah Strategi Kompetitor' },
-  { id: 'pipeline', label: '03. PRODUCTION', description: 'Produksi Aset Otomatis' },
-  { id: 'prompt', label: '04. VAULT', description: 'Hasil & Metadata' }
+  { id: 'forecast', label: '03. FORECAST', description: 'Prediksi Tren Masa Depan' },
+  { id: 'pipeline', label: '04. PRODUCTION', description: 'Produksi Aset Otomatis' },
+  { id: 'prompt', label: '05. VAULT', description: 'Hasil & Metadata' }
 ];
 
 export default function App() {
@@ -109,6 +111,8 @@ export default function App() {
   const [showTrendAlerts, setShowTrendAlerts] = useState(false);
   const [salesRecords, setSalesRecords] = useState<SalesRecord[]>([]);
   const [isParsingSales, setIsParsingSales] = useState(false);
+  const [forecasts, setForecasts] = useState<TrendForecast[]>([]);
+  const [isForecasting, setIsForecasting] = useState(false);
 
   const [errorModal, setErrorModal] = useState<{show: boolean, title: string, message: string}>({
     show: false,
@@ -116,6 +120,28 @@ export default function App() {
     message: ''
   });
   const [toast, setToast] = useState<{show: boolean, message: string}>({show: false, message: ''});
+
+  const lastSavedResults = React.useRef<string>('[]');
+
+  // Smart Persistence Effect
+  useEffect(() => {
+    if (!user || !settings.autoSave || isSyncing) return;
+
+    const currentResultsStr = JSON.stringify(results);
+    if (currentResultsStr === lastSavedResults.current) return;
+
+    const prevResults = JSON.parse(lastSavedResults.current) as CategoryResult[];
+    
+    // Find changed or new results
+    results.forEach(result => {
+      const prevResult = prevResults.find(r => r.id === result.id);
+      if (!prevResult || JSON.stringify(prevResult) !== JSON.stringify(result)) {
+        saveResultToCloud(result);
+      }
+    });
+
+    lastSavedResults.current = currentResultsStr;
+  }, [results, user, settings.autoSave, isSyncing]);
 
   // Watchdog Trend Checker
   useEffect(() => {
@@ -200,7 +226,7 @@ export default function App() {
         if (cols.length < 5) continue;
         
         const record: SalesRecord = {
-          id: Math.random().toString(36).substring(7),
+          id: cols[0].trim() || Math.random().toString(36).substring(7),
           assetId: cols[0].trim(),
           title: cols[1].trim(),
           downloads: parseInt(cols[2]) || 0,
@@ -256,10 +282,14 @@ export default function App() {
               createdAt: new Date().toISOString()
             });
           } else {
-            // Optionally sync settings from cloud to local if local is empty
             const cloudData = userDoc.data();
-            if (cloudData.settings && !settings.apiKey) {
-              setSettings(prev => ({ ...prev, ...cloudData.settings, apiKey: prev.apiKey }));
+            if (cloudData.settings) {
+              // Only sync settings if local apiKey is empty or cloud has newer settings
+              setSettings(prev => ({ 
+                ...prev, 
+                ...cloudData.settings, 
+                apiKey: prev.apiKey || cloudData.settings.apiKey 
+              }));
             }
           }
         } catch (error) {
@@ -284,7 +314,23 @@ export default function App() {
         });
         
         if (cloudResults.length > 0) {
-          setResults(cloudResults);
+          // Merge logic: keep local results if they are "newer" or have pending changes
+          setResults(prev => {
+            const merged = [...prev];
+            cloudResults.forEach(cloudItem => {
+              const localIndex = merged.findIndex(r => r.id === cloudItem.id);
+              if (localIndex === -1) {
+                merged.push(cloudItem);
+              } else {
+                if (JSON.stringify(merged[localIndex]) !== JSON.stringify(cloudItem)) {
+                  merged[localIndex] = cloudItem;
+                }
+              }
+            });
+            // Update lastSavedResults to match cloud state to prevent re-saving
+            lastSavedResults.current = JSON.stringify(merged);
+            return merged;
+          });
         }
         setIsSyncing(false);
       }, (error) => {
@@ -325,9 +371,26 @@ export default function App() {
       await signOut(auth);
       setResults([]);
       setHistory([]);
+      setForecasts([]);
       setToast({ show: true, message: 'Logged out successfully.' });
     } catch (error) {
       console.error("Logout failed:", error);
+    }
+  };
+
+  const handleGenerateForecast = async () => {
+    if (!settings.apiKey) return;
+    setIsForecasting(true);
+    setToast({ show: true, message: "Menganalisis pola musiman & sinyal pasar global..." });
+    try {
+      const data = await forecastSeasonalTrends(settings, salesRecords);
+      setForecasts(data);
+      setToast({ show: true, message: "Forecast 6 bulan berhasil digenerate!" });
+    } catch (error) {
+      console.error("Forecasting failed:", error);
+      setToast({ show: true, message: "Gagal men-generate forecast." });
+    } finally {
+      setIsForecasting(false);
     }
   };
 
@@ -339,17 +402,11 @@ export default function App() {
         ...result,
         userId: user.uid,
         timestamp: new Date().toISOString()
-      });
+      }, { merge: true });
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/results/${result.id}`);
     }
   };
-
-  useEffect(() => {
-    if (results.length > 0 && user && settings.autoSave) {
-      results.forEach(res => saveResultToCloud(res));
-    }
-  }, [results, user, settings.autoSave]);
 
   useEffect(() => {
     if (toast.show) {
@@ -922,7 +979,6 @@ export default function App() {
       };
       
       setResults(prev => prev.map(r => r.id === id ? updatedResult : r));
-      await saveResultToCloud(updatedResult);
       setToast({ show: true, message: newSharedState ? "Result shared successfully!" : "Result set to private." });
     } catch (error) {
       console.error("Sharing failed:", error);
@@ -948,7 +1004,6 @@ export default function App() {
       };
       
       setResults(prev => prev.map(r => r.id === id ? updatedResult : r));
-      await saveResultToCloud(updatedResult);
       
       setErrorModal({
         show: true,
@@ -1552,6 +1607,34 @@ export default function App() {
             results={results}
             onAnalyzeCompetitor={handleAnalyzeCompetitor}
             isAnalyzing={isAnalyzing}
+            onSelectTrend={(niche) => {
+              setKeyword(niche);
+              setActiveTab('top');
+            }}
+          />
+        )}
+
+        {activeTab === 'forecast' && (
+          <TrendForecastTab 
+            forecasts={forecasts}
+            onRefresh={handleGenerateForecast}
+            isRefreshing={isForecasting}
+            onSelectNiche={(niche) => {
+              setKeyword(niche);
+              setActiveTab('top');
+            }}
+          />
+        )}
+
+        {activeTab === 'forecast' && (
+          <TrendForecastTab 
+            forecasts={forecasts}
+            onRefresh={handleGenerateForecast}
+            isRefreshing={isForecasting}
+            onSelectNiche={(niche) => {
+              setKeyword(niche);
+              setActiveTab('top');
+            }}
           />
         )}
 

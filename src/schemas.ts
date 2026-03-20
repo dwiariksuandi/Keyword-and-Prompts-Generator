@@ -86,3 +86,18 @@ export const PromptDirectSchema = z.object({
   ]).optional(),
 });
 export type PromptDirect = z.infer<typeof PromptDirectSchema>;
+
+export const TrendForecastSchema = z.array(z.object({
+  id: z.string(),
+  niche: z.string(),
+  predictionDate: z.string(),
+  confidence: z.number().min(0).max(100),
+  growthPotential: z.number().min(0).max(100),
+  reasoning: z.string(),
+  recommendedKeywords: z.array(z.string()),
+  visualStyle: z.string(),
+  marketGap: z.string(),
+  isHighPriority: z.boolean()
+}));
+
+export type TrendForecast = z.infer<typeof TrendForecastSchema>;
