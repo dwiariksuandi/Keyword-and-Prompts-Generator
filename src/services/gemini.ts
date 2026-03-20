@@ -7,30 +7,30 @@ import { logger } from './logger';
 
 async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings, categoryName: string): Promise<T> {
   const ai = getAI(settings.apiKey);
-  const prompt = `Validate the following JSON data against its schema and logic. 
-  Ensure all fields are present, types are correct, and the content is logical and grounded.
-  If the data is valid, return it as is. If it's invalid, return a corrected version.
-  
-  CRITICAL: The user has requested a VARIATION LEVEL of ${settings.variationLevel}.
-  ${settings.variationLevel === 'High' ? 'Be EXTREMELY strict about anomalies, hallucinations, and logical inconsistencies. Ensure maximum diversity without compromising quality.' : 'Ensure consistency and quality.'}
-  
-  ADOBE STOCK PRE-FLIGHT VALIDATOR:
-  Analyze the content for potential Adobe Stock rejection risks (e.g., trademarked items, text, poor anatomy, low commercial utility).
-  Provide a rejectionRisk object: { riskLevel: 'Low' | 'Medium' | 'High', reason: string }.
-  
-  MARKET TREND INTELLIGENCE:
-  Analyze the niche '${categoryName}' and provide a brief market trend insight that makes this content commercially relevant.
-  
-  Data: ${JSON.stringify(data)}
-  
-  Respond ONLY with valid JSON following the schema.`;
+  const prompt = `Data: ${JSON.stringify(data)}`;
 
   const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-pro-preview',
     contents: [{ text: prompt }],
     config: {
+      systemInstruction: `Validate the following JSON data against its schema and logic. 
+      Ensure all fields are present, types are correct, and the content is logical and grounded.
+      If the data is valid, return it as is. If it's invalid, return a corrected version.
+      
+      CRITICAL: The user has requested a VARIATION LEVEL of ${settings.variationLevel}.
+      ${settings.variationLevel === 'High' ? 'Be EXTREMELY strict about anomalies, hallucinations, and logical inconsistencies. Ensure maximum diversity without compromising quality.' : 'Ensure consistency and quality.'}
+      
+      ADOBE STOCK PRE-FLIGHT VALIDATOR:
+      Analyze the content for potential Adobe Stock rejection risks (e.g., trademarked items, text, poor anatomy, low commercial utility).
+      Provide a rejectionRisk object: { riskLevel: 'Low' | 'Medium' | 'High', reason: string }.
+      
+      MARKET TREND INTELLIGENCE:
+      Analyze the niche '${categoryName}' and provide a brief market trend insight that makes this content commercially relevant.
+      
+      Respond ONLY with valid JSON following the schema.`,
       responseMimeType: "application/json",
       responseSchema: schema,
+      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
     }
   });
 
@@ -403,7 +403,7 @@ export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean
     const ai = getAI(apiKey);
     // A simple, fast call to verify the key
     await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3.1-pro-preview',
       contents: 'hi',
       config: { maxOutputTokens: 1 }
     });

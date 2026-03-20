@@ -11,9 +11,10 @@ import DonateTab from './components/DonateTab';
 import PromptTab from './components/PromptTab';
 import ChangelogTab from './components/ChangelogTab';
 import GuideTab from './components/GuideTab';
+import PipelineTab from './components/PipelineTab';
 import { ResultRow } from './components/ResultRow';
 
-type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide";
+type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline";
 
 export default function App() {
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -28,6 +29,7 @@ export default function App() {
   const [referenceFile, setReferenceFile] = useState<ReferenceFile | null>(null);
   const [referenceUrl, setReferenceUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isPipelineRunning, setIsPipelineRunning] = useState(false);
   const [isAnalyzingAesthetic, setIsAnalyzingAesthetic] = useState(false);
   const [aestheticAnalysis, setAestheticAnalysis] = useState<AestheticAnalysis | null>(null);
   const [results, setResults] = useState<CategoryResult[]>([]);
@@ -47,7 +49,7 @@ export default function App() {
     },
     promptCount: 100,
     language: 'en',
-    includeNegative: false,
+    includeNegative: true,
     customNegativePrompt: '--no text, typography, words, letters, watermark, signature, logos, brands, trademark, copyright, recognizable characters, real people, celebrity, deformed, bad anatomy, extra limbs, missing fingers, mutated hands, poorly drawn face, asymmetrical eyes, blurry, out of focus, noise, artifacts, low resolution, pixelated, overexposed, underexposed, artificial look, plastic skin',
     autoSave: true,
     variationLevel: 'Medium'
@@ -577,6 +579,15 @@ export default function App() {
     setActiveTab("prompt");
   };
 
+  const handleRunPipeline = async (steps: string[]) => {
+    setIsPipelineRunning(true);
+    // Add pipeline execution logic here
+    console.log("Running pipeline with steps:", steps);
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate work
+    setIsPipelineRunning(false);
+    setToast({ show: true, message: 'Pipeline executed successfully!' });
+  };
+
   const sortedResults = [...results].sort((a, b) => {
     switch (sortBy) {
       case "opportunity": return b.opportunityScore - a.opportunityScore;
@@ -704,6 +715,7 @@ export default function App() {
               { id: 'analysis', label: 'ANALYSIS' },
               { id: 'results', label: 'HISTORY' },
               { id: 'prompt', label: 'PROMPTS' },
+              { id: 'pipeline', label: 'PIPELINE' },
               { id: 'settings', label: 'CONFIG' },
               { id: 'guide', label: 'GUIDE' }
             ].map((tab) => (
@@ -744,6 +756,15 @@ export default function App() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
+        {activeTab === 'pipeline' && (
+          <PipelineTab 
+            results={results}
+            settings={settings}
+            onRunPipeline={handleRunPipeline}
+            isPipelineRunning={isPipelineRunning}
+          />
+        )}
+
         {activeTab === 'settings' && (
           <Settings 
             settings={settings} 
