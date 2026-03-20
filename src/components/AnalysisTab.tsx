@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Target, TrendingUp, Zap, Star, TrendingDown, Minus, Sparkles, BrainCircuit, Activity, Globe, Database } from 'lucide-react';
+import { BarChart3, Target, TrendingUp, Zap, Star, TrendingDown, Minus, Sparkles, BrainCircuit, Activity, Globe, Database, RefreshCw } from 'lucide-react';
 import { CategoryResult } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -26,10 +26,12 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
     }
   };
 
-  const getTrendIcon = (trend: "up" | "down" | "stable") => {
+  const getTrendIcon = (trend: "up" | "down" | "stable" | "explosive" | "cyclical") => {
     switch (trend) {
       case "up": return <TrendingUp className="w-4 h-4 text-emerald-400" />;
       case "down": return <TrendingDown className="w-4 h-4 text-rose-400" />;
+      case "explosive": return <Zap className="w-4 h-4 text-amber-400" />;
+      case "cyclical": return <RefreshCw className="w-4 h-4 text-blue-400" />;
       default: return <Minus className="w-4 h-4 text-slate-400" />;
     }
   };
@@ -165,7 +167,7 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                       </span>
                       <div className="flex items-center gap-2 sm:gap-3 bg-white/5 px-4 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-white/10">
                         {getTrendIcon(category.trend)}
-                        <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] ${category.trend === "up" ? "text-emerald-400" : category.trend === "down" ? "text-rose-400" : "text-slate-400"}`}>
+                        <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] ${category.trend === "up" ? "text-emerald-400" : category.trend === "down" ? "text-rose-400" : category.trend === "explosive" ? "text-amber-400" : category.trend === "cyclical" ? "text-blue-400" : "text-slate-400"}`}>
                           {category.trendPercent}% Trend
                         </span>
                       </div>

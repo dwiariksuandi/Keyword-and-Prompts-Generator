@@ -135,10 +135,9 @@ export default function Settings({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", desc: "High Velocity (Default)" },
               { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", desc: "Maximum Reasoning" },
-              { id: "gemini-2.0-flash", name: "Gemini 2 Flash", desc: "Legacy Flash" },
               { id: "gemini-3-flash-preview", name: "Gemini 3 Flash", desc: "Next-Gen Flash" },
+              { id: "gemini-3.1-flash-lite-preview", name: "Gemini Flash Lite", desc: "High Velocity" },
             ].map((model) => (
               <motion.button
                 key={model.id}

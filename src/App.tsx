@@ -35,7 +35,7 @@ export default function App() {
   
   const [settings, setSettings] = useState<AppSettings>({
     apiKey: '',
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.1-pro-preview',
     templateId: {
       'Photo': 'nanobanana-photo',
       'Illustration': 'nanobanana-illustration',
@@ -224,7 +224,7 @@ export default function App() {
     if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) return;
     setIsAnalyzing(true);
     try {
-      const data = await analyzeKeyword(keyword, contentType, settings, referenceFile || undefined, referenceUrl || undefined);
+      const data = await analyzeKeyword(keyword, contentType, 'General Market', settings, referenceFile || undefined, referenceUrl || undefined);
       const formattedResults: CategoryResult[] = data.map((item: any) => ({
         id: Math.random().toString(36).substring(7),
         categoryName: item.categoryName,

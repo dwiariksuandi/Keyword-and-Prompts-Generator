@@ -5,7 +5,7 @@ import { logger } from './logger';
 
 // ... (rest of the file)
 
-async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings): Promise<T> {
+async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings, categoryName: string): Promise<T> {
   const ai = getAI(settings.apiKey);
   const prompt = `Validate the following JSON data against its schema and logic. 
   Ensure all fields are present, types are correct, and the content is logical and grounded.
@@ -14,15 +14,23 @@ async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings)
   CRITICAL: The user has requested a VARIATION LEVEL of ${settings.variationLevel}.
   ${settings.variationLevel === 'High' ? 'Be EXTREMELY strict about anomalies, hallucinations, and logical inconsistencies. Ensure maximum diversity without compromising quality.' : 'Ensure consistency and quality.'}
   
+  ADOBE STOCK PRE-FLIGHT VALIDATOR:
+  Analyze the content for potential Adobe Stock rejection risks (e.g., trademarked items, text, poor anatomy, low commercial utility).
+  Provide a rejectionRisk object: { riskLevel: 'Low' | 'Medium' | 'High', reason: string }.
+  
+  MARKET TREND INTELLIGENCE:
+  Analyze the niche '${categoryName}' and provide a brief market trend insight that makes this content commercially relevant.
+  
   Data: ${JSON.stringify(data)}
   
-  Respond ONLY with valid JSON.`;
+  Respond ONLY with valid JSON following the schema.`;
 
   const response = await ai.models.generateContent({
     model: settings.model || 'gemini-3-flash-preview',
     contents: [{ text: prompt }],
     config: {
       responseMimeType: "application/json",
+      responseSchema: schema,
     }
   });
 
@@ -508,7 +516,7 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
   const startTime = Date.now();
   try {
     const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-3-flash-preview',
+      model: referenceFile ? 'gemini-3.1-flash-image-preview' : (settings.model || 'gemini-3.1-pro-preview'),
       contents: [
         { text: promptText },
         {
@@ -545,7 +553,7 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
     const parsed = JSON.parse(text);
     
     // Validate with Zod and Critic Agent
-    const validatedData = await criticizeAnalysis(AestheticAnalysisSchema.parse(parsed), AestheticAnalysisSchema, settings);
+    const validatedData = await criticizeAnalysis(AestheticAnalysisSchema.parse(parsed), AestheticAnalysisSchema, settings, 'Aesthetic Reference');
     
     // Extract grounding sources
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
@@ -618,7 +626,7 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
   const startTime = Date.now();
   try {
     const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-3-flash-preview',
+      model: settings.model || 'gemini-3.1-pro-preview',
       contents: [{ text: promptText }],
       config: {
         tools: [{ googleSearch: {} }, { urlContext: {} }],
@@ -647,7 +655,7 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
     const parsed = JSON.parse(text);
     
     // Validate with Zod and Critic Agent
-    const validatedData = await criticizeAnalysis(AestheticAnalysisSchema.parse(parsed), AestheticAnalysisSchema, settings);
+    const validatedData = await criticizeAnalysis(AestheticAnalysisSchema.parse(parsed), AestheticAnalysisSchema, settings, 'Aesthetic Reference');
     
     // Extract grounding sources
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
@@ -689,7 +697,7 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
   }
 }
 
-export async function analyzeKeyword(keyword: string, contentType: string, settings: AppSettings, referenceFile?: ReferenceFile, referenceUrl?: string) {
+export async function analyzeKeyword(keyword: string, contentType: string, categoryName: string, settings: AppSettings, referenceFile?: ReferenceFile, referenceUrl?: string) {
   const ai = getAI(settings.apiKey);
   
   const promptText = `Perform an exhaustive, data-driven microstock market analysis targeting the asset type: '${contentType}'.
@@ -810,7 +818,7 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     const parsed = extractJSON(text);
     
     // Validate with Zod and Critic Agent
-    const validatedData = await criticizeAnalysis(KeywordAnalysisSchema.parse(parsed), KeywordAnalysisSchema, settings);
+    const validatedData = await criticizeAnalysis(KeywordAnalysisSchema.parse(parsed), KeywordAnalysisSchema, settings, categoryName);
     
     // Extract grounding sources
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
@@ -832,7 +840,7 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     logger.log({
       timestamp: new Date().toISOString(),
       functionName: 'analyzeKeyword',
-      input: { keyword, contentType },
+      input: { keyword, contentType, categoryName },
       output: validatedData,
       status: 'success',
       latencyMs: Date.now() - startTime
@@ -843,7 +851,7 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     logger.log({
       timestamp: new Date().toISOString(),
       functionName: 'analyzeKeyword',
-      input: { keyword, contentType },
+      input: { keyword, contentType, categoryName },
       output: null,
       status: 'error',
       latencyMs: Date.now() - startTime,
@@ -1098,7 +1106,7 @@ export async function generatePrompts(
       const parsed = extractJSON(text);
       
       // Validate with Zod and Critic Agent
-      const validatedData = await criticizeAnalysis(PromptSchema.parse(parsed), PromptSchema, settings) as Prompt;
+      const validatedData = await criticizeAnalysis(PromptSchema.parse(parsed), PromptSchema, settings, categoryName) as Prompt;
       
       const generatedPrompts = new Set<string>();
       const negativePrompt = settings.includeNegative ? ` ${settings.customNegativePrompt || '--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy'}` : '';
@@ -1358,7 +1366,7 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
     const parsed = extractJSON(text);
     
     // Validate with Zod and Critic Agent
-    const validatedData = await criticizeAnalysis(PromptDirectSchema.parse({ prompts: Array.isArray(parsed) ? parsed : parsed.prompts }), PromptDirectSchema, settings);
+    const validatedData = await criticizeAnalysis(PromptDirectSchema.parse({ prompts: Array.isArray(parsed) ? parsed : parsed.prompts }), PromptDirectSchema, settings, 'General Market');
     
     const generatedPrompts = validatedData.prompts.map(p => {
       let prompt = p;
@@ -1523,7 +1531,7 @@ export async function optimizePrompts(
       const parsed = extractJSON(text);
       
       // Validate with Zod and Critic Agent
-      const validatedData = await criticizeAnalysis(PromptSchema.parse(parsed), PromptSchema, settings) as Prompt;
+      const validatedData = await criticizeAnalysis(PromptSchema.parse(parsed), PromptSchema, settings, categoryName) as Prompt;
       
       const optimizedPrompts = validatedData.subjects.map((subject: string, index: number) => {
         const action = validatedData.actions[index % validatedData.actions.length] || "action";
