@@ -830,6 +830,7 @@ export default function App() {
             onClearHistory={handleClearHistory} 
             onLoadHistory={handleLoadHistory} 
             onGenerateMetadata={handleGenerateMetadata}
+            onUpgrade={handleUpgradePrompts}
           />
         )}
         

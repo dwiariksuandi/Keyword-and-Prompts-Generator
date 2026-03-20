@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, History, Lightbulb, Download, Copy, Check, ChevronDown, ChevronUp, Trash2, Search, FileSpreadsheet, Loader2, Sparkles, Database, Clock, Layers } from 'lucide-react';
+import { FileText, History, Lightbulb, Download, Copy, Check, ChevronDown, ChevronUp, Trash2, Search, FileSpreadsheet, Loader2, Sparkles, Database, Clock, Layers, Wand2 } from 'lucide-react';
 import { CategoryResult, HistoryItem } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -9,9 +9,10 @@ interface ResultsTabProps {
   onClearHistory: () => void;
   onLoadHistory: (item: HistoryItem) => void;
   onGenerateMetadata: (categoryId: string) => void;
+  onUpgrade: (categoryId: string) => void;
 }
 
-export default function ResultsTab({ results, history, onClearHistory, onLoadHistory, onGenerateMetadata }: ResultsTabProps) {
+export default function ResultsTab({ results, history, onClearHistory, onLoadHistory, onGenerateMetadata, onUpgrade }: ResultsTabProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -214,6 +215,23 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
                       Download CSV
                     </motion.button>
                   )}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpgrade(category.id);
+                    }}
+                    disabled={category.isUpgrading}
+                    className="flex-1 lg:flex-none flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-50 border border-orange-500/20"
+                  >
+                    {category.isUpgrading ? (
+                      <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+                    )}
+                    {category.isUpgrading ? 'Optimizing...' : 'Optimize'}
+                  </motion.button>
                   <div className="w-px h-8 sm:h-10 bg-white/10 mx-1 sm:mx-2 hidden lg:block"></div>
                   <div className="flex items-center gap-2 sm:gap-3 ml-auto lg:ml-0">
                     <motion.button

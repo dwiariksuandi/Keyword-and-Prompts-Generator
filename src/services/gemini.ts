@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
-import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis } from '../types';
+import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult } from '../types';
 
 export const promptTemplates: PromptTemplate[] = [
   // --- PHOTO ---
@@ -1590,4 +1590,55 @@ ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
   }
 
   return allMetadata;
+}
+
+export async function upgradePrompts(
+  prompts: string[],
+  category: CategoryResult,
+  settings: AppSettings,
+  contentType: string
+): Promise<string[]> {
+  const ai = getAI(settings.apiKey);
+  
+  const promptText = `You are an elite AI Image Prompt Engineer. I have a list of ${prompts.length} image generation prompts for the niche '${category.categoryName}'. 
+  Target asset type: '${contentType}'.
+  
+  Your task is to UPGRADE and ENHANCE these prompts to be highly commercial for Adobe Stock.
+  1. Add more descriptive details, advanced lighting (e.g., cinematic, volumetric, golden hour), and better composition (e.g., rule of thirds, dynamic angle).
+  2. Align with current market trends.
+  ${category.visualTrends && category.visualTrends.length > 0 ? `Incorporate these visual trends: ${category.visualTrends.join(', ')}` : ''}
+  ${category.creativeAdvice ? `Keep this creative advice in mind: ${category.creativeAdvice}` : ''}
+  3. ${getVariationInstructions(settings.variationLevel)}
+  4. Ensure they remain compliant with stock photo rules (no text, no real people, no copyrighted brands).
+  
+  Here are the original prompts:
+  ${prompts.map((p, i) => `${i + 1}. ${p}`).join('\n')}
+  
+  Respond strictly with a JSON array of strings, where each string is the upgraded version of the prompt. The array must have exactly ${prompts.length} items.
+  Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3-flash-preview',
+      contents: promptText,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING }
+        },
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response from AI");
+    
+    const upgradedPrompts = JSON.parse(text);
+    if (!Array.isArray(upgradedPrompts)) throw new Error("Invalid format");
+    return upgradedPrompts;
+  } catch (e) {
+    console.error("Failed to parse upgraded prompts:", e);
+    throw new Error("Failed to parse the upgraded prompts.");
+  }
 }
