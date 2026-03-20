@@ -102,6 +102,33 @@ export interface CategoryResult {
     confidenceScore: number;
     topSellingFactors: string[];
   };
+  isAutoPilotActive?: boolean;
+}
+
+export interface GlobalTrend {
+  niche: string;
+  growth: number;
+  demand: 'low' | 'medium' | 'high' | 'exploding';
+  competition: 'low' | 'medium' | 'high';
+  keywords: string[];
+  reason: string;
+}
+
+export interface TrendAlert {
+  id: string;
+  trend: GlobalTrend;
+  timestamp: string;
+  isRead: boolean;
+}
+
+export interface SalesRecord {
+  id: string;
+  assetId: string;
+  title: string;
+  downloads: number;
+  earnings: number;
+  date: string;
+  keywords: string[];
 }
 
 export interface HistoryItem {
@@ -131,5 +158,6 @@ export interface AppSettings {
   customNegativePrompt?: string;
   autoSave: boolean;
   variationLevel: 'Low' | 'Medium' | 'High';
+  autoPilotEnabled: boolean;
   competitorIntel?: CompetitorAnalysis;
 }

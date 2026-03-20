@@ -3,7 +3,7 @@ import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, Alert
 import { motion, AnimatePresence } from 'motion/react';
 import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, polishMetadata, generateImagePreview, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt, refinePrompts, analyzeCompetitorIntel, analyzeGlobalTrends, predictSalesPotential } from './services/gemini';
 import { validateAdobeMetadata } from './services/validator';
-import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis } from './types';
+import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis, SalesRecord, GlobalTrend, TrendAlert } from './types';
 import Settings from './components/Settings';
 import TopTab from './components/TopTab';
 import AnalysisTab from './components/AnalysisTab';
@@ -15,6 +15,7 @@ import ChangelogTab from './components/ChangelogTab';
 import GuideTab from './components/GuideTab';
 import PipelineTab from './components/PipelineTab';
 import IntelligenceTab from './components/IntelligenceTab';
+import SalesTrackerTab from './components/SalesTrackerTab';
 import { ResultRow } from './components/ResultRow';
 import { Eye, LogIn, LogOut, User as UserIcon, Cloud, CloudOff, ShieldAlert, Users, TrendingUp, DollarSign } from 'lucide-react';
 import { 
@@ -38,7 +39,7 @@ import {
   User 
 } from './firebase';
 
-type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline" | "wizard" | "intelligence";
+type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline" | "wizard" | "intelligence" | "sales";
 
 const WORKFLOW_STEPS = [
   { id: 'top', label: '01. RESEARCH', description: 'Cari Niche Menguntungkan' },
@@ -91,7 +92,8 @@ export default function App() {
     includeNegative: true,
     customNegativePrompt: '--no text, typography, words, letters, watermark, signature, logos, brands, trademark, copyright, recognizable characters, real people, celebrity, deformed, bad anatomy, extra limbs, missing fingers, mutated hands, poorly drawn face, asymmetrical eyes, blurry, out of focus, noise, artifacts, low resolution, pixelated, overexposed, underexposed, artificial look, plastic skin',
     autoSave: true,
-    variationLevel: 'Medium'
+    variationLevel: 'Medium',
+    autoPilotEnabled: false
   });
 
   const [prefsSaved, setPrefsSaved] = useState(false);
@@ -105,6 +107,8 @@ export default function App() {
   const [globalTrends, setGlobalTrends] = useState<{ niche: string, growthRate: number, isExploding: boolean, alertMessage: string }[]>([]);
   const [isCheckingTrends, setIsCheckingTrends] = useState(false);
   const [showTrendAlerts, setShowTrendAlerts] = useState(false);
+  const [salesRecords, setSalesRecords] = useState<SalesRecord[]>([]);
+  const [isParsingSales, setIsParsingSales] = useState(false);
 
   const [errorModal, setErrorModal] = useState<{show: boolean, title: string, message: string}>({
     show: false,
@@ -122,8 +126,20 @@ export default function App() {
           const niches = results.map(r => r.categoryName);
           const trends = await analyzeGlobalTrends(niches, settings);
           setGlobalTrends(trends);
+          
           if (trends.some(t => t.isExploding)) {
             setShowTrendAlerts(true);
+            
+            // Auto-Pilot Production
+            if (settings.autoPilotEnabled) {
+              const explodingNiches = trends.filter(t => t.isExploding);
+              for (const trend of explodingNiches) {
+                const targetResult = results.find(r => r.categoryName === trend.niche);
+                if (targetResult && !targetResult.isAutoPilotActive) {
+                  handleAutoPilot(targetResult.id);
+                }
+              }
+            }
           }
         } catch (error) {
           console.error("Trend watchdog failed:", error);
@@ -135,7 +151,81 @@ export default function App() {
       const timer = setTimeout(checkTrends, 5000); // Check after 5s of inactivity
       return () => clearTimeout(timer);
     }
-  }, [results, user, settings.apiKey]);
+  }, [results, user, settings.apiKey, settings.autoPilotEnabled]);
+
+  const handleAutoPilot = async (id: string) => {
+    const result = results.find(r => r.id === id);
+    if (!result || result.isAutoPilotActive) return;
+
+    setResults(prev => prev.map(r => r.id === id ? { ...r, isAutoPilotActive: true } : r));
+    setToast({ show: true, message: `Auto-Pilot: Memulai produksi untuk ${result.categoryName}...` });
+
+    try {
+      const { prompts } = await generatePromptsDirectly(
+        settings.promptCount, 
+        settings, 
+        result.contentType, 
+        result.categoryName
+      );
+
+      const updatedResult = {
+        ...result,
+        generatedPrompts: prompts,
+        isAutoPilotActive: false,
+        isGeneratingPrompts: false
+      };
+
+      setResults(prev => prev.map(r => r.id === id ? updatedResult : r));
+      await saveResultToCloud(updatedResult);
+      setToast({ show: true, message: `Auto-Pilot: Berhasil memproduksi ${prompts.length} prompt untuk ${result.categoryName}!` });
+    } catch (error) {
+      console.error("Auto-pilot failed:", error);
+      setResults(prev => prev.map(r => r.id === id ? { ...r, isAutoPilotActive: false } : r));
+    }
+  };
+
+  const handleParseSalesCSV = async (file: File) => {
+    if (!user) return;
+    setIsParsingSales(true);
+    setToast({ show: true, message: "Parsing data penjualan..." });
+
+    try {
+      const text = await file.text();
+      const lines = text.split('\n');
+      const headers = lines[0].split(',');
+      
+      const records: SalesRecord[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length < 5) continue;
+        
+        const record: SalesRecord = {
+          id: Math.random().toString(36).substring(7),
+          assetId: cols[0].trim(),
+          title: cols[1].trim(),
+          downloads: parseInt(cols[2]) || 0,
+          earnings: parseFloat(cols[3]) || 0,
+          date: cols[4].trim(),
+          keywords: cols[5] ? cols[5].split(';').map(k => k.trim()) : []
+        };
+        records.push(record);
+      }
+
+      // Save to Firestore
+      const batch = records.map(async (r) => {
+        const ref = doc(db, 'users', user.uid, 'sales_records', r.assetId);
+        await setDoc(ref, r);
+      });
+      await Promise.all(batch);
+
+      setToast({ show: true, message: `Berhasil mengimpor ${records.length} data penjualan!` });
+    } catch (error) {
+      console.error("CSV parsing failed:", error);
+      setToast({ show: true, message: "Gagal mengimpor CSV. Pastikan format benar." });
+    } finally {
+      setIsParsingSales(false);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -202,6 +292,21 @@ export default function App() {
         setIsSyncing(false);
       });
       
+      return () => unsubscribe();
+    }
+  }, [isAuthReady, user]);
+
+  // Sync Sales Records
+  useEffect(() => {
+    if (isAuthReady && user) {
+      const salesRef = collection(db, 'users', user.uid, 'sales_records');
+      const unsubscribe = onSnapshot(salesRef, (snapshot) => {
+        const records: SalesRecord[] = [];
+        snapshot.forEach((doc) => {
+          records.push(doc.data() as SalesRecord);
+        });
+        setSalesRecords(records);
+      });
       return () => unsubscribe();
     }
   }, [isAuthReady, user]);
@@ -836,7 +941,7 @@ export default function App() {
     setToast({ show: true, message: "AI is analyzing market data..." });
     
     try {
-      const prediction = await predictSalesPotential(result.categoryName, result.contentType, settings);
+      const prediction = await predictSalesPotential(result.categoryName, result.contentType, settings, salesRecords);
       const updatedResult = {
         ...result,
         salesData: prediction
@@ -1362,6 +1467,7 @@ export default function App() {
           <div className="flex items-center gap-1">
             {[
               { id: 'results', label: 'HISTORY' },
+              { id: 'sales', label: 'SALES' },
               { id: 'settings', label: 'CONFIG' },
               { id: 'guide', label: 'HELP' }
             ].map((tab) => (
@@ -1564,6 +1670,14 @@ export default function App() {
             onGenerateMetadata={handleGenerateMetadata}
             onPolishMetadata={handlePolishMetadata}
             onUpgrade={handleUpgradePrompts}
+          />
+        )}
+
+        {activeTab === 'sales' && (
+          <SalesTrackerTab 
+            salesRecords={salesRecords}
+            onParseCSV={handleParseSalesCSV}
+            isParsing={isParsingSales}
           />
         )}
         

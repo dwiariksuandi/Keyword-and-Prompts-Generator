@@ -65,6 +65,20 @@
         "isExploding": { "type": "boolean" },
         "lastUpdated": { "type": "string", "format": "date-time" }
       }
+    },
+    "SalesRecord": {
+      "title": "Sales Record",
+      "description": "Data penjualan asli dari Adobe Stock CSV.",
+      "type": "object",
+      "properties": {
+        "assetId": { "type": "string" },
+        "title": { "type": "string" },
+        "downloads": { "type": "number" },
+        "earnings": { "type": "number" },
+        "date": { "type": "string", "format": "date" },
+        "keywords": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["assetId", "downloads", "earnings"]
     }
   },
   "firestore": {
@@ -75,6 +89,10 @@
     "/users/{userId}/results/{resultId}": {
       "schema": "ResearchResult",
       "description": "Koleksi hasil riset milik pengguna."
+    },
+    "/users/{userId}/sales_records/{recordId}": {
+      "schema": "SalesRecord",
+      "description": "Koleksi data penjualan asli pengguna."
     },
     "/global_trends/{trendId}": {
       "schema": "GlobalTrend",

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Key, Save, Check, AlertCircle, LogOut, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe } from 'lucide-react';
+import { Key, Save, Check, AlertCircle, LogOut, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe, Zap, TrendingUp } from 'lucide-react';
 import { AppSettings, PromptTemplate } from '../types';
 import { promptTemplates } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
@@ -327,6 +327,43 @@ export default function Settings({
             </div>
 
             <div className="pt-8 border-t border-white/5 space-y-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
+                      <Zap size={18} className="text-cyan-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white tracking-tight">Auto-Pilot Production</h3>
+                      <p className="text-xs text-slate-500 font-light">Auto-generate prompts for exploding trends.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSettings({ ...settings, autoPilotEnabled: !settings.autoPilotEnabled })}
+                    className={`w-14 h-7 rounded-full transition-all relative p-1 ${
+                      settings.autoPilotEnabled ? "bg-cyan-500" : "bg-slate-800"
+                    }`}
+                  >
+                    <motion.div
+                      animate={{ x: settings.autoPilotEnabled ? 28 : 0 }}
+                      className="w-5 h-5 rounded-full bg-white shadow-lg"
+                    />
+                  </button>
+                </div>
+                {settings.autoPilotEnabled && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="pl-14 p-4 bg-cyan-500/5 border border-cyan-500/10 rounded-2xl"
+                  >
+                    <p className="text-[10px] text-cyan-400 leading-relaxed font-medium">
+                      <TrendingUp size={10} className="inline mr-1" /> 
+                      Watchdog akan otomatis memicu produksi prompt saat mendeteksi niche yang sedang meledak.
+                    </p>
+                  </motion.div>
+                )}
+              </div>
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">

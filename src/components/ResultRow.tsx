@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, TrendingUp, TrendingDown, Minus, Sparkles, FileText, Zap, DollarSign, Users, Share2 } from 'lucide-react';
+import { Star, TrendingUp, TrendingDown, Minus, Sparkles, FileText, Zap, DollarSign, Users, Share2, Loader2 } from 'lucide-react';
 import { CategoryResult } from '../types';
 import { motion } from 'motion/react';
 
@@ -169,9 +169,21 @@ export const ResultRow: React.FC<ResultRowProps> = ({ result, onToggleStar, onVi
           }`}
         >
           {result.generatedPrompts.length > 0 ? (
-            <span className="flex items-center gap-2"><FileText size={14} /> Assets</span>
+            <span className="flex items-center gap-2">
+              {result.isAutoPilotActive ? (
+                <><Loader2 size={14} className="animate-spin" /> Auto-Pilot</>
+              ) : (
+                <><FileText size={14} /> Assets</>
+              )}
+            </span>
           ) : (
-            <span className="flex items-center gap-2"><Zap size={14} /> Synthesize</span>
+            <span className="flex items-center gap-2">
+              {result.isAutoPilotActive ? (
+                <><Loader2 size={14} className="animate-spin" /> Auto-Pilot</>
+              ) : (
+                <><Zap size={14} /> Synthesize</>
+              )}
+            </span>
           )}
         </motion.button>
       </td>

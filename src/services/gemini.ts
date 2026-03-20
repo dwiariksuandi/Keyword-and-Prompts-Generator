@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { KeywordAnalysisSchema, AestheticAnalysisSchema, PromptSchema, PromptDirectSchema, type Prompt, type PromptDirect } from '../schemas';
-import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult, CompetitorAnalysis } from '../types';
+import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult, CompetitorAnalysis, GlobalTrend, SalesRecord } from '../types';
 import { logger } from './logger';
 
 function zodToJsonSchemaNoSchema(schema: any) {
@@ -2380,11 +2380,16 @@ export async function analyzeGlobalTrends(userNiches: string[], settings: AppSet
   }
 }
 
-export async function predictSalesPotential(prompt: string, category: string, settings: AppSettings): Promise<{ estimatedMonthlySales: number, confidenceScore: number, topSellingFactors: string[] }> {
+export async function predictSalesPotential(prompt: string, category: string, settings: AppSettings, historicalSales?: SalesRecord[]): Promise<{ estimatedMonthlySales: number, confidenceScore: number, topSellingFactors: string[] }> {
   const ai = getAI(settings.apiKey);
+  
+  const salesContext = historicalSales && historicalSales.length > 0 
+    ? `\n\nHistorical Sales Context (Use this to refine prediction):\n${historicalSales.slice(0, 5).map(s => `- Asset: ${s.title}, Downloads: ${s.downloads}, Earnings: $${s.earnings}`).join('\n')}`
+    : '';
+
   const systemPrompt = `You are a Sales Data Scientist for Adobe Stock. 
   Predict the monthly sales potential (number of downloads) for an asset generated from this prompt: "${prompt}" in the category "${category}".
-  Base your prediction on current market demand, visual trends, and historical performance of similar assets.`;
+  Base your prediction on current market demand, visual trends, and historical performance of similar assets.${salesContext}`;
 
   try {
     const response = await ai.models.generateContent({
