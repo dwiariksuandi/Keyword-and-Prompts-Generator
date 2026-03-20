@@ -4,6 +4,7 @@ import { ChevronRight, ChevronLeft, Sparkles, Target, Zap, CheckCircle2 } from '
 import { AppSettings } from '../types';
 import { fetchTrendingKeywords, generateVeoPrompt, generateNanoBananaPrompt } from '../services/gemini';
 import TrendForecast from './TrendForecast';
+import VisualQA from './VisualQA';
 
 interface PromptWizardProps {
   keyword: string;
@@ -176,6 +177,7 @@ export default function PromptWizard({ keyword, setKeyword, contentType, setCont
               <p className="text-sm text-slate-400 mb-1">Niche: <span className="text-white font-bold">{keyword || 'Not set'}</span></p>
               <p className="text-sm text-slate-400">Platform: <span className="text-white font-bold">{contentType}</span></p>
             </div>
+            <VisualQA assetUrl="https://picsum.photos/seed/vibrant/1920/1080" />
             <button
               onClick={mode === 'freeform' ? () => onGenerate(keyword) : handleFormulaGenerate}
               disabled={isGenerating}

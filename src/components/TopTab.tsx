@@ -4,6 +4,7 @@ import { CategoryResult, AppSettings, ReferenceFile, AestheticAnalysis } from '.
 import { fetchTrendingKeywords } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
 import TrendForecast from './TrendForecast';
+import CompetitorGapAnalysis from './CompetitorGapAnalysis';
 import FormField from './FormField';
 import LoadingIndicator from './LoadingIndicator';
 
@@ -258,6 +259,7 @@ export default function TopTab({
                 onBlur={() => setTimeout(() => setIsFocused(false), 200)}
               />
               <TrendForecast niche={keyword} />
+              <CompetitorGapAnalysis niche={keyword} />
               
               <AnimatePresence>
                 {showSuggestions && filteredSuggestions.length > 0 && (
