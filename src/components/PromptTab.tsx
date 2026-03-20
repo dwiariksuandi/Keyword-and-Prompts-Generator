@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Copy, ArrowLeft, Wand2, Sparkles, RefreshCw, Loader2, Globe, FileJson, FileSpreadsheet } from 'lucide-react';
+import { Download, Copy, ArrowLeft, Wand2, Sparkles, RefreshCw, Loader2, Globe, FileJson, FileSpreadsheet, Zap, Eye } from 'lucide-react';
 import { CategoryResult } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -9,6 +9,9 @@ interface PromptTabProps {
   onBack: () => void;
   onGenerate: (id: string) => void | Promise<void>;
   onUpgrade: (id: string) => void | Promise<void>;
+  onGenerateMetadata: (id: string) => void | Promise<void>;
+  onPolishMetadata: (id: string) => void | Promise<void>;
+  onVisualize: (prompt: string) => void | Promise<void>;
   promptsCount: number;
   setPromptsCount: React.Dispatch<React.SetStateAction<number>>;
   onShowToast: (message: string) => void;
@@ -21,6 +24,9 @@ export default function PromptTab({
   onBack, 
   onGenerate, 
   onUpgrade,
+  onGenerateMetadata,
+  onPolishMetadata,
+  onVisualize,
   promptsCount,
   setPromptsCount,
   onShowToast,
@@ -315,8 +321,32 @@ export default function PromptTab({
                           className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold border border-orange-500/30 transition-all disabled:opacity-50 text-xs sm:text-sm"
                         >
                           <Wand2 size={16} sm:size={18} />
-                          <span>Optimize</span>
+                          <span>DNA Upgrade</span>
                         </motion.button>
+                        <div className="w-px h-8 sm:h-10 bg-slate-800 hidden sm:block mx-1 sm:mx-2" />
+                        {(!category.metadata || category.metadata.length === 0) ? (
+                          <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => onGenerateMetadata(category.id)}
+                            disabled={category.isGeneratingMetadata}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold border border-cyan-500/30 transition-all disabled:opacity-50 text-xs sm:text-sm"
+                          >
+                            <Sparkles size={16} sm:size={18} />
+                            <span>Metadata</span>
+                          </motion.button>
+                        ) : (
+                          <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => onPolishMetadata(category.id)}
+                            disabled={category.isGeneratingMetadata}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold border border-emerald-500/30 transition-all disabled:opacity-50 text-xs sm:text-sm"
+                          >
+                            <Zap size={16} sm:size={18} />
+                            <span>Polish SEO</span>
+                          </motion.button>
+                        )}
                         <div className="w-px h-8 sm:h-10 bg-slate-800 hidden sm:block mx-1 sm:mx-2" />
                         <motion.button 
                           whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.1)' }}
@@ -368,7 +398,16 @@ export default function PromptTab({
                           <div className="flex-grow pt-0 sm:pt-1">
                             <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-light">{prompt}</p>
                           </div>
-                          <div className="flex-shrink-0 flex justify-end">
+                          <div className="flex-shrink-0 flex justify-end gap-2">
+                            <motion.button 
+                              whileHover={{ scale: 1.1, backgroundColor: 'rgba(6, 182, 212, 0.2)', color: '#22d3ee' }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => onVisualize(prompt)}
+                              className="p-2.5 sm:p-4 bg-black/40 rounded-xl sm:rounded-2xl text-cyan-400/60 transition-all border border-white/5 hover:border-cyan-500/30"
+                              title="Visualize with Gemini"
+                            >
+                              <Eye size={16} sm:size={18} />
+                            </motion.button>
                             <motion.button 
                               whileHover={{ scale: 1.1, backgroundColor: 'var(--color-accent)', color: '#000' }}
                               whileTap={{ scale: 0.9 }}

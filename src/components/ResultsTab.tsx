@@ -9,10 +9,11 @@ interface ResultsTabProps {
   onClearHistory: () => void;
   onLoadHistory: (item: HistoryItem) => void;
   onGenerateMetadata: (categoryId: string) => void;
+  onPolishMetadata: (categoryId: string) => void;
   onUpgrade: (categoryId: string) => void;
 }
 
-export default function ResultsTab({ results, history, onClearHistory, onLoadHistory, onGenerateMetadata, onUpgrade }: ResultsTabProps) {
+export default function ResultsTab({ results, history, onClearHistory, onLoadHistory, onGenerateMetadata, onPolishMetadata, onUpgrade }: ResultsTabProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -202,18 +203,33 @@ export default function ResultsTab({ results, history, onClearHistory, onLoadHis
                       {category.isGeneratingMetadata ? 'Synthesizing...' : 'Generate Metadata'}
                     </motion.button>
                   ) : (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownloadCSV(category);
-                      }}
-                      className="flex-1 lg:flex-none flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all border border-emerald-500/20"
-                    >
-                      <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
-                      Download CSV
-                    </motion.button>
+                    <div className="flex gap-2 w-full lg:w-auto">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadCSV(category);
+                        }}
+                        className="flex-1 lg:flex-none flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all border border-emerald-500/20"
+                      >
+                        <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+                        CSV
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onPolishMetadata(category.id);
+                        }}
+                        disabled={category.isGeneratingMetadata}
+                        className="flex-1 lg:flex-none flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all border border-cyan-500/20"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+                        Polish
+                      </motion.button>
+                    </div>
                   )}
                   <motion.button
                     whileHover={{ scale: 1.02 }}

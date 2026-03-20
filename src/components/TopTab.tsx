@@ -7,6 +7,7 @@ import TrendForecast from './TrendForecast';
 import CompetitorGapAnalysis from './CompetitorGapAnalysis';
 import FormField from './FormField';
 import LoadingIndicator from './LoadingIndicator';
+import MarketMap from './MarketMap';
 
 interface TopTabProps {
   keyword: string;
@@ -762,6 +763,10 @@ export default function TopTab({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {results.length > 0 && (
+        <MarketMap results={results} onSelect={onSelectTrend} />
+      )}
     </div>
   );
 }

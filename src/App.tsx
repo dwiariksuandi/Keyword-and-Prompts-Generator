@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt, refinePrompts, analyzeCompetitorIntel } from './services/gemini';
+import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, polishMetadata, generateImagePreview, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt, refinePrompts, analyzeCompetitorIntel } from './services/gemini';
 import { validateAdobeMetadata } from './services/validator';
 import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis } from './types';
 import Settings from './components/Settings';
@@ -16,6 +16,7 @@ import GuideTab from './components/GuideTab';
 import PipelineTab from './components/PipelineTab';
 import IntelligenceTab from './components/IntelligenceTab';
 import { ResultRow } from './components/ResultRow';
+import { Eye } from 'lucide-react';
 
 type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline" | "wizard" | "intelligence";
 
@@ -39,6 +40,9 @@ export default function App() {
   const [referenceFile, setReferenceFile] = useState<ReferenceFile | null>(null);
   const [referenceUrl, setReferenceUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [visualizingPrompt, setVisualizingPrompt] = useState<string | null>(null);
+  const [visualizedImage, setVisualizedImage] = useState<string | null>(null);
+  const [isVisualizing, setIsVisualizing] = useState(false);
   const [progress, setProgress] = useState<{ current: number, total: number, message: string } | null>(null);
   const [isPipelineRunning, setIsPipelineRunning] = useState(false);
   const [isAnalyzingAesthetic, setIsAnalyzingAesthetic] = useState(false);
@@ -450,7 +454,8 @@ export default function App() {
         referenceUrl || undefined,
         category.buyerPersona,
         category.visualTrends,
-        category.creativeAdvice
+        category.creativeAdvice,
+        category.competitorIntel
       );
 
       // Refine the prompts for commercial viability in batch
@@ -521,6 +526,45 @@ export default function App() {
         message: handleGeminiError(error)
       });
       setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isGeneratingMetadata: false } : c));
+    }
+  };
+
+  const handlePolishMetadata = async (categoryId: string) => {
+    const category = results.find(c => c.id === categoryId);
+    if (!category || !category.metadata || category.metadata.length === 0) return;
+
+    setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isGeneratingMetadata: true } : c));
+    setToast({ show: true, message: 'Polishing Metadata for maximum CTR...' });
+
+    try {
+      const polished = await polishMetadata(
+        category.metadata,
+        category.categoryName,
+        settings,
+        category.contentType
+      );
+
+      setResults(prev => prev.map(c => c.id === categoryId ? { ...c, metadata: polished, isGeneratingMetadata: false } : c));
+      setToast({ show: true, message: 'Metadata Polishing Selesai!' });
+    } catch (error) {
+      console.error("Metadata polishing failed:", error);
+      setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isGeneratingMetadata: false } : c));
+    }
+  };
+
+  const handleVisualizePrompt = async (prompt: string) => {
+    setVisualizingPrompt(prompt);
+    setIsVisualizing(true);
+    setVisualizedImage(null);
+    
+    try {
+      const imageUrl = await generateImagePreview(prompt, settings.apiKey);
+      setVisualizedImage(imageUrl);
+    } catch (error) {
+      console.error("Visualization failed:", error);
+      setToast({ show: true, message: 'Gagal men-generate preview visual.' });
+      setIsVisualizing(false);
+      setVisualizingPrompt(null);
     }
   };
 
@@ -1259,6 +1303,7 @@ export default function App() {
             onClearHistory={handleClearHistory} 
             onLoadHistory={handleLoadHistory} 
             onGenerateMetadata={handleGenerateMetadata}
+            onPolishMetadata={handlePolishMetadata}
             onUpgrade={handleUpgradePrompts}
           />
         )}
@@ -1282,6 +1327,9 @@ export default function App() {
             onBack={() => setActiveTab('top')} 
             onGenerate={handleGeneratePrompts}
             onUpgrade={handleUpgradePrompts}
+            onGenerateMetadata={handleGenerateMetadata}
+            onPolishMetadata={handlePolishMetadata}
+            onVisualize={handleVisualizePrompt}
             promptsCount={settings.promptCount}
             setPromptsCount={(count) => setSettings(s => ({ ...s, promptCount: typeof count === 'function' ? count(s.promptCount) : count }))}
             onShowToast={(msg) => setToast({ show: true, message: msg })}
@@ -1326,6 +1374,73 @@ export default function App() {
                   className="w-full py-4 bg-white text-black font-bold rounded-2xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-xs"
                 >
                   DISMISS
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Visual Preview Modal */}
+      <AnimatePresence>
+        {isVisualizing && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsVisualizing(false)}
+              className="absolute inset-0 bg-black/90 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 40 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 40 }}
+              className="relative w-full max-w-2xl bg-slate-900 border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl"
+            >
+              <div className="aspect-square w-full bg-black/40 flex items-center justify-center relative group">
+                {visualizedImage ? (
+                  <img 
+                    src={visualizedImage} 
+                    alt="AI Visualization" 
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="relative">
+                      <Loader2 className="w-16 h-16 text-cyan-500 animate-spin" />
+                      <Sparkles className="w-6 h-6 text-accent absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                    </div>
+                    <div className="text-center space-y-2">
+                      <p className="text-white font-bold tracking-widest uppercase text-xs">Neural Rendering in Progress</p>
+                      <p className="text-slate-500 text-[10px] uppercase tracking-[0.2em]">Synthesizing Visual DNA via Gemini 2.5 Flash</p>
+                    </div>
+                  </div>
+                )}
+                
+                {visualizedImage && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-8">
+                    <p className="text-white text-sm font-light leading-relaxed italic line-clamp-3">"{visualizingPrompt}"</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-8 flex items-center justify-between bg-slate-900/80 backdrop-blur-sm border-t border-white/5">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
+                    <Eye className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold text-sm">Visual Validation</h4>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest">Gemini 2.5 Flash Image Engine</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsVisualizing(false)}
+                  className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-[10px]"
+                >
+                  Close Preview
                 </button>
               </div>
             </motion.div>

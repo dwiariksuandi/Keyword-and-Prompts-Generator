@@ -1796,7 +1796,8 @@ export async function optimizePrompts(
   referenceUrl?: string,
   buyerPersona?: string,
   visualTrends?: string[],
-  creativeAdvice?: string
+  creativeAdvice?: string,
+  competitorIntel?: CompetitorAnalysis
 ) {
   const ai = getAI(settings.apiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
@@ -1827,6 +1828,11 @@ export async function optimizePrompts(
     ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\n  Ensure the technical enhancements appeal directly to this specific audience.` : ''}
     ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\n  Integrate these specific aesthetic trends into the technical upgrade.` : ''}
     ${creativeAdvice ? `STRATEGIC DIRECTIVE: ${creativeAdvice}\n  Ensure the enhancements execute on this specific creative advice.` : ''}
+    ${competitorIntel ? `COMPETITOR INTELLIGENCE DNA:
+      - Aesthetic DNA: ${competitorIntel.aestheticDNA.lighting}, ${competitorIntel.aestheticDNA.composition}, ${competitorIntel.aestheticDNA.colorPalette.join(', ')}
+      - Winning Keywords: ${competitorIntel.keywordHijack.winningKeywords.join(', ')}
+      - Pivot Strategy: ${competitorIntel.counterStrategy.recommendedPivot}
+      CRITICAL: You MUST inject this Competitor DNA into the prompts. Use the 'Aesthetic DNA' as the technical benchmark, weave in the 'Winning Keywords', and apply the 'Pivot Strategy' to differentiate these prompts from the saturated market. This is "ULTIMATE DNA INJECTION" mode.` : ''}
 
     ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
     You MUST use the Google Search tool to deeply analyze the visual style, topic, lighting, and keywords from this URL. 
@@ -2177,6 +2183,89 @@ export async function generateAllPromptsBatch(
   } catch (error) {
     console.error("Batch generation failed:", error);
     throw new Error(`Batch generation failed. Raw response: ${response?.text || 'No response'}. Error: ${error}`);
+  }
+}
+
+export async function polishMetadata(
+  metadata: { title: string; description?: string; keywords: string[] }[],
+  categoryName: string,
+  settings: AppSettings,
+  contentType: string
+) {
+  const ai = getAI(settings.apiKey);
+  
+  try {
+    const prompt = `You are an Adobe Stock SEO & CTR Optimization Expert. Your task is to "Polish" the following metadata sets for maximum search visibility and click-through rate.
+    
+    Category: ${categoryName}
+    Content Type: ${contentType}
+    
+    Current Metadata:
+    ${JSON.stringify(metadata, null, 2)}
+    
+    POLISHING RULES:
+    1. Title Optimization: Rewrite titles to be more "click-baity" but professional. Use high-impact power words at the beginning. Ensure the title accurately describes the visual while being highly searchable.
+    2. Keyword Refinement: Review the 50 keywords. Replace low-value or generic keywords with high-conversion, specific, and trending synonyms. Ensure the most important keywords are in the first 10 positions (Adobe Stock priority).
+    3. A/B Simulation: Simulate which words trigger the highest commercial intent for a buyer in the ${categoryName} niche.
+    4. MULTI-LANGUAGE SEO: If the user requests or for maximum reach, ensure the keywords cover global search terms (English primary, but localized nuances).
+    5. STRICT ADOBE COMPLIANCE: No brand names, no prohibited words, max 50 keywords.
+    
+    Return the polished metadata in the EXACT SAME JSON structure as the input.`;
+
+    const response = await ai.models.generateContent({
+      model: settings.model || "gemini-3.1-flash-lite-preview",
+      contents: [{ parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              description: { type: Type.STRING },
+              keywords: { 
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              }
+            },
+            required: ["title", "keywords"]
+          }
+        }
+      }
+    });
+
+    return JSON.parse(response.text) as { title: string; description?: string; keywords: string[] }[];
+  } catch (error) {
+    console.error("Metadata polishing failed:", error);
+    return metadata; // Return original if failed
+  }
+}
+
+export async function generateImagePreview(prompt: string, apiKey: string) {
+  const ai = getAI(apiKey);
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: [{ text: prompt }],
+      config: {
+        imageConfig: {
+          aspectRatio: "1:1",
+          imageSize: "1K"
+        }
+      }
+    });
+
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        return `data:image/png;base64,${part.inlineData.data}`;
+      }
+    }
+    throw new Error("No image data returned");
+  } catch (error) {
+    console.error("Image generation failed:", error);
+    throw error;
   }
 }
 
