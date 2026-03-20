@@ -19,6 +19,13 @@ import { ResultRow } from './components/ResultRow';
 
 type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline" | "wizard" | "intelligence";
 
+const WORKFLOW_STEPS = [
+  { id: 'top', label: '01. RESEARCH', description: 'Cari Niche Menguntungkan' },
+  { id: 'intelligence', label: '02. INTEL', description: 'Bedah Strategi Kompetitor' },
+  { id: 'pipeline', label: '03. PRODUCTION', description: 'Produksi Aset Otomatis' },
+  { id: 'prompt', label: '04. VAULT', description: 'Hasil & Metadata' }
+];
+
 export default function App() {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [tempApiKey, setTempApiKey] = useState('');
@@ -1020,27 +1027,42 @@ export default function App() {
             <Sparkles size={14} />
           </div>
           <div className="flex items-center gap-1">
+            {WORKFLOW_STEPS.map((step) => (
+              <button 
+                key={step.id}
+                onClick={() => {
+                  setActiveTab(step.id as Tab);
+                  if (step.id === 'prompt') setSelectedPromptCategoryId(null);
+                }} 
+                className={`group relative px-5 py-2 rounded-full transition-all duration-500 ${
+                  activeTab === step.id 
+                    ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]' 
+                    : 'text-slate-500 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] font-black tracking-[0.2em]">{step.label}</span>
+                  <span className={`text-[7px] font-bold uppercase tracking-widest mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity absolute -bottom-6 whitespace-nowrap pointer-events-none ${activeTab === step.id ? 'text-white' : 'text-slate-500'}`}>
+                    {step.description}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+          
+          <div className="w-px h-6 bg-white/10 mx-4" />
+          
+          <div className="flex items-center gap-1">
             {[
-              { id: 'wizard', label: 'WIZARD' },
-              { id: 'top', label: 'DASHBOARD' },
-              { id: 'analysis', label: 'ANALYSIS' },
               { id: 'results', label: 'HISTORY' },
-              { id: 'prompt', label: 'PROMPTS' },
-              { id: 'pipeline', label: 'PIPELINE' },
-              { id: 'intelligence', label: 'INTEL' },
               { id: 'settings', label: 'CONFIG' },
-              { id: 'guide', label: 'GUIDE' }
+              { id: 'guide', label: 'HELP' }
             ].map((tab) => (
               <button 
                 key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id as Tab);
-                  if (tab.id === 'prompt') setSelectedPromptCategoryId(null);
-                }} 
-                className={`px-5 py-2 rounded-full text-[10px] font-bold tracking-[0.15em] transition-all duration-300 ${
-                  activeTab === tab.id 
-                    ? 'bg-white text-black futuristic-glow' 
-                    : 'text-slate-500 hover:text-white hover:bg-white/5'
+                onClick={() => setActiveTab(tab.id as Tab)}
+                className={`px-4 py-2 rounded-full text-[9px] font-bold tracking-widest transition-all ${
+                  activeTab === tab.id ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-500 hover:text-white'
                 }`}
               >
                 {tab.label}
