@@ -1006,6 +1006,8 @@ export async function generatePrompts(
   // For large counts, use a combinatorial approach to avoid LLM output token limits and guarantee uniqueness
   if (count > 30) {
     const promptText = `Generate a rich set of prompt components for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}' and the target platform is '${template.name}'.
+    
+    Think step-by-step about the market saturation, visual gaps, and commercial utility of your generated prompts before generating the components.
       
       ${getContentTypeInstructions(contentType)}
 
@@ -1093,7 +1095,9 @@ export async function generatePrompts(
         SYNTHESIS BLUEPRINT: You are generating components for the ${template.name} platform using its specific structural logic.
         ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}
         ADOBE STOCK ALGORITHM: Prioritize high-demand commercial themes, authentic representation, and technical excellence.
-        Respond ONLY with valid JSON.`,
+        
+        CHAIN-OF-THOUGHT: Before generating the final JSON, perform a step-by-step analysis of the market saturation, visual gaps, and commercial utility of your generated prompts within a <thinking> block.
+        Respond with the <thinking> block followed by ONLY valid JSON.`,
         tools: [{ googleSearch: {} }],
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
@@ -1285,6 +1289,8 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
   
   const promptText = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts. The target asset type is '${contentType}' and the target platform is '${template.name}'.
   
+  Think step-by-step about the market saturation, visual gaps, and commercial utility of your generated prompts before generating the components.
+  
   ${getContentTypeInstructions(contentType)}
 
   CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this asset type. Ensure your generated prompts reflect REAL market demand and current design trends.
@@ -1434,6 +1440,8 @@ export async function optimizePrompts(
 
   for (const chunk of chunks) {
     const promptText = `You are a Master Neural Prompt Architect. Your task is to perform a "Hyper-Technical Optimization" on the following list of ${chunk.length} image generation prompts for Adobe Stock (${contentType}) specifically for the '${template.name}' platform.
+    
+    Think step-by-step about the technical details (lighting, composition, resolution) and commercial utility of these prompts before optimizing them.
     
     ${getContentTypeInstructions(contentType)}
 
