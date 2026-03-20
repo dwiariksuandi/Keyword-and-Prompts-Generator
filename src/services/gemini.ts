@@ -11,6 +11,9 @@ async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings)
   Ensure all fields are present, types are correct, and the content is logical and grounded.
   If the data is valid, return it as is. If it's invalid, return a corrected version.
   
+  CRITICAL: The user has requested a VARIATION LEVEL of ${settings.variationLevel}.
+  ${settings.variationLevel === 'High' ? 'Be EXTREMELY strict about anomalies, hallucinations, and logical inconsistencies. Ensure maximum diversity without compromising quality.' : 'Ensure consistency and quality.'}
+  
   Data: ${JSON.stringify(data)}
   
   Respond ONLY with valid JSON.`;
