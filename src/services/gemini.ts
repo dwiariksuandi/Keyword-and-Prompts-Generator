@@ -492,6 +492,50 @@ export async function fetchTrendingKeywords(keyword: string, settings: AppSettin
   }
 }
 
+export function generateVeoPrompt(
+  cinematography: string,
+  subject: string,
+  action: string,
+  context: string,
+  style: string
+): string {
+  return `${cinematography} shot, ${subject} ${action}, in ${context}, ${style}.`;
+}
+
+export function generateNanoBananaPrompt(
+  subject: string,
+  action: string,
+  location: string,
+  composition: string,
+  style: string
+): string {
+  return `${subject} ${action}, ${location}, ${composition}, ${style}.`;
+}
+
+export async function refinePrompt(prompt: string, contentType: string, settings: AppSettings): Promise<string> {
+  const ai = getAI(settings.apiKey);
+  
+  const promptText = `Review the following prompt for Adobe Stock commercial viability: '${prompt}' for content type '${contentType}'. 
+  
+  CRITICAL:
+  1. Improve the prompt to be more commercially viable, focusing on high-quality, professional aesthetics.
+  2. Ensure it follows the required format: Subject, action, environment, lighting, camera angle, film stock.
+  3. If the prompt is already excellent, return it as is.
+  
+  Respond ONLY with the refined prompt string.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3-flash-preview',
+      contents: [{ text: promptText }],
+    });
+
+    return response.text?.trim() || prompt;
+  } catch (error) {
+    return prompt;
+  }
+}
+
 function getContentTypeInstructions(contentType: string): string {
   switch (contentType) {
     case 'Photo':

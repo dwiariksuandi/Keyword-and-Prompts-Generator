@@ -3,6 +3,7 @@ import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Z
 import { CategoryResult, AppSettings, ReferenceFile, AestheticAnalysis } from '../types';
 import { fetchTrendingKeywords } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
+import TrendForecast from './TrendForecast';
 import FormField from './FormField';
 import LoadingIndicator from './LoadingIndicator';
 
@@ -256,6 +257,7 @@ export default function TopTab({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setTimeout(() => setIsFocused(false), 200)}
               />
+              <TrendForecast niche={keyword} />
               
               <AnimatePresence>
                 {showSuggestions && filteredSuggestions.length > 0 && (

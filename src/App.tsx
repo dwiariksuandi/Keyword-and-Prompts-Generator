@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic } from './services/gemini';
+import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt } from './services/gemini';
+import { validateAdobeMetadata } from './services/validator';
 import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis } from './types';
 import Settings from './components/Settings';
 import TopTab from './components/TopTab';
@@ -224,11 +225,14 @@ export default function App() {
     }, 3000);
   };
 
-  const handleAnalyze = async () => {
-    if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) return;
+  const handleAnalyze = async (prompt?: string) => {
+    const searchKeyword = (typeof prompt === 'string' ? prompt : keyword) || '';
+    const safeReferenceUrl = (typeof referenceUrl === 'string' ? referenceUrl : '') || '';
+
+    if (!searchKeyword.trim() && !referenceFile && !safeReferenceUrl.trim()) return;
     setIsAnalyzing(true);
     try {
-      const data = await analyzeKeyword(keyword, contentType, 'General Market', settings, referenceFile || undefined, referenceUrl || undefined);
+      const data = await analyzeKeyword(searchKeyword, contentType, 'General Market', settings, referenceFile || undefined, safeReferenceUrl || undefined);
       const formattedResults: CategoryResult[] = data.map((item: any) => ({
         id: Math.random().toString(36).substring(7),
         categoryName: item.categoryName,
@@ -419,10 +423,13 @@ export default function App() {
         category.visualTrends,
         category.creativeAdvice
       );
+
+      // Refine the prompts for commercial viability
+      const refinedPrompts = await Promise.all(optimizedPrompts.map(p => refinePrompt(p, category.contentType, settings)));
       
-      // Re-score the optimized prompts
+      // Re-score the refined prompts
       const scores = await scorePrompts(
-        optimizedPrompts, 
+        refinedPrompts, 
         settings, 
         category.contentType, 
         category.categoryName,
@@ -433,7 +440,7 @@ export default function App() {
 
       setResults(prev => prev.map(c => {
         if (c.id === categoryId) {
-          return { ...c, generatedPrompts: optimizedPrompts, promptScores: scores, isUpgrading: false };
+          return { ...c, generatedPrompts: refinedPrompts, promptScores: scores, isUpgrading: false };
         }
         return c;
       }));
@@ -461,6 +468,14 @@ export default function App() {
         settings,
         contentType
       );
+      
+      // Validate the metadata
+      metadata.forEach(m => {
+        const validation = validateAdobeMetadata(m.title, m.keywords);
+        if (!validation.isValid) {
+          throw new Error(`Metadata tidak valid: ${validation.errors.join(', ')}`);
+        }
+      });
       
       setResults(prev => prev.map(c => {
         if (c.id === categoryId) {
@@ -785,7 +800,7 @@ export default function App() {
             setKeyword={setKeyword}
             contentType={contentType}
             setContentType={setContentType}
-            onGenerate={handleAnalyze}
+            onGenerate={(prompt) => handleAnalyze(prompt)}
             isGenerating={isAnalyzing}
             settings={settings}
           />
