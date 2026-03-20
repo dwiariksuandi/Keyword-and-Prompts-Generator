@@ -779,7 +779,7 @@ export async function scorePrompts(
             required: ["prompt", "score", "density", "clarity", "specificity", "adherence", "feedback", "keywordFeedback", "clarityFeedback", "specificityFeedback", "adherenceFeedback"]
           }
         },
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
 
@@ -1163,50 +1163,74 @@ export async function optimizePrompts(
     : (settings.templateId?.[contentType] || 'midjourney-photo');
   const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
   
-  // If the array is very large, we use a programmatic approach but with stricter preservation of original content
-  if (prompts.length > 30) {
-    const sample = prompts.slice(0, 10);
+  // Chunking to avoid token limits and ensure high-quality optimization for every prompt
+  const chunkSize = 15;
+  const chunks = [];
+  for (let i = 0; i < prompts.length; i += chunkSize) {
+    chunks.push(prompts.slice(i, i + chunkSize));
+  }
+
+  let allOptimizedPrompts: string[] = [];
+
+  for (const chunk of chunks) {
+    const promptText = `You are a Master Neural Prompt Architect. Your task is to perform a "Hyper-Technical Optimization" on the following list of ${chunk.length} image generation prompts for Adobe Stock (${contentType}) specifically for the '${template.name}' platform.
     
-    const promptText = `Analyze these sample prompts: ${JSON.stringify(sample)}.
-      
-      We need to perform a "Technical Upgrade" on a large batch of similar prompts for Adobe Stock (${contentType}) specifically for the '${template.name}' platform.
-      GOAL: Enhance the technical quality (lighting, camera, resolution) WITHOUT changing the core visual subject or scene of each prompt.
-      
-      ${getContentTypeInstructions(contentType)}
+    ${getContentTypeInstructions(contentType)}
 
-      CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
+    CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
 
-      ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
-      ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\n      Ensure the technical enhancements appeal directly to this specific audience.` : ''}
-      ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\n      Integrate these specific aesthetic trends into the technical upgrade.` : ''}
-      ${creativeAdvice ? `STRATEGIC DIRECTIVE: ${creativeAdvice}\n      Ensure the enhancements execute on this specific creative advice.` : ''}
+    ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
+    ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\n  Ensure the technical enhancements appeal directly to this specific audience.` : ''}
+    ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\n  Integrate these specific aesthetic trends into the technical upgrade.` : ''}
+    ${creativeAdvice ? `STRATEGIC DIRECTIVE: ${creativeAdvice}\n  Ensure the enhancements execute on this specific creative advice.` : ''}
 
-      ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-      You MUST use the Google Search tool to deeply analyze the visual style, topic, lighting, and keywords from this URL. 
-      This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
-      1. Identify the specific content type, niche, and CORE TOPIC of the asset in the URL.
-      2. Use it as the absolute benchmark for style, lighting, camera settings, and overall aesthetic.
-      3. ALIGNMENT: If the original prompts deviate significantly from the topic or style of this URL, you MUST adjust them to be "on target" with the URL's essence while maintaining the original intent where possible.
-      
-      ADOBE STOCK ALGORITHM: Ensure the technical upgrade maximizes commercial appeal (copy space, authentic lifestyle, technical perfection).` : ''}
-      ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided reference file.
-      This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
-      1. Extract the visual DNA: style, topic, lighting, and key visual elements.
-      2. Use it as the absolute benchmark for technical quality and aesthetic alignment.
-      3. ALIGNMENT: Adjust the prompts to precisely match the style, lighting, and thematic keywords found in this file.` : ''}
+    ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
+    You MUST use the Google Search tool to deeply analyze the visual style, topic, lighting, and keywords from this URL. 
+    This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
+    1. Identify the specific content type, niche, and CORE TOPIC of the asset in the URL.
+    2. Use it as the absolute benchmark for style, lighting, camera settings, and overall aesthetic.
+    3. ALIGNMENT: You MUST optimize the prompts to be "on target" with the URL's style, topic, lighting, and keywords. If the original prompt subject differs slightly, align it with the URL's essence to ensure a cohesive commercial set.
+    
+    ADOBE STOCK ALGORITHM: Ensure the hyper-technical optimization maximizes commercial utility and technical rating.` : ''}
+    ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided reference file.
+    This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
+    1. Extract the visual DNA: style, topic, lighting, and key visual elements.
+    2. Use it as the absolute benchmark for technical quality and aesthetic alignment.
+    3. ALIGNMENT: Adjust the prompts to precisely match the style, lighting, and thematic keywords found in this file.` : ''}
 
-      Provide a comprehensive set of "Neural Enhancement Layers" for a high-complexity technical upgrade:
-      1. 20 Elite Technical Modifiers: Focus on advanced optics, rendering technologies, and sensory details derived from the reference if provided.
-      2. 20 Cinematic Lighting Arrays: Use complex physics-based lighting that matches the reference's atmosphere.
-      3. 15 Masterpiece Quality Signatures: Use high-end industry terms that align with the reference's style.
-      4. 15 Subject Alignment Modifiers: Thematic keywords and topic-specific descriptors that align the original subject with the reference's topic and keywords.
-      
-      CRITICAL RULES:
-      - REFERENCE FIDELITY: If a reference is provided, it takes precedence as the "Main Idea". The modifiers must elevate the prompts to match the reference's elite standards and topic essence.
-      - NO TEXT/TYPOGRAPHY: Ensure all modifiers avoid text, watermarks, or logos.
-      - ADOBE STOCK COMPLIANCE: Use generic high-end terms instead of specific restricted brands.
-      
-      Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
+    STRICT RULE: If NO reference is provided, you MUST preserve the original visual subject exactly. If a reference IS provided, you MUST prioritize alignment with the reference's topic and style while respecting the original prompt's intent.
+    
+    YOUR TASK: Perform a "Hyper-Technical Optimization" by:
+    1. Injecting Extreme Technical Precision: Use advanced camera settings, elite rendering engines, and complex lighting physics that match the reference's quality.
+    2. Enhancing Descriptive Power & Keyword Weaving: Use sophisticated vocabulary to describe textures, materials, and atmospheric effects derived from the reference. You MUST weave 5-8 high-value commercial synonyms and LSI keywords naturally into the upgraded prompt to maximize search visibility without keyword stuffing.
+    3. Optimizing for Adobe Stock Algorithms: Ensure the prompt structure maximizes commercial appeal and technical rating.
+    4. Targeted Alignment: Ensure the resulting prompts are "tepat sasaran" (perfectly targeted) according to the reference's style, topic, and keywords.
+
+  Original Prompts:
+  ${JSON.stringify(chunk)}
+
+  CRITICAL REQUIREMENTS FOR 80+ QUALITY INDEX:
+  1. ZERO HALLUCINATION & ZERO SUBJECT DRIFT (CRITICAL): You MUST NOT change the core subject, action, or main elements of the original prompt. 
+     - If the original prompt says "A cat sitting on a mat", DO NOT change it to "A dog sitting on a mat" or "A cat running in a field".
+     - DO NOT add random characters, objects, or settings that were not present.
+     - ONLY enhance the descriptive quality, lighting, composition, and technical parameters of the EXISTING elements.
+     - The core semantic meaning MUST remain 100% identical.
+  2. GUARANTEED 80+ SCORE: The resulting prompt must be so detailed, commercially viable, and technically perfect that it is guaranteed to score above 80% on a strict Adobe Stock quality index. To achieve this, you MUST maximize:
+     - Keyword Density: Weave 5-8 high-value commercial synonyms and LSI keywords naturally.
+     - Clarity: Ensure the subject and action are unmistakable.
+     - Specificity: Provide exhaustive detail on lighting, composition, textures, and resolution.
+     - Adobe Stock Adherence: Ensure high commercial utility (copy space, authentic lifestyle) and strict AI compliance (no brands, no text).
+     - Market Alignment: Perfectly target the Buyer Persona, Visual Trends, and Creative Advice.
+  3. NO TEXT/LOGOS: Strictly avoid any mention of text, typography, or watermarks.
+  4. ADOBE STOCK COMPLIANCE: Use generic high-end terms.
+  5. POWERFUL MODIFIERS: Use terms like "8K UHD", "hyper-detailed textures", "physically based rendering (PBR)", "ray-traced reflections", and "cinematic color grading".
+  6. STRICT Template Alignment: Format each prompt using this exact structure:
+  "${template.template}"
+  7. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
+
+  Respond strictly with a JSON array of strings, containing exactly ${chunk.length} optimized prompts in the same order.
+  Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
+  ${settings.includeNegative ? 'Append a strong negative prompt at the end of each optimized prompt (e.g., "--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy").' : ''}`;
 
     const parts: any[] = [{ text: promptText }];
     if (referenceFile) {
@@ -1231,160 +1255,34 @@ export async function optimizePrompts(
           tools: [{ googleSearch: {} }],
           responseMimeType: 'application/json',
           responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              technicals: { type: Type.ARRAY, items: { type: Type.STRING } },
-              lightings: { type: Type.ARRAY, items: { type: Type.STRING } },
-              qualities: { type: Type.ARRAY, items: { type: Type.STRING } },
-              alignments: { type: Type.ARRAY, items: { type: Type.STRING } }
-            },
-            required: ["technicals", "lightings", "qualities", "alignments"]
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
           },
-          thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
-        }
+          thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
+        },
       });
 
       let text = response.text;
       if (!text) throw new Error('No response from Gemini');
       
-      const layers = extractJSON(text);
-      const optimizedPrompts = new Set<string>();
-      const negativePrompt = settings.includeNegative ? ` ${settings.customNegativePrompt || '--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy'}` : '';
+      // Strip markdown formatting if present
+      text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
       
-      for (const originalPrompt of prompts) {
-        let cleanPrompt = originalPrompt.split('--no')[0].trim();
-        
-        // More intelligent splitting
-        let parts = cleanPrompt.split(/[,.]/).map(p => p.trim()).filter(p => p.length > 0);
-        
-        // Extract the original subject (usually the first part)
-        let coreSubject = parts[0] || "subject";
-        // Combine the rest of the original details to preserve theme
-        let originalDetails = parts.slice(1).join(', ');
-        
-        const technical = layers.technicals[Math.floor(Math.random() * layers.technicals.length)] || "high quality";
-        const lighting = layers.lightings[Math.floor(Math.random() * layers.lightings.length)] || "professional lighting";
-        const quality = layers.qualities[Math.floor(Math.random() * layers.qualities.length)] || "masterpiece";
-        const alignment = layers.alignments[Math.floor(Math.random() * layers.alignments.length)] || "";
-        
-        // Reconstruct using the template but prioritizing original content and reference alignment
-        let prompt = template.template
-          .replace(/{subject}/g, `${coreSubject}${alignment ? `, ${alignment}` : ''}`)
-          .replace(/{details}/g, originalDetails || "highly detailed")
-          .replace(/{lighting}/g, lighting)
-          .replace(/{mood}/g, quality)
-          .replace(/{style}/g, technical)
-          .replace(/{aspect}/g, "16:9");
-          
-        prompt += negativePrompt;
-        prompt = prompt.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-        optimizedPrompts.add(prompt);
+      const parsed = extractJSON(text);
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.map(p => typeof p === 'string' ? p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() : p);
+        allOptimizedPrompts = [...allOptimizedPrompts, ...cleaned];
       }
-      return Array.from(optimizedPrompts);
     } catch (error) {
-      console.error("Batch prompt optimization failed:", error);
+      console.error("Prompt optimization failed for chunk:", error);
+      if (error instanceof Error && error.message.includes('JSON')) {
+         throw new Error("Gagal memproses hasil optimasi. Silakan coba lagi.");
+      }
       throw new Error(handleGeminiError(error));
     }
   }
 
-  // Standard optimization for smaller arrays
-  const promptTextSmall = `Optimize the following list of image generation prompts for Adobe Stock (${contentType}) specifically for the '${template.name}' platform.
-  
-  ${getContentTypeInstructions(contentType)}
-
-  CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
-
-  ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
-  ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\n  Ensure the technical enhancements appeal directly to this specific audience.` : ''}
-  ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\n  Integrate these specific aesthetic trends into the technical upgrade.` : ''}
-  ${creativeAdvice ? `STRATEGIC DIRECTIVE: ${creativeAdvice}\n  Ensure the enhancements execute on this specific creative advice.` : ''}
-
-  ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
-  You MUST use the Google Search tool to deeply analyze the visual style, topic, lighting, and keywords from this URL. 
-  This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
-  1. Identify the specific content type, niche, and CORE TOPIC of the asset in the URL.
-  2. Use it as the absolute benchmark for style, lighting, camera settings, and overall aesthetic.
-  3. ALIGNMENT: You MUST optimize the prompts to be "on target" with the URL's style, topic, lighting, and keywords. If the original prompt subject differs slightly, align it with the URL's essence to ensure a cohesive commercial set.
-  
-  ADOBE STOCK ALGORITHM: Ensure the hyper-technical optimization maximizes commercial utility and technical rating.` : ''}
-  ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided reference file.
-  This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for the technical upgrade.
-  1. Extract the visual DNA: style, topic, lighting, and key visual elements.
-  2. Use it as the absolute benchmark for technical quality and aesthetic alignment.
-  3. ALIGNMENT: Adjust the prompts to precisely match the style, lighting, and thematic keywords found in this file.` : ''}
-
-  STRICT RULE: If NO reference is provided, you MUST preserve the original visual subject exactly. If a reference IS provided, you MUST prioritize alignment with the reference's topic and style while respecting the original prompt's intent.
-  
-  YOUR TASK: Perform a "Hyper-Technical Optimization" by:
-  1. Injecting Extreme Technical Precision: Use advanced camera settings, elite rendering engines, and complex lighting physics that match the reference's quality.
-  2. Enhancing Descriptive Power & Keyword Weaving: Use sophisticated vocabulary to describe textures, materials, and atmospheric effects derived from the reference. You MUST weave 5-8 high-value commercial synonyms and LSI keywords naturally into the upgraded prompt to maximize search visibility without keyword stuffing.
-  3. Optimizing for Adobe Stock Algorithms: Ensure the prompt structure maximizes commercial appeal and technical rating.
-  4. Targeted Alignment: Ensure the resulting prompts are "tepat sasaran" (perfectly targeted) according to the reference's style, topic, and keywords.
-
-Original Prompts:
-${JSON.stringify(prompts)}
-
-CRITICAL REQUIREMENTS:
-1. ZERO SUBJECT DRIFT: Keep the subject and scene exactly as described.
-2. NO TEXT/LOGOS: Strictly avoid any mention of text, typography, or watermarks.
-3. ADOBE STOCK COMPLIANCE: Use generic high-end terms.
-4. POWERFUL MODIFIERS: Use terms like "8K UHD", "hyper-detailed textures", "physically based rendering (PBR)", "ray-traced reflections", and "cinematic color grading".
-5. STRICT Template Alignment: Format each prompt using this exact structure:
-"${template.template}"
-6. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
-
-Respond strictly with a JSON array of strings.
-Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
-${settings.includeNegative ? 'Append a strong negative prompt at the end of each optimized prompt (e.g., "--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy").' : ''}`;
-
-  const partsSmall: any[] = [{ text: promptTextSmall }];
-  if (referenceFile) {
-    partsSmall.push({
-      inlineData: {
-        data: referenceFile.data,
-        mimeType: referenceFile.mimeType
-      }
-    });
-  }
-
-  try {
-    const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-3-flash-preview',
-      contents: { parts: partsSmall },
-      config: {
-        systemInstruction: `You are a Master Neural Prompt Architect. Your specialty is 'Hyper-Optimization'—injecting extreme technical complexity and descriptive power into existing prompts while maintaining absolute fidelity to the original subject and style. 
-        CORE ENGINE: ${settings.model || 'gemini-3-flash-preview'}.
-        SYNTHESIS BLUEPRINT: ${template.name}.
-        ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
-        ADOBE STOCK ALGORITHM: Use advanced optics, lighting physics, and digital rendering terminology to elevate prompts to 'Masterpiece' status for Adobe Stock.`,
-        tools: [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING },
-        },
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
-      },
-    });
-
-    let text = response.text;
-    if (!text) throw new Error('No response from Gemini');
-    
-    // Strip markdown formatting if present
-    text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
-    
-    const parsed = extractJSON(text);
-    if (Array.isArray(parsed)) {
-      return parsed.map(p => typeof p === 'string' ? p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() : p);
-    }
-    return parsed;
-  } catch (error) {
-    console.error("Prompt optimization failed:", error);
-    if (error instanceof Error && error.message.includes('JSON')) {
-       throw new Error("Gagal memproses hasil optimasi. Silakan coba lagi.");
-    }
-    throw new Error(handleGeminiError(error));
-  }
+  return allOptimizedPrompts;
 }
 
 export async function generateAllPromptsBatch(
@@ -1592,53 +1490,4 @@ ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
   return allMetadata;
 }
 
-export async function upgradePrompts(
-  prompts: string[],
-  category: CategoryResult,
-  settings: AppSettings,
-  contentType: string
-): Promise<string[]> {
-  const ai = getAI(settings.apiKey);
-  
-  const promptText = `You are an elite AI Image Prompt Engineer. I have a list of ${prompts.length} image generation prompts for the niche '${category.categoryName}'. 
-  Target asset type: '${contentType}'.
-  
-  Your task is to UPGRADE and ENHANCE these prompts to be highly commercial for Adobe Stock.
-  1. Add more descriptive details, advanced lighting (e.g., cinematic, volumetric, golden hour), and better composition (e.g., rule of thirds, dynamic angle).
-  2. Align with current market trends.
-  ${category.visualTrends && category.visualTrends.length > 0 ? `Incorporate these visual trends: ${category.visualTrends.join(', ')}` : ''}
-  ${category.creativeAdvice ? `Keep this creative advice in mind: ${category.creativeAdvice}` : ''}
-  3. ${getVariationInstructions(settings.variationLevel)}
-  4. Ensure they remain compliant with stock photo rules (no text, no real people, no copyrighted brands).
-  
-  Here are the original prompts:
-  ${prompts.map((p, i) => `${i + 1}. ${p}`).join('\n')}
-  
-  Respond strictly with a JSON array of strings, where each string is the upgraded version of the prompt. The array must have exactly ${prompts.length} items.
-  Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-3-flash-preview',
-      contents: promptText,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING }
-        },
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
-      }
-    });
-
-    const text = response.text;
-    if (!text) throw new Error("No response from AI");
-    
-    const upgradedPrompts = JSON.parse(text);
-    if (!Array.isArray(upgradedPrompts)) throw new Error("Invalid format");
-    return upgradedPrompts;
-  } catch (e) {
-    console.error("Failed to parse upgraded prompts:", e);
-    throw new Error("Failed to parse the upgraded prompts.");
-  }
-}
