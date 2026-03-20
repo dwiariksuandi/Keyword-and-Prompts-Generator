@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Copy, ArrowLeft, Wand2, Sparkles, RefreshCw, Loader2, Globe } from 'lucide-react';
+import { Download, Copy, ArrowLeft, Wand2, Sparkles, RefreshCw, Loader2, Globe, FileJson, FileSpreadsheet } from 'lucide-react';
 import { CategoryResult } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -55,6 +55,54 @@ export default function PromptTab({
     a.download = `${category.categoryName.replace(/\s+/g, '_')}_prompts.txt`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleExportJSON = () => {
+    const exportData = results.filter(r => r.generatedPrompts.length > 0).map(r => ({
+      category: r.categoryName,
+      contentType: r.contentType,
+      prompts: r.generatedPrompts.map((p, i) => ({
+        prompt: p,
+        score: r.promptScores?.[i]?.score,
+        metadata: r.metadata?.[i] || null
+      }))
+    }));
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `adobe_stock_vault_export_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    onShowToast('Vault exported to JSON');
+  };
+
+  const handleExportCSV = () => {
+    let csvContent = "Category,Prompt,Title,Keywords\n";
+    
+    results.forEach(r => {
+      if (r.generatedPrompts.length > 0) {
+        r.generatedPrompts.forEach((p, i) => {
+          const meta = r.metadata?.[i];
+          const title = meta?.title ? `"${meta.title.replace(/"/g, '""')}"` : '""';
+          const keywords = meta?.keywords ? `"${meta.keywords.join(', ').replace(/"/g, '""')}"` : '""';
+          const prompt = `"${p.replace(/"/g, '""')}"`;
+          const category = `"${r.categoryName.replace(/"/g, '""')}"`;
+          
+          csvContent += `${category},${prompt},${title},${keywords}\n`;
+        });
+      }
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `adobe_stock_vault_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    onShowToast('Vault exported to CSV');
   };
 
   if (displayCategories.length === 0) {
@@ -152,21 +200,40 @@ export default function PromptTab({
           </div>
         </div>
 
-        <div className="flex items-center gap-4 sm:gap-6 glass-panel p-2 sm:p-3 pl-4 sm:pl-6">
-          <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Density</span>
-          <div className="flex items-center bg-slate-800/50 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border border-slate-700/50">
-            <input 
-              type="number" 
-              value={promptsCount || ''}
-              onChange={(e) => setPromptsCount(Number(e.target.value))}
-              onBlur={() => {
-                if (promptsCount < 1) setPromptsCount(1);
-                if (promptsCount > 1500) setPromptsCount(1500);
-              }}
-              className="bg-transparent text-white w-12 sm:w-14 outline-none text-xs sm:text-sm font-bold text-center font-mono"
-              min="1"
-              max="1500"
-            />
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/20 transition-all text-[10px] font-bold uppercase tracking-widest"
+            >
+              <FileSpreadsheet size={14} />
+              Export CSV
+            </button>
+            <button 
+              onClick={handleExportJSON}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/20 transition-all text-[10px] font-bold uppercase tracking-widest"
+            >
+              <FileJson size={14} />
+              Export JSON
+            </button>
+          </div>
+
+          <div className="flex items-center gap-4 sm:gap-6 glass-panel p-2 sm:p-3 pl-4 sm:pl-6">
+            <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Density</span>
+            <div className="flex items-center bg-slate-800/50 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border border-slate-700/50">
+              <input 
+                type="number" 
+                value={promptsCount || ''}
+                onChange={(e) => setPromptsCount(Number(e.target.value))}
+                onBlur={() => {
+                  if (promptsCount < 1) setPromptsCount(1);
+                  if (promptsCount > 1500) setPromptsCount(1500);
+                }}
+                className="bg-transparent text-white w-12 sm:w-14 outline-none text-xs sm:text-sm font-bold text-center font-mono"
+                min="1"
+                max="1500"
+              />
+            </div>
           </div>
         </div>
       </motion.div>
