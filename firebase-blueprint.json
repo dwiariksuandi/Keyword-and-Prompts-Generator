@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Informasi profil pengguna dan pengaturan aplikasi.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "ID unik pengguna dari Firebase Auth." },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "settings": { "$ref": "AppSettings" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "AppSettings": {
+      "title": "App Settings",
+      "description": "Pengaturan preferensi pengguna.",
+      "type": "object",
+      "properties": {
+        "model": { "type": "string" },
+        "language": { "type": "string" },
+        "autoSave": { "type": "boolean" },
+        "promptCount": { "type": "number" }
+      }
+    },
+    "ResearchResult": {
+      "title": "Research Result",
+      "description": "Hasil riset niche dan metadata yang disimpan.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "categoryName": { "type": "string" },
+        "contentType": { "type": "string" },
+        "opportunityScore": { "type": "number" },
+        "competitionScore": { "type": "number" },
+        "generatedPrompts": { "type": "array", "items": { "type": "string" } },
+        "metadata": { "type": "array" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "categoryName", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Dokumen profil pengguna."
+    },
+    "/users/{userId}/results/{resultId}": {
+      "schema": "ResearchResult",
+      "description": "Koleksi hasil riset milik pengguna."
+    }
+  }
+}

@@ -16,7 +16,27 @@ import GuideTab from './components/GuideTab';
 import PipelineTab from './components/PipelineTab';
 import IntelligenceTab from './components/IntelligenceTab';
 import { ResultRow } from './components/ResultRow';
-import { Eye } from 'lucide-react';
+import { Eye, LogIn, LogOut, User as UserIcon, Cloud, CloudOff } from 'lucide-react';
+import { 
+  auth, 
+  db, 
+  googleProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  collection, 
+  onSnapshot, 
+  query, 
+  where, 
+  deleteDoc, 
+  serverTimestamp, 
+  handleFirestoreError, 
+  OperationType, 
+  User 
+} from './firebase';
 
 type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline" | "wizard" | "intelligence";
 
@@ -49,6 +69,10 @@ export default function App() {
   const [aestheticAnalysis, setAestheticAnalysis] = useState<AestheticAnalysis | null>(null);
   const [results, setResults] = useState<CategoryResult[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const [settings, setSettings] = useState<AppSettings>({
     apiKey: '',
@@ -83,6 +107,115 @@ export default function App() {
     message: ''
   });
   const [toast, setToast] = useState<{show: boolean, message: string}>({show: false, message: ''});
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsAuthReady(true);
+      if (currentUser) {
+        setToast({ show: true, message: `Welcome back, ${currentUser.displayName}!` });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Sync User Profile and Settings to Firestore
+  useEffect(() => {
+    if (isAuthReady && user) {
+      const syncProfile = async () => {
+        try {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          
+          if (!userDoc.exists()) {
+            await setDoc(userDocRef, {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              settings: settings,
+              createdAt: new Date().toISOString()
+            });
+          } else {
+            // Optionally sync settings from cloud to local if local is empty
+            const cloudData = userDoc.data();
+            if (cloudData.settings && !settings.apiKey) {
+              setSettings(prev => ({ ...prev, ...cloudData.settings, apiKey: prev.apiKey }));
+            }
+          }
+        } catch (error) {
+          console.error("Profile sync failed:", error);
+        }
+      };
+      syncProfile();
+    }
+  }, [isAuthReady, user]);
+
+  // Real-time Sync Results from Firestore
+  useEffect(() => {
+    if (isAuthReady && user) {
+      setIsSyncing(true);
+      const resultsRef = collection(db, 'users', user.uid, 'results');
+      const q = query(resultsRef);
+      
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const cloudResults: CategoryResult[] = [];
+        snapshot.forEach((doc) => {
+          cloudResults.push(doc.data() as CategoryResult);
+        });
+        
+        if (cloudResults.length > 0) {
+          setResults(cloudResults);
+        }
+        setIsSyncing(false);
+      }, (error) => {
+        handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/results`);
+        setIsSyncing(false);
+      });
+      
+      return () => unsubscribe();
+    }
+  }, [isAuthReady, user]);
+
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Login failed:", error);
+      setToast({ show: true, message: 'Login Gagal. Silakan coba lagi.' });
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setResults([]);
+      setHistory([]);
+      setToast({ show: true, message: 'Logged out successfully.' });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  const saveResultToCloud = async (result: CategoryResult) => {
+    if (!user) return;
+    try {
+      const resultDocRef = doc(db, 'users', user.uid, 'results', result.id);
+      await setDoc(resultDocRef, {
+        ...result,
+        userId: user.uid,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/results/${result.id}`);
+    }
+  };
+
+  useEffect(() => {
+    if (results.length > 0 && user && settings.autoSave) {
+      results.forEach(res => saveResultToCloud(res));
+    }
+  }, [results, user, settings.autoSave]);
 
   useEffect(() => {
     if (toast.show) {
@@ -1156,6 +1289,41 @@ export default function App() {
               </button>
             ))}
           </div>
+          <div className="w-px h-4 bg-white/10 mx-2" />
+          
+          {/* Auth Section */}
+          <div className="flex items-center gap-2">
+            {user ? (
+              <div className="flex items-center gap-3 pl-2 pr-1 py-1 rounded-full bg-white/5 border border-white/10 group">
+                <div className="flex items-center gap-2">
+                  {isSyncing ? (
+                    <Cloud className="w-3 h-3 text-cyan-400 animate-pulse" />
+                  ) : (
+                    <Cloud className="w-3 h-3 text-emerald-400" />
+                  )}
+                  <span className="text-[9px] font-bold text-slate-300 uppercase tracking-tighter max-w-[80px] truncate">
+                    {user.displayName?.split(' ')[0]}
+                  </span>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center hover:bg-red-500/20 hover:text-red-400 transition-all"
+                  title="Logout"
+                >
+                  <LogOut size={12} />
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={handleLogin}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500 text-black text-[9px] font-black tracking-widest hover:bg-cyan-400 transition-all shadow-[0_0_15px_rgba(6,182,212,0.4)]"
+              >
+                <LogIn size={12} />
+                LOGIN
+              </button>
+            )}
+          </div>
+
           <div className="w-px h-4 bg-white/10 mx-2" />
           <button 
             onClick={() => setActiveTab('donate')}
