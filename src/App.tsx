@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt, refinePrompts } from './services/gemini';
+import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt, refinePrompts, analyzeCompetitorIntel } from './services/gemini';
 import { validateAdobeMetadata } from './services/validator';
 import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis } from './types';
 import Settings from './components/Settings';
@@ -14,9 +14,10 @@ import PromptWizard from './components/PromptWizard';
 import ChangelogTab from './components/ChangelogTab';
 import GuideTab from './components/GuideTab';
 import PipelineTab from './components/PipelineTab';
+import IntelligenceTab from './components/IntelligenceTab';
 import { ResultRow } from './components/ResultRow';
 
-type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline" | "wizard";
+type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline" | "wizard" | "intelligence";
 
 export default function App() {
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -710,13 +711,191 @@ export default function App() {
     }
   };
 
+  const handleAnalyzeCompetitor = async (category: CategoryResult) => {
+    setIsAnalyzing(true);
+    setToast({ show: true, message: `Membedah strategi kompetitor untuk ${category.categoryName}...` });
+    
+    try {
+      const intel = await analyzeCompetitorIntel(category.categoryName, category.contentType, settings);
+      setResults(prev => prev.map(r => r.id === category.id ? { ...r, competitorIntel: intel } : r));
+      setToast({ show: true, message: 'Analisis Intelijen Selesai!' });
+    } catch (error) {
+      console.error("Competitor analysis failed:", error);
+      setErrorModal({
+        show: true,
+        title: 'Gagal Analisis Intelijen',
+        message: handleGeminiError(error)
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleRunPipeline = async (steps: string[]) => {
+    if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) {
+      setErrorModal({ show: true, title: 'Input Diperlukan', message: 'Masukkan kata kunci atau referensi sebelum menjalankan pipeline.' });
+      return;
+    }
+
     setIsPipelineRunning(true);
-    // Add pipeline execution logic here
-    console.log("Running pipeline with steps:", steps);
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate work
-    setIsPipelineRunning(false);
-    setToast({ show: true, message: 'Pipeline executed successfully!' });
+    setIsAnalyzing(true);
+    setProgress({ current: 0, total: steps.length, message: 'Memulai Pipeline...' });
+
+    try {
+      let currentResults = [...results];
+      let stepIndex = 0;
+
+      // STEP 1: ANALYZE
+      if (steps.includes('analyze')) {
+        stepIndex++;
+        setProgress({ current: stepIndex, total: steps.length, message: 'Menganalisis Tren Pasar...' });
+        const data = await analyzeKeyword(keyword, contentType, 'General Market', settings, referenceFile || undefined, referenceUrl || undefined);
+        currentResults = data.map((item: any) => ({
+          id: Math.random().toString(36).substring(7),
+          categoryName: item.categoryName,
+          contentType: contentType,
+          mainKeywords: item.mainKeywords,
+          longTailKeywords: item.longTailKeywords,
+          volumeLevel: item.volumeLevel,
+          volumeNumber: item.volumeNumber,
+          competition: item.competition,
+          competitionScore: item.competitionScore,
+          trend: item.trend,
+          trendPercent: item.trendPercent,
+          difficultyScore: item.difficultyScore,
+          opportunityScore: item.opportunityScore,
+          nicheScore: item.nicheScore,
+          demandVariance: item.demandVariance,
+          keiScore: item.keiScore,
+          commercialIntent: item.commercialIntent,
+          assetTypeSuitability: item.assetTypeSuitability,
+          buyerPersona: item.buyerPersona,
+          visualTrends: item.visualTrends,
+          creativeAdvice: item.creativeAdvice,
+          metadataStrategy: item.metadataStrategy,
+          generatedPrompts: [],
+          isGeneratingPrompts: false,
+          isUpgrading: false,
+          isStarred: false,
+          groundingSources: item.groundingSources
+        }));
+        setResults(currentResults);
+      }
+
+      // STEP 2: GENERATE PROMPTS
+      if (steps.includes('generate') && currentResults.length > 0) {
+        stepIndex++;
+        setProgress({ current: stepIndex, total: steps.length, message: 'Membuat Prompt Massal...' });
+        const actualTotalCount = Math.min(settings.promptCount * currentResults.length, 5000);
+        const { promptsMap, groundingSources } = await generateAllPromptsBatch(
+          keyword,
+          currentResults,
+          actualTotalCount,
+          settings,
+          contentType,
+          referenceUrl,
+          setProgress
+        );
+
+        currentResults = currentResults.map(result => {
+          const prompts = promptsMap.get(result.categoryName) || [];
+          return {
+            ...result,
+            generatedPrompts: prompts,
+            isGeneratingPrompts: prompts.length > 0,
+            groundingSources: groundingSources || result.groundingSources
+          };
+        });
+        setResults(currentResults);
+      }
+
+      // STEP 3: SCORE PROMPTS (Parallel Processing)
+      if (steps.includes('score') && currentResults.length > 0) {
+        stepIndex++;
+        setProgress({ current: stepIndex, total: steps.length, message: 'Menilai Kualitas Prompt (Paralel)...' });
+        
+        const scoringPromises = currentResults.map(async (result) => {
+          if (result.generatedPrompts.length > 0) {
+            try {
+              const scores = await scorePrompts(
+                result.generatedPrompts, 
+                settings, 
+                result.contentType, 
+                result.categoryName,
+                result.buyerPersona,
+                result.visualTrends,
+                result.creativeAdvice
+              );
+              return { id: result.id, scores };
+            } catch (e) {
+              console.error(`Scoring failed for ${result.categoryName}:`, e);
+              return { id: result.id, scores: [] };
+            }
+          }
+          return { id: result.id, scores: [] };
+        });
+
+        const allScores = await Promise.all(scoringPromises);
+        currentResults = currentResults.map(result => {
+          const scoreData = allScores.find(s => s.id === result.id);
+          return {
+            ...result,
+            promptScores: scoreData?.scores || [],
+            isGeneratingPrompts: false
+          };
+        });
+        setResults(currentResults);
+      }
+
+      // STEP 4: GENERATE METADATA (Parallel Processing)
+      if (steps.includes('metadata') && currentResults.length > 0) {
+        stepIndex++;
+        setProgress({ current: stepIndex, total: steps.length, message: 'Membuat Metadata Adobe Stock (Paralel)...' });
+        
+        const metadataPromises = currentResults.map(async (result) => {
+          if (result.generatedPrompts.length > 0) {
+            try {
+              const metadata = await generateAdobeStockMetadata(
+                result.generatedPrompts, 
+                result.categoryName,
+                settings,
+                contentType
+              );
+              return { id: result.id, metadata };
+            } catch (e) {
+              console.error(`Metadata failed for ${result.categoryName}:`, e);
+              return { id: result.id, metadata: [] };
+            }
+          }
+          return { id: result.id, metadata: [] };
+        });
+
+        const allMetadata = await Promise.all(metadataPromises);
+        currentResults = currentResults.map(result => {
+          const metaData = allMetadata.find(m => m.id === result.id);
+          return {
+            ...result,
+            metadata: metaData?.metadata || [],
+            isGeneratingMetadata: false
+          };
+        });
+        setResults(currentResults);
+      }
+
+      setToast({ show: true, message: 'Pipeline Berhasil Diselesaikan!' });
+      setActiveTab('prompt');
+    } catch (error) {
+      console.error("Pipeline execution failed:", error);
+      setErrorModal({
+        show: true,
+        title: 'Pipeline Gagal',
+        message: handleGeminiError(error)
+      });
+    } finally {
+      setIsPipelineRunning(false);
+      setIsAnalyzing(false);
+      setProgress(null);
+    }
   };
 
   const sortedResults = [...results].sort((a, b) => {
@@ -848,6 +1027,7 @@ export default function App() {
               { id: 'results', label: 'HISTORY' },
               { id: 'prompt', label: 'PROMPTS' },
               { id: 'pipeline', label: 'PIPELINE' },
+              { id: 'intelligence', label: 'INTEL' },
               { id: 'settings', label: 'CONFIG' },
               { id: 'guide', label: 'GUIDE' }
             ].map((tab) => (
@@ -894,6 +1074,14 @@ export default function App() {
             settings={settings}
             onRunPipeline={handleRunPipeline}
             isPipelineRunning={isPipelineRunning}
+          />
+        )}
+
+        {activeTab === 'intelligence' && (
+          <IntelligenceTab 
+            results={results}
+            onAnalyzeCompetitor={handleAnalyzeCompetitor}
+            isAnalyzing={isAnalyzing}
           />
         )}
 

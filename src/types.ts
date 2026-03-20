@@ -32,6 +32,37 @@ export interface AestheticAnalysis {
   groundingSources?: { uri: string; title: string }[];
 }
 
+export interface CompetitorAnalysis {
+  id: string;
+  competitorName: string;
+  niche: string;
+  aestheticDNA: {
+    lighting: string;
+    composition: string;
+    colorPalette: string[];
+    technicalSpecs: string;
+  };
+  keywordHijack: {
+    winningKeywords: string[];
+    missedGaps: string[];
+  };
+  counterStrategy: {
+    dominantStyle: string;
+    recommendedPivot: string;
+    pivotReason: string;
+  };
+  metadataBenchmark: {
+    titleScore: number;
+    descriptionScore: number;
+    recommendations: string[];
+  };
+  marketVelocity: {
+    status: 'Aggressive' | 'Steady' | 'Declining';
+    trendAlert: string;
+  };
+  timestamp: string;
+}
+
 export interface CategoryResult {
   id: string;
   categoryName: string;
@@ -63,6 +94,7 @@ export interface CategoryResult {
   isGeneratingMetadata?: boolean;
   metadata?: { title: string; description?: string; keywords: string[] }[];
   groundingSources?: { uri: string; title: string }[];
+  competitorIntel?: CompetitorAnalysis;
 }
 
 export interface HistoryItem {
@@ -92,4 +124,5 @@ export interface AppSettings {
   customNegativePrompt?: string;
   autoSave: boolean;
   variationLevel: 'Low' | 'Medium' | 'High';
+  competitorIntel?: CompetitorAnalysis;
 }

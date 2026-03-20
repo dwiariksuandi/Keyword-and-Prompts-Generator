@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { KeywordAnalysisSchema, AestheticAnalysisSchema, PromptSchema, PromptDirectSchema, type Prompt, type PromptDirect } from '../schemas';
-import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult } from '../types';
+import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult, CompetitorAnalysis } from '../types';
 import { logger } from './logger';
 
 function zodToJsonSchemaNoSchema(schema: any) {
@@ -1510,6 +1510,15 @@ export async function generatePromptsDirectly(
       
       ${getContentTypeInstructions(contentType)}
 
+      ${settings.competitorIntel ? `
+      CRITICAL COMPETITOR INTELLIGENCE INTEGRATION:
+      - AESTHETIC DNA: Use these lighting/composition specs: ${settings.competitorIntel.aestheticDNA.lighting}, ${settings.competitorIntel.aestheticDNA.composition}.
+      - COLOR PALETTE: Incorporate these colors: ${settings.competitorIntel.aestheticDNA.colorPalette.join(', ')}.
+      - KEYWORD HIJACKING: Naturally weave these winning keywords: ${settings.competitorIntel.keywordHijack.winningKeywords.join(', ')}.
+      - MARKET GAP: Target these underserved keywords: ${settings.competitorIntel.keywordHijack.missedGaps.join(', ')}.
+      - COUNTER-STRATEGY (PIVOT): Avoid the dominant style '${settings.competitorIntel.counterStrategy.dominantStyle}' and instead use the recommended pivot style: '${settings.competitorIntel.counterStrategy.recommendedPivot}'.
+      ` : ''}
+
       CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated components reflect REAL market demand and current design trends.
 
       ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
@@ -1969,6 +1978,79 @@ export async function optimizePrompts(
   return allOptimizedPrompts;
 }
 
+export async function analyzeCompetitorIntel(
+  niche: string, 
+  contentType: string, 
+  settings: AppSettings
+): Promise<CompetitorAnalysis> {
+  const ai = getAI(settings.apiKey);
+  
+  const promptText = `Perform a deep "Competitor Intelligence & Market Takeover" analysis for the niche '${niche}' on Adobe Stock (${contentType}).
+  
+  Think step-by-step about the top-performing contributors in this specific niche.
+  
+  CRITICAL: You MUST use Google Search to identify the current top-selling assets and contributors for this niche. Ground your analysis in REAL, CURRENT market data.
+  
+  Your analysis MUST include:
+  1. PORTFOLIO DNA PROFILING: Identify the dominant visual style (lighting, composition, color palette, technical specs) of the top 1% of contributors.
+  2. KEYWORD HIJACKING: Identify the specific, high-converting keywords they use that are not obvious. Also, find "Missed Gaps" - high-volume keywords they are NOT targeting.
+  3. AESTHETIC COUNTER-STRATEGY: Identify the "Dominant Style" that is saturating the market and recommend a "Pivot Style" (Counter-Aesthetic) to stand out.
+  4. METADATA BENCHMARKING: Audit the typical Title and Description structure of top assets and provide scores and improvement recommendations.
+  5. MARKET VELOCITY: Determine if the top competitors are uploading aggressively, steadily, or if their activity is declining. Provide a trend alert.
+  
+  Respond strictly with a JSON object following this schema:
+  {
+    "competitorName": string (e.g., "Top Tier Stock Studio"),
+    "niche": string,
+    "aestheticDNA": {
+      "lighting": string,
+      "composition": string,
+      "colorPalette": string[],
+      "technicalSpecs": string
+    },
+    "keywordHijack": {
+      "winningKeywords": string[],
+      "missedGaps": string[]
+    },
+    "counterStrategy": {
+      "dominantStyle": string,
+      "recommendedPivot": string,
+      "pivotReason": string
+    },
+    "metadataBenchmark": {
+      "titleScore": number (0-100),
+      "descriptionScore": number (0-100),
+      "recommendations": string[]
+    },
+    "marketVelocity": {
+      "status": "Aggressive" | "Steady" | "Declining",
+      "trendAlert": string
+    }
+  }
+  
+  Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
+
+  const response = await ai.models.generateContent({
+    model: settings.model || 'gemini-3.1-pro-preview',
+    contents: promptText,
+    config: {
+      systemInstruction: "You are a Senior Market Intelligence Analyst for Adobe Stock. Your goal is to provide actionable, data-driven insights to help a contributor outperform their top competitors. Respond ONLY with valid JSON.",
+      tools: [{ googleSearch: {} }],
+      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
+    }
+  });
+
+  const text = response.text;
+  if (!text) throw new Error('No response from Gemini Intelligence Agent');
+  
+  const parsed = extractJSON(text);
+  return {
+    ...parsed,
+    id: Math.random().toString(36).substring(7),
+    timestamp: new Date().toISOString()
+  };
+}
+
 export async function generateAllPromptsBatch(
   keyword: string, 
   categories: any[], 
@@ -1994,7 +2076,14 @@ export async function generateAllPromptsBatch(
       Creative Advice: ${c.creativeAdvice || 'N/A'}
       Demand Variance: ${c.demandVariance || 'N/A'}
       Commercial Intent: ${c.commercialIntent || 'N/A'}
-      Asset Type Suitability: ${c.assetTypeSuitability ? c.assetTypeSuitability.join(', ') : 'N/A'}`
+      Asset Type Suitability: ${c.assetTypeSuitability ? c.assetTypeSuitability.join(', ') : 'N/A'}
+      ${c.competitorIntel ? `
+      COMPETITOR INTEL FOR THIS NICHE:
+      - Aesthetic DNA: ${c.competitorIntel.aestheticDNA.lighting}, ${c.competitorIntel.aestheticDNA.composition}
+      - Colors: ${c.competitorIntel.aestheticDNA.colorPalette.join(', ')}
+      - Winning Keywords: ${c.competitorIntel.keywordHijack.winningKeywords.join(', ')}
+      - Market Gaps: ${c.competitorIntel.keywordHijack.missedGaps.join(', ')}
+      - Pivot Strategy: Avoid ${c.competitorIntel.counterStrategy.dominantStyle}, use ${c.competitorIntel.counterStrategy.recommendedPivot}` : ''}`
   ).join('\n    ');
 
   let response: any;
