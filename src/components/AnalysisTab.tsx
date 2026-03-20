@@ -169,6 +169,21 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                           {category.trendPercent}% Trend
                         </span>
                       </div>
+                      {category.demandVariance && (
+                        <span className="px-4 sm:px-5 py-1.5 sm:py-2 rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] border border-blue-500/20 bg-blue-500/10 text-blue-400">
+                          {category.demandVariance} Demand
+                        </span>
+                      )}
+                      {category.commercialIntent && (
+                        <span className="px-4 sm:px-5 py-1.5 sm:py-2 rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] border border-purple-500/20 bg-purple-500/10 text-purple-400">
+                          {category.commercialIntent} Intent
+                        </span>
+                      )}
+                      {category.assetTypeSuitability && category.assetTypeSuitability.length > 0 && (
+                        <span className="px-4 sm:px-5 py-1.5 sm:py-2 rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] border border-pink-500/20 bg-pink-500/10 text-pink-400">
+                          {category.assetTypeSuitability.join(', ')}
+                        </span>
+                      )}
                     </div>
                   </div>
                   
@@ -208,11 +223,13 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                 </div>
                 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12 mb-10 sm:mb-12">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-12 mb-10 sm:mb-12">
                   {[
                     { label: 'Search Volume', value: category.volumeNumber.toLocaleString(), progress: Math.min(100, (category.volumeNumber / 50000) * 100), color: 'accent' },
                     { label: 'Difficulty', value: `${category.difficultyScore}/100`, progress: category.difficultyScore, color: 'rose-500' },
-                    { label: 'Competition', value: `${category.competitionScore}/100`, progress: category.competitionScore, color: 'orange-500' }
+                    { label: 'Competition', value: `${category.competitionScore}/100`, progress: category.competitionScore, color: 'orange-500' },
+                    { label: 'Niche Score', value: `${category.nicheScore || 0}/100`, progress: category.nicheScore || 0, color: 'purple-500' },
+                    { label: 'KEI Score', value: `${category.keiScore || 0}/100`, progress: category.keiScore || 0, color: 'emerald-500' }
                   ].map((metric, i) => (
                     <div key={i} className="space-y-3 sm:space-y-4">
                       <div className="flex justify-between items-end">
@@ -225,7 +242,7 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                           whileInView={{ width: `${metric.progress}%` }}
                           viewport={{ once: true }}
                           transition={{ duration: 1.5, delay: 0.5 + (i * 0.1), ease: "easeOut" }}
-                          className={`h-full rounded-full ${i === 0 ? 'bg-accent futuristic-glow' : i === 1 ? 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.4)]' : 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.4)]'}`} 
+                          className={`h-full rounded-full ${i === 0 ? 'bg-accent futuristic-glow' : i === 1 ? 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.4)]' : i === 2 ? 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.4)]' : i === 3 ? 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]'}`} 
                         />
                       </div>
                     </div>
@@ -235,7 +252,7 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                 {/* Keywords & Advice */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10">
                   <div className="space-y-4 sm:space-y-5">
-                    <h4 className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Neural Vectors</h4>
+                    <h4 className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Neural Vectors (Broad)</h4>
                     <div className="flex flex-wrap gap-2 sm:gap-3">
                       {category.mainKeywords.map((keyword, idx) => (
                         <motion.span
@@ -248,9 +265,25 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                       ))}
                     </div>
 
+                    {category.longTailKeywords && category.longTailKeywords.length > 0 && (
+                      <div className="mt-6 space-y-4 sm:space-y-5">
+                        <h4 className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Smart Long-Tail Keywords</h4>
+                        <div className="flex flex-wrap gap-2 sm:gap-3">
+                          {category.longTailKeywords.map((keyword, idx) => (
+                            <span
+                              key={idx}
+                              className="bg-emerald-500/10 text-emerald-300 text-[10px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-emerald-500/20 font-medium tracking-wide"
+                            >
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {category.visualTrends && category.visualTrends.length > 0 && (
                       <div className="mt-6 space-y-4 sm:space-y-5">
-                        <h4 className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Visual Trends</h4>
+                        <h4 className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">2026 Visual Trends</h4>
                         <div className="flex flex-wrap gap-2 sm:gap-3">
                           {category.visualTrends.map((trend, idx) => (
                             <span
@@ -275,6 +308,17 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                         "{category.creativeAdvice}"
                       </p>
                     </div>
+
+                    {category.metadataStrategy && (
+                      <div className="bg-blue-500/5 rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-blue-500/10 relative overflow-hidden">
+                        <h4 className="text-[9px] sm:text-[10px] font-bold text-blue-400 uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
+                          <Database size={14} className="sm:w-4 sm:h-4" /> Metadata Architecture 2026
+                        </h4>
+                        <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-light">
+                          {category.metadataStrategy}
+                        </p>
+                      </div>
+                    )}
 
                     {category.buyerPersona && (
                       <div className="bg-white/5 rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-white/10 relative overflow-hidden">

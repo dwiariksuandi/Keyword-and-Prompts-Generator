@@ -34,6 +34,7 @@ export interface CategoryResult {
   categoryName: string;
   contentType: string;
   mainKeywords: string[];
+  longTailKeywords?: string[];
   volumeLevel: 'High' | 'Medium' | 'Low';
   volumeNumber: number;
   competition: 'High' | 'Medium' | 'Low';
@@ -42,7 +43,13 @@ export interface CategoryResult {
   trendPercent: number;
   difficultyScore: number;
   opportunityScore: number;
+  nicheScore?: number;
+  demandVariance?: 'Stable' | 'Seasonal' | 'Viral';
+  keiScore?: number;
+  commercialIntent?: string;
+  assetTypeSuitability?: string[];
   creativeAdvice: string;
+  metadataStrategy?: string;
   buyerPersona?: string;
   visualTrends?: string[];
   generatedPrompts: string[];
@@ -51,7 +58,7 @@ export interface CategoryResult {
   isUpgrading: boolean;
   isStarred: boolean;
   isGeneratingMetadata?: boolean;
-  metadata?: { title: string; keywords: string[] }[];
+  metadata?: { title: string; description?: string; keywords: string[] }[];
 }
 
 export interface HistoryItem {

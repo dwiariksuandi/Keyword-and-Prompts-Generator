@@ -591,6 +591,7 @@ Respond strictly with a JSON array of objects. Each object MUST follow this sche
 {
   "categoryName": string,
   "mainKeywords": string[],
+  "longTailKeywords": string[],
   "volumeLevel": "High" | "Medium" | "Low",
   "volumeNumber": number,
   "competition": "High" | "Medium" | "Low",
@@ -599,9 +600,15 @@ Respond strictly with a JSON array of objects. Each object MUST follow this sche
   "trendPercent": number,
   "difficultyScore": number (0-100),
   "opportunityScore": number (0-100),
+  "nicheScore": number (0-100),
+  "demandVariance": "Stable" | "Seasonal" | "Viral",
+  "keiScore": number (0-100),
+  "commercialIntent": "Informational" | "Navigational" | "Commercial" | "Transactional",
+  "assetTypeSuitability": string[],
   "buyerPersona": string,
   "visualTrends": string[],
-  "creativeAdvice": string
+  "creativeAdvice": string,
+  "metadataStrategy": string
 }
 
 ${keyword ? `The broad keyword context is: '${keyword}'.` : 'No specific keyword was provided.'}
@@ -618,6 +625,8 @@ ${!keyword && !referenceUrl && referenceFile ? 'Please derive the niche opportun
 Your objective is to uncover 5 to 8 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.
 
 CRITICAL ANALYSIS REQUIREMENT: Identify specific "Content Gaps" in the current market. What are buyers searching for that yields outdated, low-quality, or irrelevant results? Base your niches on these gaps.
+- CROSS-NICHE STRATEGY: Look for opportunities to combine two distinct concepts (e.g., Technology + Sustainability, Healthcare + Remote Work) to create unique, high-demand micro-niches.
+- COMMERCIAL MODIFIERS: Ensure the niches and keywords naturally incorporate high-intent commercial modifiers (e.g., "background", "template", "mockup", "isolated", "copy space", "infographic").
 
 ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: I have provided an ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference. 
 This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for this analysis.
@@ -626,23 +635,31 @@ This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for t
 3. Identify the target audience and commercial purpose of the content in the file.
 4. Use Google Search to cross-reference these extracted themes with current market demand on Adobe Stock to find profitable angles based on the file's core concept.` : ''}
 
-CRITICAL ADOBE STOCK RULES:
-- GENERATIVE AI COMPLIANCE: The niches MUST NOT rely on trademarked/copyrighted elements, specific brands, recognizable characters, or real known restricted places/buildings. Focus on generic, commercially safe concepts (e.g., "generic modern smartphone" instead of "iPhone").
-- NO SIMILAR CONTENT: Ensure the 5 to 8 niches are distinct from each other, while still adhering to the main idea if a reference URL/file is provided.
+CRITICAL ADOBE STOCK RULES & 2026 MICROSTOCK ECONOMICS:
+- GENERATIVE AI COMPLIANCE: The niches MUST NOT rely on trademarked/copyrighted elements, specific brands, recognizable characters, or real known restricted places/buildings. Focus on generic, commercially safe concepts.
+- ZERO-CLICK DOMINANCE & AI SEARCH: Traditional SEO is dead. Focus on semantic relevance, emotional context, and hyper-specificity.
+- 2026 VISUAL TRENDS: Integrate trends like "Appstinence" (All the Feels, Connectioneering, Surreal Silliness, Local Flavor), "Contextualized AI", "Authenticity via Specificity", and "Honest Sustainability". If targeting Indonesia, consider "Phygital Retail", "Archipelago Logistics", and "Gen Z Subcultures".
 
 For each niche, you MUST provide realistic, data-backed market metrics based on your search:
-1. categoryName: A highly specific, commercial niche name (e.g., "Gen Z Sustainable Office Lifestyle" instead of "Business People").
-2. mainKeywords: 5-7 exact-match, long-tail keywords that buyers actually type into search bars.
-3. volumeLevel & volumeNumber: Estimated monthly search volume on major stock platforms based on real trends. Make this a highly realistic number reflecting actual market demand (e.g., 12500, not just 100).
-4. competition & competitionScore: Estimated number of existing assets (0-100 score). 100 means millions of assets (oversaturated), 10 means very few assets (blue ocean).
-5. trend & trendPercent: Current market trajectory based on real-world news/seasons (e.g., +45% due to recent events).
-6. difficultyScore: 0-100. How hard is it for a new contributor to rank on page 1?
-7. opportunityScore: 0-100. The ultimate metric. High volume + Low competition = High Opportunity (80-100).
-8. buyerPersona: A specific description of the target buyer (e.g., "Tech startup marketing teams", "Eco-conscious lifestyle bloggers"). Who is actively searching for this?
-9. visualTrends: An array of 3-5 specific visual trends currently dominating this niche (e.g., ["Muted earth tones", "Candid documentary style", "Harsh flash photography"]).
-10. creativeAdvice: Highly specific art direction based on current design trends. What exact visual elements, lighting, colors, or compositions are missing in the current market for this niche? ${referenceUrl ? 'Ensure the advice heavily incorporates the aesthetic and concepts from the reference URL.' : ''} ${referenceFile ? 'Ensure the advice heavily incorporates the aesthetic and concepts from the reference file.' : ''}
+1. categoryName: A highly specific, commercial niche name (e.g., "Gen Z Sustainable Office Lifestyle").
+2. mainKeywords: 5-7 exact-match, broad keywords.
+3. longTailKeywords: 5-8 hyper-specific, medium-to-low competition phrases with high buyer intent (Smart Keywording Heuristic, e.g., "boardroom brainstorm", "cashless qris digital wallet transaction").
+4. volumeLevel & volumeNumber: Estimated monthly search volume on major stock platforms.
+5. competition & competitionScore: Estimated number of existing assets (0-100 score).
+6. trend & trendPercent: Current market trajectory based on real-world news/seasons.
+7. difficultyScore: 0-100. How hard is it for a new contributor to rank on page 1?
+8. opportunityScore: 0-100. Macro metric. High score = high market demand overall, regardless of current asset quality.
+9. nicheScore: 0-100. Micro metric. Evaluates the top 3-10 assets. High score = top assets monopolize the niche with perfect metadata. If high, recommend digging deeper into long-tail keywords.
+10. demandVariance: "Stable" (constant demand like corporate UI), "Seasonal" (holidays), or "Viral" (news-driven).
+11. keiScore: 0-100. Keyword Effectiveness Index. (Search Volume ^ 2) / Competition. High score = excellent potential.
+12. commercialIntent: "Informational", "Navigational", "Commercial", or "Transactional". For microstock, prioritize Commercial/Transactional.
+13. assetTypeSuitability: Array of best-suited asset types (e.g., ["Photo", "Vector", "Video"]).
+14. buyerPersona: A specific description of the target buyer.
+15. visualTrends: An array of 3-5 specific 2026 visual trends dominating this niche.
+16. creativeAdvice: Highly specific art direction based on current design trends.
+17. metadataStrategy: Specific advice on structuring the Title (50-60 chars, front-loaded with primary intent) and Description (140-160 chars, radical specificity) for this niche.
 
-CRITICAL: Ensure mathematical and logical consistency. If competition is 95/100 (oversaturated), the opportunity score MUST be low (under 40) unless the volume is exceptionally massive and growing rapidly. Prioritize finding "Blue Ocean" niches (High Opportunity).
+CRITICAL: Ensure mathematical and logical consistency. If competition is 95/100 (oversaturated), the opportunity score MUST be low (under 40) unless the volume is exceptionally massive. Prioritize finding "Blue Ocean" niches (High Opportunity).
 Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
   const parts: any[] = [{ text: promptText }];
@@ -790,7 +807,10 @@ export async function generatePrompts(
   referenceUrl?: string,
   buyerPersona?: string,
   visualTrends?: string[],
-  creativeAdvice?: string
+  creativeAdvice?: string,
+  demandVariance?: string,
+  commercialIntent?: string,
+  assetTypeSuitability?: string[]
 ) {
   const ai = getAI(settings.apiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
@@ -809,6 +829,9 @@ export async function generatePrompts(
       ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\n      Tailor the subjects, environments, and overall vibe to appeal directly to this specific audience and their commercial needs.` : ''}
       ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\n      Integrate these specific aesthetic trends into the lighting, color grading, and styling of the prompts.` : ''}
       ${creativeAdvice ? `STRATEGIC DIRECTIVE: ${creativeAdvice}\n      Ensure the prompts execute on this specific creative advice.` : ''}
+      ${demandVariance ? `DEMAND VARIANCE: ${demandVariance}\n      Adjust the thematic elements to suit this type of demand.` : ''}
+      ${commercialIntent ? `COMMERCIAL INTENT: ${commercialIntent}\n      Ensure the prompts are highly optimized for this specific commercial intent.` : ''}
+      ${assetTypeSuitability && assetTypeSuitability.length > 0 ? `ASSET TYPE SUITABILITY: ${assetTypeSuitability.join(', ')}\n      Ensure the prompts are well-suited for these asset types.` : ''}
 
       ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
       You MUST use the Google Search tool to deeply analyze the visual style, trends, topic, lighting, and keywords from this URL. 
@@ -936,6 +959,9 @@ CRITICAL: Use Google Search to research current visual trends, popular aesthetic
 ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\nTailor the subjects, environments, and overall vibe to appeal directly to this specific audience and their commercial needs.` : ''}
 ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\nIntegrate these specific aesthetic trends into the lighting, color grading, and styling of the prompts.` : ''}
 ${creativeAdvice ? `STRATEGIC DIRECTIVE: ${creativeAdvice}\nEnsure the prompts execute on this specific creative advice.` : ''}
+${demandVariance ? `DEMAND VARIANCE: ${demandVariance}\nAdjust the thematic elements to suit this type of demand.` : ''}
+${commercialIntent ? `COMMERCIAL INTENT: ${commercialIntent}\nEnsure the prompts are highly optimized for this specific commercial intent.` : ''}
+${assetTypeSuitability && assetTypeSuitability.length > 0 ? `ASSET TYPE SUITABILITY: ${assetTypeSuitability.join(', ')}\nEnsure the prompts are well-suited for these asset types.` : ''}
 
 ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
 You MUST use the Google Search tool to analyze this URL. 
@@ -1382,7 +1408,10 @@ export async function generateAllPromptsBatch(
     `- Niche: ${c.categoryName}
       Buyer Persona: ${c.buyerPersona || 'N/A'}
       Visual Trends: ${c.visualTrends ? c.visualTrends.join(', ') : 'N/A'}
-      Creative Advice: ${c.creativeAdvice || 'N/A'}`
+      Creative Advice: ${c.creativeAdvice || 'N/A'}
+      Demand Variance: ${c.demandVariance || 'N/A'}
+      Commercial Intent: ${c.commercialIntent || 'N/A'}
+      Asset Type Suitability: ${c.assetTypeSuitability ? c.assetTypeSuitability.join(', ') : 'N/A'}`
   ).join('\n    ');
 
   try {

@@ -362,7 +362,10 @@ export default function App() {
         referenceUrl || undefined,
         result.buyerPersona,
         result.visualTrends,
-        result.creativeAdvice
+        result.creativeAdvice,
+        result.demandVariance,
+        result.commercialIntent,
+        result.assetTypeSuitability
       );
 
       // Score the prompts
