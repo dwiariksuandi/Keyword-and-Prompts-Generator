@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { KeywordAnalysisSchema, AestheticAnalysisSchema, PromptSchema, PromptDirectSchema, type Prompt } from '../schemas';
+import { KeywordAnalysisSchema, AestheticAnalysisSchema, PromptSchema, PromptDirectSchema, type Prompt, type PromptDirect } from '../schemas';
 import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult } from '../types';
 import { logger } from './logger';
 
@@ -1640,7 +1640,7 @@ export async function optimizePrompts(
   "${template.template}"
   7. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
 
-  Respond strictly with a JSON array of strings, containing exactly ${chunk.length} optimized prompts in the same order.
+  Respond strictly with a JSON object containing a 'prompts' array of strings, containing exactly ${chunk.length} optimized prompts in the same order.
   Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
   ${settings.includeNegative ? 'Append a strong negative prompt at the end of each optimized prompt (e.g., "--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy").' : ''}`;
 
@@ -1667,8 +1667,19 @@ export async function optimizePrompts(
           tools: [{ googleSearch: {} }],
           responseMimeType: 'application/json',
           responseSchema: {
-            type: "ARRAY",
-            items: { type: "STRING" },
+            type: "OBJECT",
+            properties: {
+              prompts: { type: "ARRAY", items: { type: "STRING" } },
+              groundingSources: { 
+                type: "ARRAY", 
+                items: { 
+                  type: "OBJECT", 
+                  properties: { uri: { type: "STRING" }, title: { type: "STRING" } },
+                  required: ["uri", "title"]
+                }
+              }
+            },
+            required: ["prompts"]
           },
           thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
         },
@@ -1683,37 +1694,9 @@ export async function optimizePrompts(
       const parsed = extractJSON(text);
       
       // Validate with Zod and Critic Agent
-      const validatedData = await criticizeAnalysis(PromptSchema.parse(parsed), PromptSchema, settings, categoryName) as Prompt;
+      const validatedData = await criticizeAnalysis(PromptDirectSchema.parse(parsed), PromptDirectSchema, settings, categoryName) as PromptDirect;
       
-      const optimizedPrompts = validatedData.subjects.map((subject: string, index: number) => {
-        const action = validatedData.actions[index % validatedData.actions.length] || "action";
-        const context = validatedData.contexts[index % validatedData.contexts.length] || "context";
-        const cinematography = validatedData.cinematography[index % validatedData.cinematography.length] || "cinematography";
-        const lighting = validatedData.lightings[index % validatedData.lightings.length] || "lighting";
-        const mood = validatedData.moods[index % validatedData.moods.length] || "mood";
-        const style = validatedData.styles[index % validatedData.styles.length] || "style";
-        const aspect = validatedData.aspects[index % validatedData.aspects.length] || "16:9";
-        
-        let prompt = template.template
-          .replace(/{subject}/g, subject)
-          .replace(/{action}/g, action)
-          .replace(/{context}/g, context)
-          .replace(/{cinematography}/g, cinematography)
-          .replace(/{lighting}/g, lighting)
-          .replace(/{mood}/g, mood)
-          .replace(/{style}/g, style)
-          .replace(/{aspect}/g, aspect);
-        
-        if (contentType === 'Video' && validatedData.soundstage) {
-          const soundstage = validatedData.soundstage[index % validatedData.soundstage.length] || "Ambient noise: quiet";
-          prompt += ` ${soundstage}`;
-        }
-        
-        if (settings.includeNegative) {
-          prompt += ` ${settings.customNegativePrompt || '--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy'}`;
-        }
-        return prompt.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-      });
+      const optimizedPrompts = validatedData.prompts;
       
       logger.log({
         timestamp: new Date().toISOString(),
@@ -1816,18 +1799,29 @@ export async function generateAllPromptsBatch(
     
     const resultsMap = new Map<string, string[]>();
     
-    for (const catData of result.categories) {
+    for (const [nicheName, catData] of Object.entries(result)) {
       const generatedPrompts = new Set<string>();
       let attempts = 0;
       const maxAttempts = countPerCategory * 5;
       
       while (generatedPrompts.size < countPerCategory && attempts < maxAttempts) {
-        const subject = catData.subjects[Math.floor(Math.random() * catData.subjects.length)] || "subject";
-        const detail = catData.details[Math.floor(Math.random() * catData.details.length)] || "detail";
-        const lighting = catData.lightings[Math.floor(Math.random() * catData.lightings.length)] || "lighting";
-        const mood = catData.moods[Math.floor(Math.random() * catData.moods.length)] || "mood";
-        const style = catData.styles[Math.floor(Math.random() * catData.styles.length)] || "style";
-        const aspect = catData.aspects[Math.floor(Math.random() * catData.aspects.length)] || "16:9";
+        const subjectList = (catData as any).subjects || [];
+        const subject = subjectList[Math.floor(Math.random() * subjectList.length)] || "subject";
+        
+        const detailList = (catData as any).details_actions_composition || [];
+        const detail = detailList[Math.floor(Math.random() * detailList.length)] || "detail";
+        
+        const lightingList = (catData as any).lighting_styles || [];
+        const lighting = lightingList[Math.floor(Math.random() * lightingList.length)] || "lighting";
+        
+        const moodList = (catData as any).mood_atmosphere || [];
+        const mood = moodList[Math.floor(Math.random() * moodList.length)] || "mood";
+        
+        const styleList = (catData as any).artistic_styles_mediums || [];
+        const style = styleList[Math.floor(Math.random() * styleList.length)] || "style";
+        
+        const aspectList = (catData as any).aspect_ratios || [];
+        const aspect = aspectList[Math.floor(Math.random() * aspectList.length)] || "16:9";
         
         let prompt = template.template
           .replace(/{subject}/g, subject)
@@ -1845,7 +1839,7 @@ export async function generateAllPromptsBatch(
         generatedPrompts.add(prompt);
         attempts++;
       }
-      resultsMap.set(catData.categoryName, Array.from(generatedPrompts));
+      resultsMap.set(nicheName, Array.from(generatedPrompts));
     }
     
     progressCallback?.({ current: 1, total: 1, message: 'Selesai!' });
