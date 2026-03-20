@@ -330,6 +330,23 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                         </p>
                       </div>
                     )}
+
+                    {category.groundingSources && category.groundingSources.length > 0 && (
+                      <div className="bg-emerald-500/5 rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-emerald-500/10 relative overflow-hidden">
+                        <h4 className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
+                          <Globe size={14} className="sm:w-4 sm:h-4" /> Real-Time Sources
+                        </h4>
+                        <ul className="space-y-2">
+                          {category.groundingSources.map((source, idx) => (
+                            <li key={idx} className="text-sm sm:text-base text-slate-300 leading-relaxed font-light truncate">
+                              <a href={source.uri} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors underline decoration-emerald-500/30 underline-offset-4">
+                                {source.title || source.uri}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

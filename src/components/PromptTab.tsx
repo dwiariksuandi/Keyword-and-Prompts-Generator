@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Copy, ArrowLeft, Wand2, Sparkles, RefreshCw, Loader2 } from 'lucide-react';
+import { Download, Copy, ArrowLeft, Wand2, Sparkles, RefreshCw, Loader2, Globe } from 'lucide-react';
 import { CategoryResult } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -351,6 +351,26 @@ export default function PromptTab({
                                   </div>
                                 ))}
                               </div>
+
+                              {category.promptScores[index].groundingSources && category.promptScores[index].groundingSources!.length > 0 && (
+                                <div className="pt-4 border-t border-white/5 space-y-2">
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Market Validation Sources</span>
+                                  <div className="flex flex-wrap gap-2">
+                                    {category.promptScores[index].groundingSources!.map((source, i) => (
+                                      <a 
+                                        key={i} 
+                                        href={source.uri} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-[10px] text-accent hover:text-white hover:underline transition-colors bg-accent/10 px-2 py-1 rounded border border-accent/20 flex items-center gap-1"
+                                      >
+                                        <Globe size={10} />
+                                        {source.title.length > 40 ? source.title.substring(0, 40) + '...' : source.title}
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </motion.div>
                         )}

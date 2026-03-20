@@ -274,7 +274,7 @@ export default function App() {
     setIsAnalyzing(true);
     try {
       const actualCountToGenerate = Math.min(settings.promptCount, 1500);
-      const prompts = await generatePromptsDirectly(
+      const { prompts, groundingSources } = await generatePromptsDirectly(
         actualCountToGenerate, 
         settings, 
         contentType, 
@@ -298,6 +298,7 @@ export default function App() {
         opportunityScore: 100,
         creativeAdvice: 'Directly generated from reference.',
         generatedPrompts: prompts,
+        groundingSources: groundingSources,
         isGeneratingPrompts: true, // Temporarily true while scoring
         isUpgrading: false,
         isStarred: true,
@@ -482,21 +483,25 @@ export default function App() {
     setIsAnalyzing(true);
     try {
       const actualTotalCount = Math.min(settings.promptCount * results.length, 5000);
-      const promptMap = await generateAllPromptsBatch(
+      const { promptsMap, groundingSources } = await generateAllPromptsBatch(
         keyword,
         results,
         actualTotalCount,
         settings,
-        contentType
+        contentType,
+        referenceUrl
       );
 
       const updatedResults = [...results];
       
       for (const result of updatedResults) {
-        const prompts = promptMap.get(result.categoryName) || [];
+        const prompts = promptsMap.get(result.categoryName) || [];
         if (prompts.length > 0) {
           result.generatedPrompts = prompts;
           result.isGeneratingPrompts = true;
+          if (groundingSources) {
+            result.groundingSources = groundingSources;
+          }
         }
       }
       

@@ -17,6 +17,7 @@ export interface PromptScore {
   clarityFeedback?: string;
   specificityFeedback?: string;
   adherenceFeedback?: string;
+  groundingSources?: { uri: string; title: string }[];
 }
 
 export interface AestheticAnalysis {
@@ -27,6 +28,8 @@ export interface AestheticAnalysis {
   composition: string;
   suggestions: string[];
   detectedContentType?: string;
+  marketGaps?: string[];
+  groundingSources?: { uri: string; title: string }[];
 }
 
 export interface CategoryResult {
@@ -59,6 +62,7 @@ export interface CategoryResult {
   isStarred: boolean;
   isGeneratingMetadata?: boolean;
   metadata?: { title: string; description?: string; keywords: string[] }[];
+  groundingSources?: { uri: string; title: string }[];
 }
 
 export interface HistoryItem {

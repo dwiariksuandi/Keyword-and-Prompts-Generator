@@ -464,10 +464,12 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
     "mood": "description of mood/atmosphere",
     "artisticStyle": "description of the artistic style/medium",
     "composition": "description of the composition and framing",
-    "suggestions": ["suggestion 1", "suggestion 2", ...]
+    "suggestions": ["suggestion 1", "suggestion 2", ...],
+    "marketGaps": ["gap 1", "gap 2", ...]
   }
 
   Suggestions should be specific to the '${contentType}' category, focusing on commercial utility, technical precision, and high-end aesthetic standards.
+  Market Gaps should identify what is missing in the current market or how this aesthetic can be uniquely positioned for higher sales.
   
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
@@ -484,6 +486,7 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
         }
       ],
       config: {
+        tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -494,9 +497,10 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
             mood: { type: Type.STRING },
             artisticStyle: { type: Type.STRING },
             composition: { type: Type.STRING },
-            suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
+            suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+            marketGaps: { type: Type.ARRAY, items: { type: Type.STRING } }
           },
-          required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
+          required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions", "marketGaps"]
         },
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
@@ -505,7 +509,21 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
     const text = response.text;
     if (!text) throw new Error('No response from Gemini');
     
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    
+    // Extract grounding sources
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    if (chunks) {
+      const sources = chunks
+        .filter((chunk: any) => chunk.web?.uri && chunk.web?.title)
+        .map((chunk: any) => ({ uri: chunk.web.uri, title: chunk.web.title }));
+      
+      if (sources.length > 0) {
+        parsed.groundingSources = sources;
+      }
+    }
+    
+    return parsed;
   } catch (error) {
     console.error("Aesthetic analysis failed:", error);
     if (error instanceof Error && error.message.includes('JSON')) {
@@ -534,10 +552,12 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
     "mood": "description of mood/atmosphere",
     "artisticStyle": "description of the artistic style/medium",
     "composition": "description of the composition and framing",
-    "suggestions": ["suggestion 1", "suggestion 2", ...]
+    "suggestions": ["suggestion 1", "suggestion 2", ...],
+    "marketGaps": ["gap 1", "gap 2", ...]
   }
 
   Suggestions should be specific to the '${contentType}' category, focusing on commercial utility, technical precision, and high-end aesthetic standards.
+  Market Gaps should identify what is missing in the current market or how this aesthetic can be uniquely positioned for higher sales.
   
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
@@ -546,7 +566,7 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
       model: settings.model || 'gemini-3-flash-preview',
       contents: [{ text: promptText }],
       config: {
-        tools: [{ googleSearch: {} }],
+        tools: [{ googleSearch: {} }, { urlContext: {} }],
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -557,9 +577,10 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
             mood: { type: Type.STRING },
             artisticStyle: { type: Type.STRING },
             composition: { type: Type.STRING },
-            suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
+            suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+            marketGaps: { type: Type.ARRAY, items: { type: Type.STRING } }
           },
-          required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
+          required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions", "marketGaps"]
         },
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
@@ -568,7 +589,21 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
     const text = response.text;
     if (!text) throw new Error('No response from Gemini');
     
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    
+    // Extract grounding sources
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    if (chunks) {
+      const sources = chunks
+        .filter((chunk: any) => chunk.web?.uri && chunk.web?.title)
+        .map((chunk: any) => ({ uri: chunk.web.uri, title: chunk.web.title }));
+      
+      if (sources.length > 0) {
+        parsed.groundingSources = sources;
+      }
+    }
+    
+    return parsed;
   } catch (error) {
     console.error("URL Aesthetic analysis failed:", error);
     if (error instanceof Error && error.message.includes('JSON')) {
@@ -673,12 +708,17 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     });
   }
 
+  const tools: any[] = [{ googleSearch: {} }];
+  if (referenceUrl) {
+    tools.push({ urlContext: {} });
+  }
+
   const response = await ai.models.generateContent({
     model: settings.model || 'gemini-3-flash-preview',
     contents: { parts },
     config: {
-      systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to provide highly accurate, data-backed estimates for search volume and competition based on REAL, current market trends using Google Search. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
-      tools: [{ googleSearch: {} }],
+      systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to provide highly accurate, data-backed estimates for search volume and competition based on REAL, current market trends using Google Search. YOU MUST USE GOOGLE SEARCH TO FIND THE EXACT NUMBER OF SEARCH RESULTS FOR THESE KEYWORDS ON ADOBE STOCK OR SHUTTERSTOCK. Use these real numbers for volumeNumber and competitionScore. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
+      tools: tools,
       thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
     },
   });
@@ -690,7 +730,26 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
   text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
   
   try {
-    return extractJSON(text);
+    const parsed = extractJSON(text);
+    
+    // Extract grounding sources
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    if (chunks) {
+      const sources = chunks
+        .filter((chunk: any) => chunk.web?.uri && chunk.web?.title)
+        .map((chunk: any) => ({ uri: chunk.web.uri, title: chunk.web.title }));
+      
+      if (sources.length > 0) {
+        // Attach grounding sources to each category result
+        if (Array.isArray(parsed)) {
+          parsed.forEach(item => {
+            item.groundingSources = sources;
+          });
+        }
+      }
+    }
+    
+    return parsed;
   } catch (e) {
     console.error("Failed to parse JSON response:", text);
     throw new Error("Failed to parse the response from the AI. Please try again.");
@@ -732,7 +791,7 @@ export async function scorePrompts(
     2. Clarity: Is the prompt easy for an AI to understand? Is the subject clear?
     3. Specificity: Does it provide enough detail (lighting, composition, textures, resolution) to generate a high-quality, unique image?
     4. Adobe Stock Adherence: Does it follow commercial utility rules (copy space, diversity, authentic lifestyle) and AI compliance (no brands, no text)?
-    5. Market Alignment: Does the prompt align with the Buyer Persona, Visual Trends, and Creative Advice provided for this niche?
+    5. Market Alignment: Does the prompt align with the Buyer Persona, Visual Trends, and Creative Advice provided for this niche? Use Google Search to verify if the concepts in the prompt are currently trending or in demand.
 
     Prompts to evaluate:
     ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
@@ -758,6 +817,7 @@ export async function scorePrompts(
       contents: promptText,
       config: {
         systemInstruction: "You are an expert Adobe Stock Quality Reviewer and AI Prompt Auditor. Your job is to provide harsh but fair evaluations of image prompts to ensure they meet the highest commercial and technical standards of Adobe Stock. Provide detailed, actionable feedback for each evaluation criterion.",
+        tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.ARRAY,
@@ -788,7 +848,26 @@ export async function scorePrompts(
     
     try {
       const parsed = extractJSON(text);
-      allScores = [...allScores, ...parsed];
+      
+      // Extract grounding sources
+      let groundingSources = undefined;
+      const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+      if (chunks) {
+        const sources = chunks
+          .filter((chunk: any) => chunk.web?.uri && chunk.web?.title)
+          .map((chunk: any) => ({ uri: chunk.web.uri, title: chunk.web.title }));
+        if (sources.length > 0) {
+          groundingSources = sources;
+        }
+      }
+
+      if (Array.isArray(parsed)) {
+        const parsedWithSources = parsed.map(p => ({
+          ...p,
+          groundingSources
+        }));
+        allScores = [...allScores, ...parsedWithSources];
+      }
     } catch (e) {
       console.error("Failed to parse JSON response for scoring chunk:", text);
     }
@@ -1113,6 +1192,11 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
     });
   }
 
+  const tools: any[] = [{ googleSearch: {} }];
+  if (referenceUrl) {
+    tools.push({ urlContext: {} });
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: settings.model || 'gemini-3-flash-preview',
@@ -1124,7 +1208,7 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
         ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
         ADOBE STOCK ALGORITHM: Extract aesthetic essence and apply it to commercially viable concepts.
         Respond ONLY with valid JSON.`,
-        tools: [{ googleSearch: {} }],
+        tools: tools,
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
@@ -1134,10 +1218,25 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
     text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
     
     const parsed = extractJSON(text);
+    let prompts: string[] = [];
     if (Array.isArray(parsed)) {
-      return parsed.map(p => typeof p === 'string' ? p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() : p);
+      prompts = parsed.map(p => typeof p === 'string' ? p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() : p);
+    } else {
+      prompts = parsed;
     }
-    return parsed;
+
+    let groundingSources = undefined;
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    if (chunks) {
+      const sources = chunks
+        .filter((chunk: any) => chunk.web?.uri && chunk.web?.title)
+        .map((chunk: any) => ({ uri: chunk.web.uri, title: chunk.web.title }));
+      if (sources.length > 0) {
+        groundingSources = sources;
+      }
+    }
+
+    return { prompts, groundingSources };
   } catch (error) {
     console.error("Direct prompt generation failed:", error);
     if (error instanceof Error && error.message.includes('JSON')) {
@@ -1292,8 +1391,9 @@ export async function generateAllPromptsBatch(
   categories: any[], 
   totalCount: number, 
   settings: AppSettings, 
-  contentType: string
-): Promise<Map<string, string[]>> {
+  contentType: string,
+  referenceUrl?: string
+): Promise<{ promptsMap: Map<string, string[]>, groundingSources?: { uri: string, title: string }[] }> {
   const ai = getAI(settings.apiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
@@ -1318,6 +1418,7 @@ export async function generateAllPromptsBatch(
     const response = await ai.models.generateContent({
       model: settings.model || 'gemini-3-flash-preview',
       contents: `Generate rich prompt components for multiple niches based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
+      ${referenceUrl ? `\nReference URL to analyze for context: ${referenceUrl}` : ''}
       
       ${getContentTypeInstructions(contentType)}
 
@@ -1366,7 +1467,7 @@ export async function generateAllPromptsBatch(
         SYNTHESIS BLUEPRINT: ${template.name}.
         ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
         ADOBE STOCK ALGORITHM: Use real-world data to inform your aesthetic choices. Respond ONLY with valid JSON.`,
-        tools: [{ googleSearch: {} }],
+        tools: referenceUrl ? [{ googleSearch: {} }, { urlContext: {} }] : [{ googleSearch: {} }],
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
@@ -1374,6 +1475,8 @@ export async function generateAllPromptsBatch(
     let text = response.text;
     if (!text) throw new Error('No response from Gemini');
     
+    const groundingSources = response.candidates?.[0]?.groundingMetadata?.groundingChunks?.map(chunk => chunk.web).filter(Boolean) as { uri: string, title: string }[] | undefined;
+
     const data = extractJSON(text);
     const negativePrompt = settings.includeNegative ? ` ${settings.customNegativePrompt || '--no text, watermark, deformed, blurry, logos'}` : '';
     
@@ -1411,7 +1514,7 @@ export async function generateAllPromptsBatch(
       resultsMap.set(catData.categoryName, Array.from(generatedPrompts));
     }
     
-    return resultsMap;
+    return { promptsMap: resultsMap, groundingSources };
   } catch (error) {
     console.error("Batch generation failed:", error);
     throw new Error(handleGeminiError(error));

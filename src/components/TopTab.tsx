@@ -599,6 +599,48 @@ export default function TopTab({
                             ))}
                           </div>
                         </div>
+
+                        {/* Market Gaps */}
+                        {aestheticAnalysis.marketGaps && aestheticAnalysis.marketGaps.length > 0 && (
+                          <div className="space-y-3 lg:col-span-4">
+                            <div className="flex items-center gap-2">
+                              <TrendingUp size={14} className="text-emerald-400" />
+                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Market Gaps & Opportunities</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {aestheticAnalysis.marketGaps.map((gap, i) => (
+                                <div 
+                                  key={i} 
+                                  className="text-left p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 flex items-start gap-3 group"
+                                >
+                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+                                  <span className="text-xs text-slate-300 font-light leading-relaxed">{gap}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Grounding Sources */}
+                        {aestheticAnalysis.groundingSources && aestheticAnalysis.groundingSources.length > 0 && (
+                          <div className="space-y-3 lg:col-span-4 mt-4">
+                            <div className="flex items-center gap-2">
+                              <Globe size={14} className="text-emerald-400" />
+                              <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-[0.2em]">Real-Time Sources</span>
+                            </div>
+                            <div className="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10">
+                              <ul className="space-y-2">
+                                {aestheticAnalysis.groundingSources.map((source, idx) => (
+                                  <li key={idx} className="text-xs text-slate-300 font-light truncate">
+                                    <a href={source.uri} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors underline decoration-emerald-500/30 underline-offset-4">
+                                      {source.title || source.uri}
+                                    </a>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </motion.div>
