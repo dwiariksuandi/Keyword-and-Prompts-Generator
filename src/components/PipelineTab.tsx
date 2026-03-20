@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Zap, Play, CheckCircle2, Loader2, Settings, Layers, Database, Sparkles } from 'lucide-react';
+import { Zap, Play, CheckCircle2, Loader2, Settings, Layers, Database, Sparkles, Target } from 'lucide-react';
 import { CategoryResult, AppSettings } from '../types';
 
 interface PipelineTabProps {
@@ -11,10 +11,11 @@ interface PipelineTabProps {
 }
 
 const PIPELINE_STEPS = [
-  { id: 'analyze', label: 'Analyze Market', icon: Database },
-  { id: 'generate', label: 'Generate Prompts', icon: Sparkles },
-  { id: 'score', label: 'Score Prompts', icon: Zap },
-  { id: 'metadata', label: 'Generate Metadata', icon: Layers },
+  { id: 'analyze', label: 'Market Research', icon: Database, description: 'Cari Niche & Analisis Tren' },
+  { id: 'intel', label: 'Competitor Intelligence', icon: Target, description: 'Bedah Strategi Kompetitor' },
+  { id: 'generate', label: 'Prompt Generation', icon: Sparkles, description: 'Produksi Prompt Massal' },
+  { id: 'score', label: 'Quality Scoring', icon: Zap, description: 'Penilaian Kualitas Prompt' },
+  { id: 'metadata', label: 'Adobe Stock Metadata', icon: Layers, description: 'Optimasi Judul & Keyword' },
 ];
 
 export default function PipelineTab({ results, settings, onRunPipeline, isPipelineRunning }: PipelineTabProps) {
@@ -58,7 +59,10 @@ export default function PipelineTab({ results, settings, onRunPipeline, isPipeli
                 <div className={`p-3 rounded-xl ${selectedSteps.includes(step.id) ? 'bg-accent/10 text-accent' : 'bg-white/5 text-slate-500'}`}>
                   <step.icon size={20} />
                 </div>
-                <span className="font-bold text-white tracking-wide">{step.label}</span>
+                <div>
+                  <span className="font-bold text-white tracking-wide block">{step.label}</span>
+                  <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">{step.description}</span>
+                </div>
               </div>
               <button 
                 onClick={() => toggleStep(step.id)}

@@ -296,11 +296,19 @@ export default function App() {
   const handleQuickGenerate = async () => {
     if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) return;
     setIsAnalyzing(true);
+    setProgress({ current: 0, total: 100, message: 'Memulai Quick Intelligence...' });
+    
     try {
+      // 1. Quick Intel (Intelligence Phase)
+      setProgress({ current: 20, total: 100, message: 'Membedah Strategi Kompetitor...' });
+      const intel = await analyzeCompetitorIntel(keyword || (referenceFile ? referenceFile.name : 'Quick Generation'), contentType, settings);
+
+      // 2. Generate with Intel (Production Phase)
+      setProgress({ current: 50, total: 100, message: 'Membuat Prompt Berbasis Intelijen...' });
       const actualCountToGenerate = Math.min(settings.promptCount, 1500);
       const { prompts } = await generatePromptsDirectly(
         actualCountToGenerate, 
-        settings, 
+        { ...settings, competitorIntel: intel }, 
         contentType, 
         keyword || undefined, 
         referenceFile || undefined, 
@@ -320,17 +328,20 @@ export default function App() {
         trendPercent: 0,
         difficultyScore: 0,
         opportunityScore: 100,
-        creativeAdvice: 'Directly generated from reference.',
+        creativeAdvice: 'Directly generated from reference with Competitor Intel.',
         generatedPrompts: prompts,
+        promptScores: [],
         isGeneratingPrompts: true, // Temporarily true while scoring
         isUpgrading: false,
         isStarred: true,
+        competitorIntel: intel
       };
 
       setResults(prev => [quickResult, ...prev]);
       setActiveTab('prompt');
 
-      // Score the prompts
+      // 3. Score the prompts
+      setProgress({ current: 90, total: 100, message: 'Menilai Kualitas...' });
       try {
         const scores = await scorePrompts(
           prompts, 
@@ -349,7 +360,7 @@ export default function App() {
       
       setHistory(prev => [{
         id: Date.now().toString(),
-        query: `Quick: ${keyword || (referenceUrl ? referenceUrl : referenceFile?.name)}`,
+        query: `Quick Intel: ${keyword || (referenceUrl ? referenceUrl : referenceFile?.name)}`,
         contentType: contentType,
         timestamp: new Date().toISOString(),
         categoryCount: 1,
@@ -360,11 +371,12 @@ export default function App() {
       console.error("Quick generation failed:", error);
       setErrorModal({
         show: true,
-        title: 'Gagal Generate Prompt',
+        title: 'Quick Intelligence Gagal',
         message: handleGeminiError(error)
       });
     } finally {
       setIsAnalyzing(false);
+      setProgress(null);
     }
   };
 
@@ -739,8 +751,13 @@ export default function App() {
   };
 
   const handleRunPipeline = async (steps: string[]) => {
-    if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) {
-      setErrorModal({ show: true, title: 'Input Diperlukan', message: 'Masukkan kata kunci atau referensi sebelum menjalankan pipeline.' });
+    if (steps.includes('analyze') && !keyword.trim() && !referenceFile && !referenceUrl.trim()) {
+      setErrorModal({ show: true, title: 'Input Diperlukan', message: 'Masukkan kata kunci atau referensi sebelum menjalankan analisis pasar.' });
+      return;
+    }
+
+    if (!steps.includes('analyze') && results.length === 0) {
+      setErrorModal({ show: true, title: 'Data Tidak Ditemukan', message: 'Lakukan riset pasar terlebih dahulu atau aktifkan langkah "Market Research" di pipeline.' });
       return;
     }
 
@@ -789,7 +806,33 @@ export default function App() {
         setResults(currentResults);
       }
 
-      // STEP 2: GENERATE PROMPTS
+      // STEP 2: COMPETITOR INTELLIGENCE
+      if (steps.includes('intel') && currentResults.length > 0) {
+        stepIndex++;
+        setProgress({ current: stepIndex, total: steps.length, message: 'Membedah Strategi Kompetitor (Paralel)...' });
+        
+        const intelPromises = currentResults.map(async (result) => {
+          try {
+            const intel = await analyzeCompetitorIntel(result.categoryName, result.contentType, settings);
+            return { id: result.id, intel };
+          } catch (e) {
+            console.error(`Intel analysis failed for ${result.categoryName}:`, e);
+            return { id: result.id, intel: null };
+          }
+        });
+
+        const allIntel = await Promise.all(intelPromises);
+        currentResults = currentResults.map(result => {
+          const intelData = allIntel.find(i => i.id === result.id);
+          return {
+            ...result,
+            competitorIntel: intelData?.intel || result.competitorIntel
+          };
+        });
+        setResults(currentResults);
+      }
+
+      // STEP 3: GENERATE PROMPTS
       if (steps.includes('generate') && currentResults.length > 0) {
         stepIndex++;
         setProgress({ current: stepIndex, total: steps.length, message: 'Membuat Prompt Massal...' });
