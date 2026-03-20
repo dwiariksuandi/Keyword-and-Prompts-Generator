@@ -14,9 +14,21 @@ interface PromptWizardProps {
   onGenerate: (prompt: string) => void;
   isGenerating: boolean;
   settings: AppSettings;
+  progress?: { current: number, total: number, message: string } | null;
+  onSelectTrend?: (niche: string) => void;
 }
 
-export default function PromptWizard({ keyword, setKeyword, contentType, setContentType, onGenerate, isGenerating, settings }: PromptWizardProps) {
+export default function PromptWizard({ 
+  keyword, 
+  setKeyword, 
+  contentType, 
+  setContentType, 
+  onGenerate, 
+  isGenerating, 
+  settings,
+  progress,
+  onSelectTrend
+}: PromptWizardProps) {
   const [step, setStep] = useState(1);
   const [suggestions, setSuggestions] = useState<{ keyword: string; relevanceScore: number }[]>([]);
   const [mode, setMode] = useState<'freeform' | 'formula'>('freeform');
@@ -126,7 +138,7 @@ export default function PromptWizard({ keyword, setKeyword, contentType, setCont
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                 />
-                <TrendForecast niche={keyword} />
+                <TrendForecast niche={keyword} settings={settings} onSelect={onSelectTrend || setKeyword} />
                 {suggestions.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {suggestions.map((s, i) => (
@@ -178,6 +190,23 @@ export default function PromptWizard({ keyword, setKeyword, contentType, setCont
               <p className="text-sm text-slate-400">Platform: <span className="text-white font-bold">{contentType}</span></p>
             </div>
             <VisualQA assetUrl="https://picsum.photos/seed/vibrant/1920/1080" />
+            
+            {progress && (
+              <div className="w-full mb-4">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
+                  <span>{progress.message}</span>
+                  <span>{Math.round((progress.current / progress.total) * 100)}%</span>
+                </div>
+                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(progress.current / progress.total) * 100}%` }}
+                    className="h-full bg-accent"
+                  />
+                </div>
+              </div>
+            )}
+
             <button
               onClick={mode === 'freeform' ? () => onGenerate(keyword) : handleFormulaGenerate}
               disabled={isGenerating}

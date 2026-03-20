@@ -12,6 +12,7 @@ interface PromptTabProps {
   promptsCount: number;
   setPromptsCount: React.Dispatch<React.SetStateAction<number>>;
   onShowToast: (message: string) => void;
+  progress: { current: number, total: number, message: string } | null;
 }
 
 export default function PromptTab({ 
@@ -22,7 +23,8 @@ export default function PromptTab({
   onUpgrade,
   promptsCount,
   setPromptsCount,
-  onShowToast
+  onShowToast,
+  progress
 }: PromptTabProps) {
   const selectedCategory = results.find(r => r.id === selectedCategoryId);
   
@@ -102,6 +104,23 @@ export default function PromptTab({
               <h3 className={`text-3xl font-bold mb-4 tracking-tight font-display ${isGeneratingAny ? 'text-accent' : 'text-orange-500'}`}>
                 {isGeneratingAny ? 'Synthesizing' : 'Optimizing'}
               </h3>
+              
+              {progress && (
+                <div className="w-full mb-6">
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
+                    <span>{progress.message}</span>
+                    <span>{Math.round((progress.current / progress.total) * 100)}%</span>
+                  </div>
+                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(progress.current / progress.total) * 100}%` }}
+                      className={`h-full ${isGeneratingAny ? 'bg-accent' : 'bg-orange-500'}`}
+                    />
+                  </div>
+                </div>
+              )}
+
               <p className="text-slate-400 text-sm leading-relaxed font-light">
                 Our neural engine is {isGeneratingAny ? 'crafting high-fidelity prompts' : 'refining visual parameters'} for your niche.
               </p>

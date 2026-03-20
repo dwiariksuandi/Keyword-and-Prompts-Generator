@@ -30,6 +30,7 @@ interface TopTabProps {
   aestheticAnalysis: AestheticAnalysis | null;
   setAestheticAnalysis: React.Dispatch<React.SetStateAction<AestheticAnalysis | null>>;
   settings: AppSettings;
+  onSelectTrend?: (niche: string) => void;
 }
 
 const suggestionKeywords = [
@@ -83,7 +84,7 @@ export default function TopTab({
   referenceFile, setReferenceFile,
   referenceUrl, setReferenceUrl,
   onAnalyzeAesthetic, isAnalyzingAesthetic, aestheticAnalysis, setAestheticAnalysis,
-  settings
+  settings, onSelectTrend
 }: TopTabProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -258,8 +259,8 @@ export default function TopTab({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setTimeout(() => setIsFocused(false), 200)}
               />
-              <TrendForecast niche={keyword} />
-              <CompetitorGapAnalysis niche={keyword} />
+              <TrendForecast niche={keyword} settings={settings} onSelect={onSelectTrend || setKeyword} />
+              <CompetitorGapAnalysis niche={keyword} onSelect={onSelectTrend || setKeyword} />
               
               <AnimatePresence>
                 {showSuggestions && filteredSuggestions.length > 0 && (

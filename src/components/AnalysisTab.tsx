@@ -1,17 +1,57 @@
-import React from 'react';
-import { BarChart3, Target, TrendingUp, Zap, Star, TrendingDown, Minus, Sparkles, BrainCircuit, Activity, Globe, Database, RefreshCw } from 'lucide-react';
-import { CategoryResult } from '../types';
+import React, { useState } from 'react';
+import { BarChart3, Target, TrendingUp, Zap, Star, TrendingDown, Minus, Sparkles, BrainCircuit, Activity, Globe, Database, RefreshCw, MessageSquare } from 'lucide-react';
+import { CategoryResult, AppSettings, ReferenceFile } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import LoadingIndicator from './LoadingIndicator';
+import { analyzeKeyword } from '../services/gemini';
+import RefineButton from './RefineButton';
 
 interface AnalysisTabProps {
   results: CategoryResult[];
   onToggleStar: (id: string) => void;
   onGenerateAll: () => void;
   isGeneratingAll: boolean;
+  settings: AppSettings;
+  setResults: React.Dispatch<React.SetStateAction<CategoryResult[]>>;
+  onSelect?: (niche: string) => void;
 }
 
-export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGeneratingAll }: AnalysisTabProps) {
+export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGeneratingAll, settings, setResults, onSelect }: AnalysisTabProps) {
+  const [feedback, setFeedback] = useState<Record<string, string>>({});
+  const [refining, setRefining] = useState<Record<string, boolean>>({});
+
+  const handleRefine = async (category: CategoryResult) => {
+    console.log("Refine button clicked for:", category.categoryName);
+    setRefining(prev => ({ ...prev, [category.id]: true }));
+    try {
+      const refined = await analyzeKeyword(
+        `${category.categoryName} (Refinement: ${feedback[category.id] || ''})`, 
+        category.contentType,
+        category.categoryName,
+        settings
+      );
+      
+      if (refined && Array.isArray(refined) && refined.length > 0) {
+        const refinedCategory = refined[0];
+        setResults(prev => prev.map(r => r.id === category.id ? { 
+          ...refinedCategory, 
+          id: category.id, 
+          isStarred: r.isStarred, 
+          isGeneratingPrompts: r.isGeneratingPrompts, 
+          isUpgrading: r.isUpgrading,
+          isGeneratingMetadata: r.isGeneratingMetadata,
+          metadata: r.metadata,
+          generatedPrompts: r.generatedPrompts,
+          promptScores: r.promptScores
+        } : r));
+        setFeedback(prev => ({ ...prev, [category.id]: '' }));
+      }
+    } catch (error) {
+      console.error("Refinement failed:", error);
+    } finally {
+      setRefining(prev => ({ ...prev, [category.id]: false }));
+    }
+  };
   const totalKeywords = results.reduce((sum, c) => sum + c.mainKeywords.length, 0);
   const avgOpportunity = results.length > 0 
     ? Math.round(results.reduce((sum, c) => sum + c.opportunityScore, 0) / results.length)
@@ -153,6 +193,14 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                   <div className="space-y-4 sm:space-y-6">
                     <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                       <h3 className="text-3xl sm:text-4xl font-bold text-white tracking-tight font-display group-hover:text-accent transition-colors duration-500">{category.categoryName}</h3>
+                      {onSelect && (
+                        <button 
+                          onClick={() => onSelect(category.categoryName)}
+                          className="text-[10px] font-bold uppercase tracking-widest text-accent hover:text-white bg-accent/10 hover:bg-accent px-4 py-2 rounded-xl transition-all border border-accent/20"
+                        >
+                          Gunakan Ide Ini
+                        </button>
+                      )}
                       <motion.button
                         whileHover={{ scale: 1.1, rotate: 15 }}
                         whileTap={{ scale: 0.9 }}
@@ -307,9 +355,30 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                       <h4 className="text-[9px] sm:text-[10px] font-bold text-accent uppercase tracking-[0.3em] mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
                         <Sparkles size={14} className="sm:w-4 sm:h-4" /> Strategic Directive
                       </h4>
-                      <p className="text-base sm:text-lg text-slate-300 leading-relaxed italic font-light">
+                      <p className="text-base sm:text-lg text-slate-300 leading-relaxed italic font-light mb-6">
                         "{category.creativeAdvice}"
                       </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {category.commercialIntent && (
+                          <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold block mb-1">Commercial Intent</span>
+                            <div className="flex items-center gap-2 text-white text-xs">
+                              <Target size={12} className="text-accent" />
+                              {category.commercialIntent}
+                            </div>
+                          </div>
+                        )}
+                        {category.demandVariance && (
+                          <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold block mb-1">Demand Variance</span>
+                            <div className="flex items-center gap-2 text-white text-xs">
+                              <Activity size={12} className="text-accent" />
+                              {category.demandVariance}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {category.metadataStrategy && (
@@ -350,6 +419,25 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
                         </ul>
                       </div>
                     )}
+                    
+                    <div className="bg-white/5 rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-white/10 relative">
+                      <h4 className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
+                        <MessageSquare size={14} className="sm:w-4 sm:h-4" /> Refine Analysis
+                      </h4>
+                      <div className="flex gap-2 relative z-50 pointer-events-auto">
+                        <input 
+                          type="text" 
+                          value={feedback[category.id] || ''} 
+                          onChange={(e) => setFeedback(prev => ({ ...prev, [category.id]: e.target.value }))} 
+                          placeholder="Berikan feedback untuk refine..."
+                          className="flex-1 bg-black/40 border border-white/10 rounded-lg p-2 text-sm text-white"
+                        />
+                        <RefineButton 
+                          onClick={() => handleRefine(category)}
+                          isRefining={refining[category.id]}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

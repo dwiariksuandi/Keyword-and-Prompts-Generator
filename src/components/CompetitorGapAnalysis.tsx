@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { VisualGap, analyzeCompetitorGaps } from '../services/competitorService';
 import { Target, AlertTriangle } from 'lucide-react';
 
-export default function CompetitorGapAnalysis({ niche }: { niche: string }) {
+export default function CompetitorGapAnalysis({ niche, onSelect }: { niche: string, onSelect?: (niche: string) => void }) {
   const [gaps, setGaps] = useState<VisualGap[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,7 +28,17 @@ export default function CompetitorGapAnalysis({ niche }: { niche: string }) {
         {gaps.map((gap, i) => (
           <div key={i} className="bg-rose-500/5 border border-rose-500/10 p-4 rounded-xl">
             <div className="flex justify-between items-start mb-2">
-              <h4 className="font-bold text-rose-400">{gap.missingElement}</h4>
+              <div className="flex-1">
+                <h4 className="font-bold text-rose-400">{gap.missingElement}</h4>
+                {onSelect && (
+                  <button 
+                    onClick={() => onSelect(gap.missingElement)}
+                    className="mt-2 text-[10px] font-bold uppercase tracking-widest text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-500 px-3 py-1 rounded-full transition-all border border-rose-500/20"
+                  >
+                    Gunakan Ide Ini
+                  </button>
+                )}
+              </div>
               <span className="text-xs font-bold bg-rose-500/20 text-rose-400 px-2 py-1 rounded">Score: {gap.opportunityScore}</span>
             </div>
             <p className="text-sm text-slate-400">{gap.reasoning}</p>

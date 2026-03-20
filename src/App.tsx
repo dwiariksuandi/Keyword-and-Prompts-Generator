@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt } from './services/gemini';
+import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt, refinePrompts } from './services/gemini';
 import { validateAdobeMetadata } from './services/validator';
 import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis } from './types';
 import Settings from './components/Settings';
@@ -238,6 +238,7 @@ export default function App() {
         categoryName: item.categoryName,
         contentType: contentType,
         mainKeywords: item.mainKeywords,
+        longTailKeywords: item.longTailKeywords,
         volumeLevel: item.volumeLevel,
         volumeNumber: item.volumeNumber,
         competition: item.competition,
@@ -246,13 +247,20 @@ export default function App() {
         trendPercent: item.trendPercent,
         difficultyScore: item.difficultyScore,
         opportunityScore: item.opportunityScore,
+        nicheScore: item.nicheScore,
+        demandVariance: item.demandVariance,
+        keiScore: item.keiScore,
+        commercialIntent: item.commercialIntent,
+        assetTypeSuitability: item.assetTypeSuitability,
         buyerPersona: item.buyerPersona,
         visualTrends: item.visualTrends,
         creativeAdvice: item.creativeAdvice,
+        metadataStrategy: item.metadataStrategy,
         generatedPrompts: [],
         isGeneratingPrompts: false,
         isUpgrading: false,
         isStarred: false,
+        groundingSources: item.groundingSources
       }));
       setResults(formattedResults);
       
@@ -373,7 +381,8 @@ export default function App() {
         result.creativeAdvice,
         result.demandVariance,
         result.commercialIntent,
-        result.assetTypeSuitability
+        result.assetTypeSuitability,
+        setProgress
       );
 
       // Score the prompts
@@ -424,8 +433,8 @@ export default function App() {
         category.creativeAdvice
       );
 
-      // Refine the prompts for commercial viability
-      const refinedPrompts = await Promise.all(optimizedPrompts.map(p => refinePrompt(p, category.contentType, settings)));
+      // Refine the prompts for commercial viability in batch
+      const refinedPrompts = await refinePrompts(optimizedPrompts, category.contentType, settings);
       
       // Re-score the refined prompts
       const scores = await scorePrompts(
@@ -507,7 +516,8 @@ export default function App() {
         actualTotalCount,
         settings,
         contentType,
-        referenceUrl
+        referenceUrl,
+        setProgress
       );
 
       const updatedResults = [...results];
@@ -594,6 +604,110 @@ export default function App() {
   const handleViewPrompts = (id: string) => {
     setSelectedPromptCategoryId(id);
     setActiveTab("prompt");
+  };
+
+  const handleTrendToPrompts = async (niche: string) => {
+    setKeyword(niche);
+    setActiveTab('analysis');
+    setIsAnalyzing(true);
+    
+    try {
+      // 1. Deep Analysis
+      const data = await analyzeKeyword(niche, contentType, 'General Market', settings, referenceFile || undefined, referenceUrl || undefined);
+      const formattedResults: CategoryResult[] = data.map((item: any) => ({
+        id: Math.random().toString(36).substring(7),
+        categoryName: item.categoryName,
+        contentType: contentType,
+        mainKeywords: item.mainKeywords,
+        longTailKeywords: item.longTailKeywords,
+        volumeLevel: item.volumeLevel,
+        volumeNumber: item.volumeNumber,
+        competition: item.competition,
+        competitionScore: item.competitionScore,
+        trend: item.trend,
+        trendPercent: item.trendPercent,
+        difficultyScore: item.difficultyScore,
+        opportunityScore: item.opportunityScore,
+        nicheScore: item.nicheScore,
+        demandVariance: item.demandVariance,
+        keiScore: item.keiScore,
+        commercialIntent: item.commercialIntent,
+        assetTypeSuitability: item.assetTypeSuitability,
+        buyerPersona: item.buyerPersona,
+        visualTrends: item.visualTrends,
+        creativeAdvice: item.creativeAdvice,
+        metadataStrategy: item.metadataStrategy,
+        generatedPrompts: [],
+        isGeneratingPrompts: false,
+        isUpgrading: false,
+        isStarred: false,
+        groundingSources: item.groundingSources
+      }));
+      setResults(formattedResults);
+      
+      // 2. Generate All Prompts automatically
+      if (formattedResults.length > 0) {
+        setToast({ show: true, message: 'Analisis selesai, mulai membuat prompt...' });
+        
+        const actualTotalCount = Math.min(settings.promptCount * formattedResults.length, 5000);
+        const { promptsMap, groundingSources } = await generateAllPromptsBatch(
+          niche,
+          formattedResults,
+          actualTotalCount,
+          settings,
+          contentType,
+          referenceUrl,
+          setProgress
+        );
+
+        const updatedResults = [...formattedResults];
+        for (const result of updatedResults) {
+          const prompts = promptsMap.get(result.categoryName) || [];
+          if (prompts.length > 0) {
+            result.generatedPrompts = prompts;
+            result.isGeneratingPrompts = true;
+            if (groundingSources) {
+              result.groundingSources = groundingSources;
+            }
+          }
+        }
+        
+        setResults([...updatedResults]);
+        setActiveTab('prompt');
+
+        // Score each category's prompts (async background)
+        for (let i = 0; i < updatedResults.length; i++) {
+          const result = updatedResults[i];
+          if (result.generatedPrompts.length > 0) {
+            try {
+              const scores = await scorePrompts(
+                result.generatedPrompts, 
+                settings, 
+                result.contentType, 
+                result.categoryName,
+                result.buyerPersona,
+                result.visualTrends,
+                result.creativeAdvice
+              );
+              setResults(prev => prev.map(r => r.id === result.id ? { ...r, promptScores: scores, isGeneratingPrompts: false } : r));
+            } catch (scoreError) {
+              console.error(`Scoring failed for ${result.categoryName}:`, scoreError);
+              setResults(prev => prev.map(r => r.id === result.id ? { ...r, isGeneratingPrompts: false } : r));
+            }
+          }
+        }
+        setToast({ show: true, message: 'Semua prompt berhasil dibuat!' });
+      }
+    } catch (error) {
+      console.error("Trend to Prompts workflow failed:", error);
+      setErrorModal({
+        show: true,
+        title: 'Workflow Gagal',
+        message: handleGeminiError(error)
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleRunPipeline = async (steps: string[]) => {
@@ -803,6 +917,8 @@ export default function App() {
             onGenerate={(prompt) => handleAnalyze(prompt)}
             isGenerating={isAnalyzing}
             settings={settings}
+            progress={progress}
+            onSelectTrend={handleTrendToPrompts}
           />
         )}
         
@@ -830,6 +946,7 @@ export default function App() {
               referenceUrl={referenceUrl}
               setReferenceUrl={setReferenceUrl}
               settings={settings}
+              onSelectTrend={handleTrendToPrompts}
             />
 
             {results.length > 0 && (
@@ -876,6 +993,9 @@ export default function App() {
             onToggleStar={handleToggleStar} 
             onGenerateAll={handleGenerateAllPrompts}
             isGeneratingAll={isAnalyzing}
+            settings={settings}
+            setResults={setResults}
+            onSelect={handleTrendToPrompts}
           />
         )}
         
@@ -912,6 +1032,7 @@ export default function App() {
             promptsCount={settings.promptCount}
             setPromptsCount={(count) => setSettings(s => ({ ...s, promptCount: typeof count === 'function' ? count(s.promptCount) : count }))}
             onShowToast={(msg) => setToast({ show: true, message: msg })}
+            progress={progress}
           />
         )}
         </motion.div>

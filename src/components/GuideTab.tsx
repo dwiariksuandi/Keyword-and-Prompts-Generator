@@ -140,15 +140,16 @@ export default function GuideTab() {
             <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
               <CheckCircle2 size={20} />
             </div>
-            <h3 className="text-xl font-bold uppercase tracking-[0.2em] font-display">03. Langkah-Langkah Penggunaan</h3>
+            <h3 className="text-xl font-bold uppercase tracking-[0.2em] font-display">03. Langkah-Langkah Penggunaan Detail</h3>
           </div>
           
           <div className="space-y-6">
             {[
-              { step: "01", title: "Konfigurasi API Key", desc: "Masukkan Gemini API Key Anda di halaman awal atau menu Settings untuk mengaktifkan kecerdasan AI." },
-              { step: "02", title: "Pilih Tipe Konten & Keyword", desc: "Pilih kategori (Photo, Vector, dll) dan masukkan topik riset. Anda juga bisa mengunggah gambar referensi." },
-              { step: "03", title: "Analisis & Generate", desc: "Klik 'Start Analysis' untuk melihat peluang pasar, lalu klik 'Create Prompts' pada niche yang Anda minati." },
-              { step: "04", title: "Review & Export", desc: "Lihat skor kualitas prompt, baca feedback, lalu salin atau download prompt untuk generator AI favorit Anda." }
+              { step: "01", title: "Persiapan & Konfigurasi", desc: "Pastikan Anda memiliki Gemini API Key yang valid. Buka menu 'Settings' di aplikasi dan masukkan API Key Anda. Tanpa API Key, aplikasi tidak dapat melakukan analisis atau generate prompt." },
+              { step: "02", title: "Riset Niche & Keyword", desc: "Pada tab 'Analysis', masukkan topik atau niche yang ingin Anda targetkan (misal: 'Agrivoltaics'). Aplikasi akan menganalisis volume pencarian, kompetisi, dan memberikan skor peluang." },
+              { step: "03", title: "Analisis Estetika (Opsional)", desc: "Jika Anda memiliki gambar referensi yang bagus, unggah di tab 'VisualQA'. AI akan membedah DNA estetika gambar tersebut (warna, komposisi, pencahayaan) untuk membantu Anda membuat prompt yang serupa." },
+              { step: "04", title: "Generate & Optimasi Prompt", desc: "Pilih niche yang memiliki skor peluang tinggi. Klik 'Create Prompts'. Anda akan mendapatkan daftar prompt yang sudah dioptimasi. Gunakan fitur 'Critic Agent' untuk memperbaiki prompt jika skor kualitasnya masih rendah." },
+              { step: "05", title: "Review & Export", desc: "Periksa skor kualitas prompt (Keyword Density, Clarity, Specificity, Adobe Adherence). Jika sudah puas, klik tombol 'Copy' atau 'Download' untuk menyalin prompt ke generator AI favorit Anda (Midjourney, Kling, dll)." }
             ].map((item, i) => (
               <div key={i} className="flex gap-8 p-6 rounded-3xl hover:bg-white/5 transition-colors group">
                 <div className="flex-shrink-0 w-12 h-12 bg-accent text-slate-900 rounded-2xl flex items-center justify-center font-bold font-mono text-xl shadow-lg shadow-accent/20">
@@ -160,6 +161,30 @@ export default function GuideTab() {
                 </div>
               </div>
             ))}
+          </div>
+        </motion.section>
+
+        {/* Section 4: Tips Pro */}
+        <motion.section 
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="space-y-10"
+        >
+          <div className="flex items-center gap-4 text-accent">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
+              <Sparkles size={20} />
+            </div>
+            <h3 className="text-xl font-bold uppercase tracking-[0.2em] font-display">04. Tips Pro</h3>
+          </div>
+          
+          <div className="bg-white/5 border border-white/10 p-8 rounded-3xl space-y-4">
+            <ul className="list-disc list-inside text-sm text-slate-400 font-light leading-relaxed space-y-2">
+              <li><strong>Fokus pada Blue Ocean:</strong> Cari niche dengan <em>Competition Score</em> rendah (&lt; 30) dan <em>Opportunity Score</em> tinggi (&gt; 70).</li>
+              <li><strong>Gunakan Gambar Referensi:</strong> AI bekerja jauh lebih baik jika diberikan referensi visual yang sesuai dengan gaya Adobe Stock yang Anda inginkan.</li>
+              <li><strong>Iterasi Prompt:</strong> Jangan puas dengan hasil pertama. Gunakan fitur optimasi berkali-kali untuk mendapatkan hasil yang lebih teknis dan spesifik.</li>
+              <li><strong>Perhatikan Adobe Compliance:</strong> Selalu perhatikan skor <em>Adobe Adherence</em>. Hindari prompt yang mengandung elemen yang dilarang (teks, logo, wajah selebriti).</li>
+            </ul>
           </div>
         </motion.section>
 

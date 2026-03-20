@@ -4,6 +4,14 @@ import { KeywordAnalysisSchema, AestheticAnalysisSchema, PromptSchema, PromptDir
 import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult } from '../types';
 import { logger } from './logger';
 
+function zodToJsonSchemaNoSchema(schema: any) {
+  const jsonSchema = zodToJsonSchema(schema) as any;
+  delete jsonSchema.$schema;
+  return jsonSchema;
+}
+
+// ... (rest of the file)
+
 // ... (rest of the file)
 
 async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings, categoryName: string): Promise<T> {
@@ -30,7 +38,7 @@ async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings,
       
       Respond ONLY with valid JSON following the schema.`,
       responseMimeType: "application/json",
-      responseSchema: zodToJsonSchema(schema) as any,
+      responseSchema: zodToJsonSchemaNoSchema(schema) as any,
       thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
     }
   });
@@ -39,7 +47,38 @@ async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings,
   if (!text) throw new Error('Critic agent returned no response');
   
   const parsed = extractJSON(text);
-  return schema.parse(parsed);
+  
+  // Robustness fix: handle case where AI returns an array for an object schema
+  let dataToParse = parsed;
+  if (Array.isArray(parsed) && !Array.isArray(data)) {
+    if (schema === PromptDirectSchema) {
+      dataToParse = { prompts: parsed };
+    } else if (schema === AestheticAnalysisSchema) {
+      // Try to find an object that looks like AestheticAnalysis or wrap suggestions
+      dataToParse = { 
+        detectedContentType: categoryName,
+        colorPalette: [],
+        lighting: '',
+        mood: '',
+        artisticStyle: '',
+        composition: '',
+        suggestions: parsed,
+        marketGaps: []
+      };
+    }
+  }
+  
+  try {
+    return schema.parse(dataToParse);
+  } catch (e) {
+    console.error(`Critic analysis validation failed for ${categoryName}:`, e);
+    // Fallback to original data if it's valid
+    try {
+      return schema.parse(data);
+    } catch {
+      throw e;
+    }
+  }
 }
 
 export const promptTemplates: PromptTemplate[] = [
@@ -259,7 +298,7 @@ export const promptTemplates: PromptTemplate[] = [
   }
 ];
 
-const getAI = (apiKey?: string) => {
+export const getAI = (apiKey?: string) => {
   const envApiKey = typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : (import.meta as any).env?.VITE_GEMINI_API_KEY;
   const finalApiKey = apiKey?.trim() || envApiKey || '';
   
@@ -381,7 +420,7 @@ export function handleGeminiError(error: any): string {
   return `⚠️ Terjadi Kesalahan Tak Terduga\n\nDetail: ${errorString.substring(0, 200)}${errorString.length > 200 ? '...' : ''}\n\nSaran: Coba muat ulang halaman atau periksa koneksi internet Anda.`;
 }
 
-function extractJSON(text: string) {
+export function extractJSON(text: string) {
   try {
     // Remove markdown code block formatting if present
     const cleanedText = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
@@ -512,28 +551,46 @@ export function generateNanoBananaPrompt(
   return `${subject} ${action}, ${location}, ${composition}, ${style}.`;
 }
 
-export async function refinePrompt(prompt: string, contentType: string, settings: AppSettings): Promise<string> {
+export async function refinePrompts(prompts: string[], contentType: string, settings: AppSettings): Promise<string[]> {
   const ai = getAI(settings.apiKey);
   
-  const promptText = `Review the following prompt for Adobe Stock commercial viability: '${prompt}' for content type '${contentType}'. 
+  const promptText = `Review the following ${prompts.length} image generation prompts for Adobe Stock commercial viability:
+  ${prompts.map((p, i) => `${i + 1}. ${p}`).join('\n')}
   
-  CRITICAL:
-  1. Improve the prompt to be more commercially viable, focusing on high-quality, professional aesthetics.
-  2. Ensure it follows the required format: Subject, action, environment, lighting, camera angle, film stock.
-  3. If the prompt is already excellent, return it as is.
+  Content Type: '${contentType}'. 
   
-  Respond ONLY with the refined prompt string.`;
+  CRITICAL INSTRUCTIONS:
+  1. Improve each prompt to be more commercially viable, focusing on high-quality, professional aesthetics.
+  2. Ensure they follow the required format: Subject, action, environment, lighting, camera angle, film stock.
+  3. If a prompt is already excellent, return it as is.
+  4. Maintain the core semantic meaning of each prompt.
+  
+  Respond strictly with a JSON array of strings. Each string MUST be the refined version of the corresponding input prompt.`;
 
   try {
     const response = await ai.models.generateContent({
       model: settings.model || 'gemini-3-flash-preview',
       contents: [{ text: promptText }],
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'ARRAY',
+          items: { type: 'STRING' }
+        }
+      }
     });
 
-    return response.text?.trim() || prompt;
+    const parsed = JSON.parse(response.text || '[]');
+    return Array.isArray(parsed) && parsed.length === prompts.length ? parsed : prompts;
   } catch (error) {
-    return prompt;
+    console.error("Batch refinement failed:", error);
+    return prompts;
   }
+}
+
+export async function refinePrompt(prompt: string, contentType: string, settings: AppSettings): Promise<string> {
+  const refined = await refinePrompts([prompt], contentType, settings);
+  return refined[0];
 }
 
 function getContentTypeInstructions(contentType: string): string {
@@ -828,6 +885,13 @@ ${getContentTypeInstructions(contentType)}
 
 CRITICAL: You MUST use Google Search to find REAL, CURRENT data, trends, and search volumes for Adobe Stock and the microstock industry. Do not rely solely on your internal knowledge; ground your analysis in actual, up-to-date market realities to avoid bias.
 
+${categoryName ? `REFINEMENT MODE: You are refining the existing niche analysis for: '${categoryName}'. 
+The user has provided a specific keyword or feedback: '${keyword}'.
+Your task is to DEEPEN the analysis of this specific niche. 
+1. Provide 3-5 highly specialized variations or sub-segments of this specific niche.
+2. Ensure the creative advice and metadata strategy are significantly more detailed and targeted based on the refinement feedback.
+3. If the feedback suggests a specific direction, prioritize that direction in the analysis.` : `Your objective is to uncover 5 to 8 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.`}
+
 VISUAL GAP ANALYSIS: For each potential niche, you MUST perform a simulated "Visual Gap Analysis":
 1. Search for the top-performing assets in this niche on Adobe Stock (via Google Search).
 2. Analyze their visual characteristics: lighting, composition, subject diversity, and aesthetic style.
@@ -868,8 +932,6 @@ This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for this analysi
 4. Identify the target audience and commercial purpose of the content in the URL.
 5. Use Google Search to cross-reference these extracted themes with current market demand on Adobe Stock to find profitable angles based on the URL's core concept.` : ''}
 ${!keyword && !referenceUrl && referenceFile ? 'Please derive the niche opportunities primarily from the visual content of the provided reference.' : ''}
-
-Your objective is to uncover 5 to 8 highly specific, underserved, and commercially lucrative sub-niches (Blue Oceans). AVOID generic categories. Focus on exact, long-tail concepts that buyers (ad agencies, web designers, corporate marketers) are actively searching for but lack high-quality supply on platforms like Adobe Stock and Shutterstock.
 
 CRITICAL ANALYSIS REQUIREMENT: Identify specific "Content Gaps" in the current market. What are buyers searching for that yields outdated, low-quality, or irrelevant results? Base your niches on these gaps.
 - CROSS-NICHE STRATEGY: Look for opportunities to combine two distinct concepts (e.g., Technology + Sustainability, Healthcare + Remote Work) to create unique, high-demand micro-niches.
@@ -934,20 +996,19 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
   }
 
   const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-pro-preview',
     contents: { parts },
     config: {
       systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to provide highly accurate, data-backed estimates for search volume and competition based on REAL, current market trends using Google Search. YOU MUST USE GOOGLE SEARCH TO FIND THE EXACT NUMBER OF SEARCH RESULTS FOR THESE KEYWORDS ON ADOBE STOCK OR SHUTTERSTOCK. Use these real numbers for volumeNumber and competitionScore. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
       tools: tools,
+      responseMimeType: "application/json",
+      responseSchema: zodToJsonSchemaNoSchema(KeywordAnalysisSchema as any) as any,
       thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
     },
   });
 
-  let text = response.text;
+  const text = response.text;
   if (!text) throw new Error('No response from Gemini');
-  
-  // Strip markdown formatting if present
-  text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
   
   const startTime = Date.now();
   try {
@@ -1131,7 +1192,8 @@ export async function generatePrompts(
   creativeAdvice?: string,
   demandVariance?: string,
   commercialIntent?: string,
-  assetTypeSuitability?: string[]
+  assetTypeSuitability?: string[],
+  progressCallback?: (progress: { current: number, total: number, message: string }) => void
 ) {
   const ai = getAI(settings.apiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
@@ -1141,6 +1203,7 @@ export async function generatePrompts(
   
   // For large counts, use a combinatorial approach to avoid LLM output token limits and guarantee uniqueness
   if (count > 30) {
+    progressCallback?.({ current: 0, total: 1, message: 'Menganalisis Niche & Tren Pasar...' });
     const promptText = `Generate a rich set of prompt components for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}' and the target platform is '${template.name}'.
     
     Think step-by-step about the market saturation, visual gaps, and commercial utility of your generated prompts before generating the components.
@@ -1203,11 +1266,7 @@ export async function generatePrompts(
         "lightings": string[],
         "moods": string[],
         "styles": string[],
-        "aspects": string[],
-        ${contentType === 'Video' ? '"soundstage": string[],' : ''}
-      }        "moods": string[],
-        "styles": string[],
-        "aspects": string[]
+        "aspects": string[]${contentType === 'Video' ? ',\n        "soundstage": string[]' : ''}
       }
 
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
@@ -1222,6 +1281,7 @@ export async function generatePrompts(
       });
     }
 
+    progressCallback?.({ current: 0.5, total: 1, message: 'Mensintesis Komponen Visual...' });
     const response = await ai.models.generateContent({
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
@@ -1241,6 +1301,8 @@ export async function generatePrompts(
 
     let text = response.text;
     if (!text) throw new Error('No response from Gemini');
+    
+    progressCallback?.({ current: 0.8, total: 1, message: 'Menggabungkan Vektor Kreatif...' });
     const startTime = Date.now();
     try {
       const parsed = extractJSON(text);
@@ -1423,7 +1485,15 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
   }
 }
 
-export async function generatePromptsDirectly(count: number, settings: AppSettings, contentType: string, keyword?: string, referenceFile?: ReferenceFile, referenceUrl?: string) {
+export async function generatePromptsDirectly(
+  count: number, 
+  settings: AppSettings, 
+  contentType: string, 
+  keyword?: string, 
+  referenceFile?: ReferenceFile, 
+  referenceUrl?: string,
+  progressCallback?: (progress: { current: number, total: number, message: string }) => void
+) {
   const ai = getAI(settings.apiKey);
   const startTime = Date.now();
   const currentTemplateId = typeof settings.templateId === 'string' 
@@ -1431,6 +1501,144 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
     : (settings.templateId?.[contentType] || 'midjourney-photo');
   const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
   
+  // For large counts, use a combinatorial approach to avoid LLM output token limits and guarantee uniqueness
+  if (count > 30) {
+    progressCallback?.({ current: 0, total: 1, message: 'Menganalisis Niche & Tren Pasar...' });
+    const promptText = `Generate a rich set of prompt components for the niche '${keyword || 'General Market'}'. The target asset type is '${contentType}' and the target platform is '${template.name}'.
+    
+    Think step-by-step about the market saturation, visual gaps, and commercial utility of your generated prompts before generating the components.
+      
+      ${getContentTypeInstructions(contentType)}
+
+      CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated components reflect REAL market demand and current design trends.
+
+      ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
+      You MUST use the Google Search tool to deeply analyze the visual style, trends, topic, lighting, and keywords from this URL. 
+      This URL is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
+      1. Identify the specific content type, niche, and CORE TOPIC of the asset in the URL.
+      2. Extract its "Visual DNA" (lighting, color palette, mood, composition, subject matter, and thematic keywords).
+      
+      ADOBE STOCK ALGORITHM OPTIMIZATION: Ensure the resulting prompts are "tepat sasaran" (perfectly targeted) to the URL's aesthetic DNA while maximizing commercial appeal (copy space, authentic lifestyle).` : ''}
+      ${referenceFile ? `CRITICAL REFERENCE FILE INSTRUCTION: Analyze the provided ${referenceFile.mimeType.startsWith('image/') ? 'image' : 'video'} reference.
+      This reference file is the PRIMARY SOURCE OF INSPIRATION and the MAIN IDEA for these prompts.
+      1. Extract its "Visual DNA": style, topic, lighting, and key visual elements.` : ''}
+
+      We need to programmatically generate ${count} unique combinations. Please provide:
+      1. 30 highly distinct subjects. MUST be diverse in age, ethnicity, and core concept.
+      2. 30 specific and varied actions.
+      3. 30 specific and varied contexts/locations/background elements.
+      4. 30 specific and varied cinematography/composition/camera techniques.
+      5. 20 distinct and trending lighting styles.
+      6. 15 mood/atmosphere descriptions.
+      7. 20 diverse artistic styles/mediums/materiality/texture descriptions.
+      8. 5 aspect ratios.
+      ${contentType === 'Video' ? '9. 15 Soundstage details (Dialogue, SFX, Ambient noise).' : ''}
+      
+      CRITICAL ADOBE STOCK RULES:
+      - ZERO HALLUCINATION & ZERO SUBJECT DRIFT: You MUST NOT invent new subjects, objects, or core concepts that are not explicitly requested by the user's input or the reference material.
+      - ALGORITHM OPTIMIZATION: Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
+      - KEYWORD WEAVING & DENSITY STRATEGY: Weave 5-8 high-value commercial synonyms naturally across the components.
+      - NO SIMILAR CONTENT: The components must be vastly different from each other.
+      - NO TEXT/TYPOGRAPHY: Absolutely no text, words, letters, signatures, or watermarks.
+      - GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands.
+      - ${getVariationInstructions(settings.variationLevel)}
+      
+      Respond strictly with a JSON object following this schema:
+      {
+        "subjects": string[],
+        "actions": string[],
+        "contexts": string[],
+        "cinematography": string[],
+        "lightings": string[],
+        "moods": string[],
+        "styles": string[],
+        "aspects": string[]${contentType === 'Video' ? ',\n        "soundstage": string[]' : ''}
+      }
+
+      Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
+
+    const parts: any[] = [{ text: promptText }];
+    if (referenceFile) {
+      parts.push({
+        inlineData: {
+          data: referenceFile.data,
+          mimeType: referenceFile.mimeType
+        }
+      });
+    }
+
+    const tools: any[] = [{ googleSearch: {} }];
+    if (referenceUrl) {
+      tools.push({ urlContext: {} });
+    }
+
+    progressCallback?.({ current: 0.5, total: 1, message: 'Mensintesis Komponen Visual...' });
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3-flash-preview',
+      contents: { parts },
+      config: {
+        systemInstruction: `You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components.
+        Respond ONLY with valid JSON.`,
+        tools: tools,
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
+      }
+    });
+
+    let text = response.text;
+    if (!text) throw new Error('No response from Gemini');
+    text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
+    
+    progressCallback?.({ current: 0.8, total: 1, message: 'Menggabungkan Vektor Kreatif...' });
+    const components = extractJSON(text);
+    
+    // Generate combinations
+    const prompts: string[] = [];
+    const usedCombinations = new Set();
+    
+    while (prompts.length < count) {
+      const s = components.subjects[Math.floor(Math.random() * components.subjects.length)];
+      const a = components.actions[Math.floor(Math.random() * components.actions.length)];
+      const c = components.contexts[Math.floor(Math.random() * components.contexts.length)];
+      const cam = components.cinematography[Math.floor(Math.random() * components.cinematography.length)];
+      const l = components.lightings[Math.floor(Math.random() * components.lightings.length)];
+      const m = components.moods[Math.floor(Math.random() * components.moods.length)];
+      const st = components.styles[Math.floor(Math.random() * components.styles.length)];
+      const asp = components.aspects[Math.floor(Math.random() * components.aspects.length)];
+      const snd = contentType === 'Video' ? components.soundstage[Math.floor(Math.random() * components.soundstage.length)] : '';
+      
+      const comboKey = `${s}-${a}-${c}-${cam}-${l}-${m}-${st}-${asp}-${snd}`;
+      if (!usedCombinations.has(comboKey)) {
+        usedCombinations.add(comboKey);
+        
+        let prompt = template.template
+          .replace('{subject}', s)
+          .replace('{details}', a)
+          .replace('{lighting}', l)
+          .replace('{mood}', m)
+          .replace('{style}', st)
+          .replace('{aspect}', asp)
+          .replace('{action}', a)
+          .replace('{context}', c)
+          .replace('{cinematography}', cam);
+          
+        if (contentType === 'Video') {
+          prompt += ` ${snd}`;
+        }
+        
+        if (settings.includeNegative) {
+          prompt += ` ${settings.customNegativePrompt || '--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy'}`;
+        }
+        
+        prompts.push(prompt.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim());
+      }
+      
+      // Safety break to avoid infinite loop if combinations are exhausted
+      if (usedCombinations.size > count * 5) break;
+    }
+    
+    return { prompts, duration: Date.now() - startTime };
+  }
+
   const promptText = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts. The target asset type is '${contentType}' and the target platform is '${template.name}'.
   
   Think step-by-step about the market saturation, visual gaps, and commercial utility of your generated prompts before generating the components.
@@ -1515,8 +1723,23 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
     
     const parsed = extractJSON(text);
     
+    // Handle case where Gemini returns an array instead of the expected object or vice versa
+    let dataToValidate: any = parsed;
+    if (Array.isArray(parsed)) {
+      dataToValidate = { prompts: parsed };
+    } else if (parsed && typeof parsed === 'object' && !parsed.prompts) {
+      const values = Object.values(parsed);
+      const firstArray = values.find(v => Array.isArray(v));
+      if (firstArray) {
+        dataToValidate = { prompts: firstArray };
+      } else {
+        // If no array found, maybe it's just a single prompt?
+        dataToValidate = { prompts: [JSON.stringify(parsed)] };
+      }
+    }
+    
     // Validate with Zod and Critic Agent
-    const validatedData = await criticizeAnalysis(PromptDirectSchema.parse({ prompts: Array.isArray(parsed) ? parsed : parsed.prompts }), PromptDirectSchema, settings, 'General Market');
+    const validatedData = await criticizeAnalysis(PromptDirectSchema.parse(dataToValidate), PromptDirectSchema, settings, 'General Market');
     
     const generatedPrompts = validatedData.prompts.map(p => {
       let prompt = p;
@@ -1692,10 +1915,23 @@ export async function optimizePrompts(
       text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
       
       const parsed = extractJSON(text);
-      console.log("Parsed:", parsed);
       
       // Handle case where Gemini returns an array instead of the expected object
-      const dataToValidate = Array.isArray(parsed) ? { prompts: parsed } : parsed;
+      let dataToValidate: any = parsed;
+      if (Array.isArray(parsed)) {
+        dataToValidate = { prompts: parsed };
+      } else if (parsed && typeof parsed === 'object' && !parsed.prompts) {
+        // AI might return { "result": [...] } or similar
+        const values = Object.values(parsed);
+        const firstArray = values.find(v => Array.isArray(v));
+        if (firstArray) {
+          dataToValidate = { prompts: firstArray };
+        }
+      }
+      
+      if (!dataToValidate || typeof dataToValidate !== 'object') {
+        throw new Error("Invalid JSON response from Gemini");
+      }
       
       // Validate with Zod and Critic Agent
       const validatedData = await criticizeAnalysis(PromptDirectSchema.parse(dataToValidate), PromptDirectSchema, settings, categoryName) as PromptDirect;
@@ -1765,6 +2001,7 @@ export async function generateAllPromptsBatch(
   progressCallback?.({ current: 0, total: 1, message: 'Memulai pembuatan prompt...' });
 
   try {
+    progressCallback?.({ current: 0.5, total: 1, message: 'Mensintesis Komponen Visual...' });
     response = await ai.models.generateContent({
       model: settings.model || 'gemini-3-flash-preview',
       contents: `Generate rich prompt components for multiple niches based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
