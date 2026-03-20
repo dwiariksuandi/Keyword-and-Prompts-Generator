@@ -498,7 +498,7 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
           },
           required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
         },
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
 
@@ -561,7 +561,7 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
           },
           required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions"]
         },
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
 
@@ -679,7 +679,7 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     config: {
       systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to provide highly accurate, data-backed estimates for search volume and competition based on REAL, current market trends using Google Search. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
       tools: [{ googleSearch: {} }],
-      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
     },
   });
 
@@ -855,6 +855,7 @@ export async function generatePrompts(
       6. 5 aspect ratios (e.g., "16:9", "4:3", "3:2", "1:1", "9:16")
       
       CRITICAL ADOBE STOCK RULES:
+      - ZERO HALLUCINATION & ZERO SUBJECT DRIFT: You MUST NOT invent new subjects, objects, or core concepts that are not explicitly requested by the user's input or the reference material. The core semantic meaning MUST remain identical to the user's intent.
       - ALGORITHM OPTIMIZATION: To rank high and sell, concepts must have high commercial utility. Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
       - KEYWORD WEAVING & DENSITY STRATEGY: To maximize search visibility without keyword stuffing, you MUST weave 5-8 high-value commercial synonyms and LSI (Latent Semantic Indexing) keywords naturally across the components (subject, details, lighting, mood, style). 
         - Do NOT repeat the exact same words. Use varied adjectives and nouns (e.g., instead of repeating "business", use "corporate, executive, professional, commercial, enterprise").
@@ -901,7 +902,7 @@ export async function generatePrompts(
         ADOBE STOCK ALGORITHM: Prioritize high-demand commercial themes, authentic representation, and technical excellence.
         Respond ONLY with valid JSON.`,
         tools: [{ googleSearch: {} }],
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
 
@@ -1026,7 +1027,7 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
           type: Type.ARRAY,
           items: { type: Type.STRING },
         },
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       },
     });
 
@@ -1079,22 +1080,23 @@ ${contentType === 'AI Art & Creativity' ? `SPECIAL AI ART INSTRUCTION: For this 
 ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'. Specify frame rates like '60fps' for slow motion or '24fps' for a cinematic look. Ensure the action described is dynamic and visually engaging. Include Soundstage details (Dialogue, SFX, Ambient noise).` : ''}
 
   CRITICAL REQUIREMENTS FOR ADOBE STOCK:
-  1. ALGORITHM OPTIMIZATION & Commercial Utility: Ensure concepts are highly usable for designers and agencies. You MUST include concepts with 'copy space', 'authentic lifestyle', 'diverse representation', 'modern aesthetics', or 'clean backgrounds' where appropriate.
-  2. KEYWORD DENSITY & SEO: Weave 5-7 highly relevant, commercial keywords naturally into the descriptive flow of EACH prompt. 
+  1. ZERO HALLUCINATION & ZERO SUBJECT DRIFT: You MUST NOT invent new subjects, objects, or core concepts that are not explicitly requested by the user's input or the reference material. The core semantic meaning MUST remain identical to the user's intent.
+  2. ALGORITHM OPTIMIZATION & Commercial Utility: Ensure concepts are highly usable for designers and agencies. You MUST include concepts with 'copy space', 'authentic lifestyle', 'diverse representation', 'modern aesthetics', or 'clean backgrounds' where appropriate.
+  3. KEYWORD DENSITY & SEO: Weave 5-7 highly relevant, commercial keywords naturally into the descriptive flow of EACH prompt. 
      - DO NOT keyword stuff (e.g., do not just add a list of words at the end).
      - Instead, integrate them into the visual description (e.g., "A successful corporate business team collaborating in a modern sunlit office..."). 
      - Ensure the keywords accurately describe the visual elements so the AI generates them.
-  3. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for the ${template.name} platform.
-  4. NO SIMILAR CONTENT: Adobe Stock rejects batches of similar images. Each prompt MUST have a distinct composition, camera angle, subject, or core action. Avoid repetitive concepts.
+  4. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for the ${template.name} platform.
+  5. NO SIMILAR CONTENT: Adobe Stock rejects batches of similar images. Each prompt MUST have a distinct composition, camera angle, subject, or core action. Avoid repetitive concepts.
      - VARIATION STRATEGY: Rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
-  4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only (e.g., "generic modern smartphone").
-  5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
-  6. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks.
-  7. ${getVariationInstructions(settings.variationLevel)}
-  8. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
+  6. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only (e.g., "generic modern smartphone").
+  7. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
+  8. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks.
+  9. ${getVariationInstructions(settings.variationLevel)}
+  10. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
   "${template.template}"
   Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
-  9. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
+  11. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
 
   Respond strictly with a JSON array of strings, where each string is a complete, ready-to-use image generation prompt tailored for a ${contentType}.
   Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
@@ -1123,7 +1125,7 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
         ADOBE STOCK ALGORITHM: Extract aesthetic essence and apply it to commercially viable concepts.
         Respond ONLY with valid JSON.`,
         tools: [{ googleSearch: {} }],
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
 
@@ -1333,6 +1335,7 @@ export async function generateAllPromptsBatch(
       6. 5 aspect ratios (e.g., "16:9", "4:3", "1:1").
       
       CRITICAL ADOBE STOCK RULES:
+      - ZERO HALLUCINATION & ZERO SUBJECT DRIFT: You MUST NOT invent new subjects, objects, or core concepts that are not explicitly requested by the user's input or the reference material. The core semantic meaning MUST remain identical to the user's intent.
       - ALGORITHM OPTIMIZATION: To rank high and sell, components must lead to high commercial utility. Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
       - KEYWORD WEAVING & DENSITY STRATEGY: To maximize search visibility without keyword stuffing, you MUST weave 5-8 high-value commercial synonyms and LSI (Latent Semantic Indexing) keywords naturally across the components (subject, details, lighting, mood, style). 
         - Do NOT repeat the exact same words. Use varied adjectives and nouns (e.g., instead of repeating "business", use "corporate, executive, professional, commercial, enterprise").
@@ -1364,7 +1367,7 @@ export async function generateAllPromptsBatch(
         ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
         ADOBE STOCK ALGORITHM: Use real-world data to inform your aesthetic choices. Respond ONLY with valid JSON.`,
         tools: [{ googleSearch: {} }],
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
 
@@ -1438,11 +1441,12 @@ export async function generateAdobeStockMetadata(
     ${getContentTypeInstructions(contentType)}
 
 CRITICAL ADOBE STOCK SEO ALGORITHM RULES:
-1. TITLE: Write a natural, descriptive title (5-10 words, max 200 chars). Include the main subject, action, and setting. Do not keyword stuff the title. Must be in English.
-2. KEYWORDS: Provide exactly 40-50 highly relevant keywords. Must be in English.
-3. KEYWORD ORDER IS CRITICAL: The Adobe Stock search algorithm heavily weighs the FIRST 10 KEYWORDS. Place the most accurate, descriptive, and important keywords at the very beginning of the array.
-4. KEYWORD TYPES: Include who, what, where, action, mood, and technical concepts (e.g., 'copy space', 'background', 'authentic').
-5. COMPLIANCE: NO trademarks, NO brand names, NO camera brands (like Nikon, Sony). No spammy words.
+1. ZERO HALLUCINATION: You MUST NOT invent subjects, objects, or concepts that are not explicitly present in the provided prompt. The metadata MUST accurately reflect ONLY what is described.
+2. TITLE: Write a natural, descriptive title (5-10 words, max 200 chars). Include the main subject, action, and setting. Do not keyword stuff the title. Must be in English.
+3. KEYWORDS: Provide exactly 40-50 highly relevant keywords. Must be in English.
+4. KEYWORD ORDER IS CRITICAL: The Adobe Stock search algorithm heavily weighs the FIRST 10 KEYWORDS. Place the most accurate, descriptive, and important keywords at the very beginning of the array.
+5. KEYWORD TYPES: Include who, what, where, action, mood, and technical concepts (e.g., 'copy space', 'background', 'authentic').
+6. COMPLIANCE: NO trademarks, NO brand names, NO camera brands (like Nikon, Sony). No spammy words.
 
 Prompts:
 ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
@@ -1469,7 +1473,7 @@ ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
               required: ["title", "keywords"]
             }
           },
-          thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+          thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
         }
       });
 
