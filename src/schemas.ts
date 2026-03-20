@@ -69,6 +69,20 @@ export const PromptDirectSchema = z.object({
   groundingSources: z.array(z.object({
     uri: z.string(),
     title: z.string()
-  })).optional()
+  })).optional(),
+  rejectionRisk: z.union([
+    z.object({
+      riskLevel: z.enum(['Low', 'Medium', 'High']),
+      reason: z.string(),
+    }),
+    z.string().transform((val) => ({
+      riskLevel: 'Low',
+      reason: val
+    })),
+    z.array(z.any()).transform((val) => ({
+      riskLevel: 'Low',
+      reason: JSON.stringify(val)
+    }))
+  ]).optional(),
 });
 export type PromptDirect = z.infer<typeof PromptDirectSchema>;

@@ -1692,9 +1692,13 @@ export async function optimizePrompts(
       text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
       
       const parsed = extractJSON(text);
+      console.log("Parsed:", parsed);
+      
+      // Handle case where Gemini returns an array instead of the expected object
+      const dataToValidate = Array.isArray(parsed) ? { prompts: parsed } : parsed;
       
       // Validate with Zod and Critic Agent
-      const validatedData = await criticizeAnalysis(PromptDirectSchema.parse(parsed), PromptDirectSchema, settings, categoryName) as PromptDirect;
+      const validatedData = await criticizeAnalysis(PromptDirectSchema.parse(dataToValidate), PromptDirectSchema, settings, categoryName) as PromptDirect;
       
       const optimizedPrompts = validatedData.prompts;
       
