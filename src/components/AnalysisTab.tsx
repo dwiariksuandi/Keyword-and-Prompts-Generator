@@ -2,6 +2,7 @@ import React from 'react';
 import { BarChart3, Target, TrendingUp, Zap, Star, TrendingDown, Minus, Sparkles, BrainCircuit, Activity, Globe, Database, RefreshCw } from 'lucide-react';
 import { CategoryResult } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
+import LoadingIndicator from './LoadingIndicator';
 
 interface AnalysisTabProps {
   results: CategoryResult[];
@@ -98,7 +99,7 @@ export default function AnalysisTab({ results, onToggleStar, onGenerateAll, isGe
           className="flex items-center justify-center gap-4 bg-accent hover:bg-accent/90 text-slate-900 font-bold px-8 sm:px-10 py-4 sm:py-5 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-accent/20 border border-accent/20 uppercase tracking-widest text-[10px] sm:text-xs"
         >
           {isGeneratingAll ? (
-            <><Activity className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> Synchronizing...</>
+            <LoadingIndicator size="sm" text="Synchronizing..." />
           ) : (
             <><Sparkles className="w-4 h-4 sm:w-5 sm:h-5" /> Execute Full Insight</>
           )}

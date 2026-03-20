@@ -3,6 +3,7 @@ import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Z
 import { CategoryResult, AppSettings, ReferenceFile, AestheticAnalysis } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import FormField from './FormField';
+import LoadingIndicator from './LoadingIndicator';
 
 interface TopTabProps {
   keyword: string;
@@ -437,7 +438,7 @@ export default function TopTab({
               className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-2xl text-[9px] font-bold uppercase tracking-[0.3em] transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 shadow-xl"
             >
               {isAnalyzing ? (
-                <Loader2 size={16} className="animate-spin" />
+                <LoadingIndicator size="sm" />
               ) : (
                 <>
                   <Zap size={16} className="text-accent" />
@@ -454,7 +455,7 @@ export default function TopTab({
             >
               {isAnalyzing ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" />
+                  <LoadingIndicator size="sm" />
                   <span>Processing Neural Data...</span>
                 </>
               ) : (
