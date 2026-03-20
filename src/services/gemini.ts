@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
-import { KeywordAnalysisSchema, AestheticAnalysisSchema } from '../schemas';
+import { KeywordAnalysisSchema, AestheticAnalysisSchema, PromptSchema, PromptDirectSchema, type Prompt } from '../schemas';
 import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult } from '../types';
 import { logger } from './logger';
 
@@ -1082,10 +1082,13 @@ export async function generatePrompts(
 
     let text = response.text;
     if (!text) throw new Error('No response from Gemini');
-    text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
-    
+    const startTime = Date.now();
     try {
-      const components = extractJSON(text);
+      const parsed = extractJSON(text);
+      
+      // Validate with Zod and Critic Agent
+      const validatedData = await criticizeAnalysis(PromptSchema.parse(parsed), PromptSchema, settings) as Prompt;
+      
       const generatedPrompts = new Set<string>();
       const negativePrompt = settings.includeNegative ? ` ${settings.customNegativePrompt || '--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy'}` : '';
       
@@ -1094,12 +1097,12 @@ export async function generatePrompts(
       const maxAttempts = count * 5;
       
       while (generatedPrompts.size < count && attempts < maxAttempts) {
-        const subject = components.subjects[Math.floor(Math.random() * components.subjects.length)] || "subject";
-        const detail = components.details[Math.floor(Math.random() * components.details.length)] || "detail";
-        const lighting = components.lightings[Math.floor(Math.random() * components.lightings.length)] || "lighting";
-        const mood = components.moods[Math.floor(Math.random() * components.moods.length)] || "mood";
-        const style = components.styles[Math.floor(Math.random() * components.styles.length)] || "style";
-        const aspect = components.aspects[Math.floor(Math.random() * components.aspects.length)] || "16:9";
+        const subject = validatedData.subjects[Math.floor(Math.random() * validatedData.subjects.length)] || "subject";
+        const detail = validatedData.details[Math.floor(Math.random() * validatedData.details.length)] || "detail";
+        const lighting = validatedData.lightings[Math.floor(Math.random() * validatedData.lightings.length)] || "lighting";
+        const mood = validatedData.moods[Math.floor(Math.random() * validatedData.moods.length)] || "mood";
+        const style = validatedData.styles[Math.floor(Math.random() * validatedData.styles.length)] || "style";
+        const aspect = validatedData.aspects[Math.floor(Math.random() * validatedData.aspects.length)] || "16:9";
         
         let prompt = template.template
           .replace(/{subject}/g, subject)
@@ -1117,8 +1120,27 @@ export async function generatePrompts(
         generatedPrompts.add(prompt);
         attempts++;
       }
+      
+      logger.log({
+        timestamp: new Date().toISOString(),
+        functionName: 'generatePrompts',
+        input: { keyword, count },
+        output: Array.from(generatedPrompts),
+        status: 'success',
+        latencyMs: Date.now() - startTime
+      });
+      
       return Array.from(generatedPrompts);
     } catch (e) {
+      logger.log({
+        timestamp: new Date().toISOString(),
+        functionName: 'generatePrompts',
+        input: { keyword, count },
+        output: null,
+        status: 'error',
+        latencyMs: Date.now() - startTime,
+        error: e instanceof Error ? e.message : String(e)
+      });
       console.error("Failed to parse JSON response:", text);
       throw new Error("Failed to parse the response from the AI. Please try again.");
     }
@@ -1227,6 +1249,7 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
 
 export async function generatePromptsDirectly(count: number, settings: AppSettings, contentType: string, keyword?: string, referenceFile?: ReferenceFile, referenceUrl?: string) {
   const ai = getAI(settings.apiKey);
+  const startTime = Date.now();
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
     : (settings.templateId?.[contentType] || 'midjourney-photo');
@@ -1313,26 +1336,38 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
     text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
     
     const parsed = extractJSON(text);
-    let prompts: string[] = [];
-    if (Array.isArray(parsed)) {
-      prompts = parsed.map(p => typeof p === 'string' ? p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() : p);
-    } else {
-      prompts = parsed;
-    }
-
-    let groundingSources = undefined;
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-    if (chunks) {
-      const sources = chunks
-        .filter((chunk: any) => chunk.web?.uri && chunk.web?.title)
-        .map((chunk: any) => ({ uri: chunk.web.uri, title: chunk.web.title }));
-      if (sources.length > 0) {
-        groundingSources = sources;
+    
+    // Validate with Zod and Critic Agent
+    const validatedData = await criticizeAnalysis(PromptDirectSchema.parse({ prompts: Array.isArray(parsed) ? parsed : parsed.prompts }), PromptDirectSchema, settings);
+    
+    const generatedPrompts = validatedData.prompts.map(p => {
+      let prompt = p;
+      if (settings.includeNegative) {
+        prompt += ` ${settings.customNegativePrompt || '--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy'}`;
       }
-    }
-
-    return { prompts, groundingSources };
+      return prompt.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    });
+    
+    logger.log({
+      timestamp: new Date().toISOString(),
+      functionName: 'generatePromptsDirectly',
+      input: { keyword, count },
+      output: generatedPrompts,
+      status: 'success',
+      latencyMs: Date.now() - startTime
+    });
+    
+    return { prompts: generatedPrompts };
   } catch (error) {
+    logger.log({
+      timestamp: new Date().toISOString(),
+      functionName: 'generatePromptsDirectly',
+      input: { keyword, count },
+      output: null,
+      status: 'error',
+      latencyMs: Date.now() - startTime,
+      error: error instanceof Error ? error.message : String(error)
+    });
     console.error("Direct prompt generation failed:", error);
     if (error instanceof Error && error.message.includes('JSON')) {
        throw new Error("Gagal memproses hasil prompt. Silakan coba lagi.");
@@ -1367,6 +1402,7 @@ export async function optimizePrompts(
   }
 
   let allOptimizedPrompts: string[] = [];
+  const startTime = Date.now();
 
   for (const chunk of chunks) {
     const promptText = `You are a Master Neural Prompt Architect. Your task is to perform a "Hyper-Technical Optimization" on the following list of ${chunk.length} image generation prompts for Adobe Stock (${contentType}) specifically for the '${template.name}' platform.
@@ -1465,11 +1501,38 @@ export async function optimizePrompts(
       text = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
       
       const parsed = extractJSON(text);
-      if (Array.isArray(parsed)) {
-        const cleaned = parsed.map(p => typeof p === 'string' ? p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() : p);
-        allOptimizedPrompts = [...allOptimizedPrompts, ...cleaned];
-      }
+      
+      // Validate with Zod and Critic Agent
+      const validatedData = await criticizeAnalysis(PromptSchema.parse({ subjects: Array.isArray(parsed) ? parsed : parsed }), PromptSchema, settings) as Prompt;
+      
+      const optimizedPrompts = validatedData.subjects.map((p: string) => {
+        let prompt = p;
+        if (settings.includeNegative) {
+          prompt += ` ${settings.customNegativePrompt || '--no text, typography, words, letters, watermark, signature, blurry, logos, deformed, bad anatomy'}`;
+        }
+        return prompt.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+      });
+      
+      logger.log({
+        timestamp: new Date().toISOString(),
+        functionName: 'optimizePrompts',
+        input: { prompts: chunk },
+        output: optimizedPrompts,
+        status: 'success',
+        latencyMs: Date.now() - startTime
+      });
+      
+      allOptimizedPrompts = [...allOptimizedPrompts, ...optimizedPrompts];
     } catch (error) {
+      logger.log({
+        timestamp: new Date().toISOString(),
+        functionName: 'optimizePrompts',
+        input: { prompts: chunk },
+        output: null,
+        status: 'error',
+        latencyMs: Date.now() - startTime,
+        error: error instanceof Error ? error.message : String(error)
+      });
       console.error("Prompt optimization failed for chunk:", error);
       if (error instanceof Error && error.message.includes('JSON')) {
          throw new Error("Gagal memproses hasil optimasi. Silakan coba lagi.");

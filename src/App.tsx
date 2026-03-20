@@ -274,7 +274,7 @@ export default function App() {
     setIsAnalyzing(true);
     try {
       const actualCountToGenerate = Math.min(settings.promptCount, 1500);
-      const { prompts, groundingSources } = await generatePromptsDirectly(
+      const { prompts } = await generatePromptsDirectly(
         actualCountToGenerate, 
         settings, 
         contentType, 
@@ -298,7 +298,6 @@ export default function App() {
         opportunityScore: 100,
         creativeAdvice: 'Directly generated from reference.',
         generatedPrompts: prompts,
-        groundingSources: groundingSources,
         isGeneratingPrompts: true, // Temporarily true while scoring
         isUpgrading: false,
         isStarred: true,
