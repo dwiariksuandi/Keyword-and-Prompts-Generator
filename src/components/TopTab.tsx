@@ -114,19 +114,26 @@ export default function TopTab({
 
   useEffect(() => {
     if (keyword.trim().length > 0) {
-      const lowerKeyword = keyword.toLowerCase();
-      const filtered = suggestionKeywords
-        .filter(k => k.toLowerCase().includes(lowerKeyword))
-        .sort((a, b) => {
-          const aStarts = a.toLowerCase().startsWith(lowerKeyword);
-          const bStarts = b.toLowerCase().startsWith(lowerKeyword);
-          if (aStarts && !bStarts) return -1;
-          if (!aStarts && bStarts) return 1;
-          return a.localeCompare(b);
-        })
-        .slice(0, 8);
-      setFilteredSuggestions(filtered);
-      setShowSuggestions(isFocused && filtered.length > 0);
+      const parts = keyword.split(',').map(p => p.trim().toLowerCase());
+      const lastPart = parts[parts.length - 1];
+      
+      if (lastPart) {
+        const filtered = suggestionKeywords
+          .filter(k => k.toLowerCase().includes(lastPart) && !parts.includes(k.toLowerCase()))
+          .sort((a, b) => {
+            const aStarts = a.toLowerCase().startsWith(lastPart);
+            const bStarts = b.toLowerCase().startsWith(lastPart);
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            return a.localeCompare(b);
+          })
+          .slice(0, 8);
+        setFilteredSuggestions(filtered);
+        setShowSuggestions(isFocused && filtered.length > 0);
+      } else {
+        setFilteredSuggestions(trendingKeywords);
+        setShowSuggestions(isFocused);
+      }
     } else {
       setFilteredSuggestions(trendingKeywords);
       setShowSuggestions(isFocused);
@@ -241,7 +248,10 @@ export default function TopTab({
                         key={i}
                         className="w-full text-left px-8 py-5 text-sm text-slate-300 hover:bg-white/5 hover:text-accent transition-all border-b border-white/5 last:border-0 flex items-center gap-5 group"
                         onClick={() => {
-                          setKeyword(suggestion);
+                          const parts = keyword.split(',');
+                          parts.pop(); // Remove the partial last part
+                          const newKeyword = [...parts, suggestion].map(p => p.trim()).filter(Boolean).join(', ');
+                          setKeyword(newKeyword + ', ');
                           setIsFocused(false);
                           setShowSuggestions(false);
                         }}
@@ -256,6 +266,40 @@ export default function TopTab({
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Keyword Suggestions Chips */}
+            {keyword.trim().length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {suggestionKeywords
+                  .filter(k => {
+                    const lowerK = k.toLowerCase();
+                    const parts = keyword.split(',').map(p => p.trim().toLowerCase());
+                    const lastPart = parts[parts.length - 1];
+                    
+                    if (!lastPart) return false;
+                    
+                    // Match if the suggestion includes the last typed part, 
+                    // and the suggestion isn't already in the list of parts
+                    return lowerK.includes(lastPart) && !parts.includes(lowerK);
+                  })
+                  .slice(0, 6)
+                  .map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        const parts = keyword.split(',');
+                        parts.pop(); // Remove the partial last part
+                        const newKeyword = [...parts, suggestion].map(p => p.trim()).filter(Boolean).join(', ');
+                        setKeyword(newKeyword + ', ');
+                      }}
+                      className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs text-slate-300 transition-colors flex items-center gap-1.5"
+                    >
+                      <Sparkles size={12} className="text-accent" />
+                      {suggestion}
+                    </button>
+                  ))}
+              </div>
+            )}
           </FormField>
 
           {/* Reference Tools Section */}
