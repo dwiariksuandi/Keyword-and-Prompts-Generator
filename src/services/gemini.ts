@@ -382,7 +382,9 @@ export function handleGeminiError(error: any): string {
 
 function extractJSON(text: string) {
   try {
-    return JSON.parse(text);
+    // Remove markdown code block formatting if present
+    const cleanedText = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    return JSON.parse(cleanedText);
   } catch (e) {
     const startArr = text.indexOf('[');
     const endArr = text.lastIndexOf(']');
@@ -1608,7 +1610,8 @@ export async function generateAllPromptsBatch(
   totalCount: number, 
   settings: AppSettings, 
   contentType: string,
-  referenceUrl?: string
+  referenceUrl?: string,
+  progressCallback?: (progress: { current: number, total: number, message: string }) => void
 ): Promise<{ promptsMap: Map<string, string[]>, groundingSources?: { uri: string, title: string }[] }> {
   const ai = getAI(settings.apiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
@@ -1619,7 +1622,6 @@ export async function generateAllPromptsBatch(
   const countPerCategory = Math.max(1, Math.floor(totalCount / categories.length));
   const itemsNeeded = Math.max(5, Math.ceil(Math.sqrt(countPerCategory) * 1.5));
 
-  const categoryNames = categories.map(c => c.categoryName).join("', '");
   const categoryDetails = categories.map(c => 
     `- Niche: ${c.categoryName}
       Buyer Persona: ${c.buyerPersona || 'N/A'}
@@ -1629,6 +1631,8 @@ export async function generateAllPromptsBatch(
       Commercial Intent: ${c.commercialIntent || 'N/A'}
       Asset Type Suitability: ${c.assetTypeSuitability ? c.assetTypeSuitability.join(', ') : 'N/A'}`
   ).join('\n    ');
+
+  progressCallback?.({ current: 0, total: 1, message: 'Memulai pembuatan prompt...' });
 
   try {
     const response = await ai.models.generateContent({
@@ -1651,31 +1655,6 @@ export async function generateAllPromptsBatch(
       5. ${itemsNeeded} artistic styles/mediums.
       6. 5 aspect ratios (e.g., "16:9", "4:3", "1:1").
       
-      CRITICAL ADOBE STOCK RULES:
-      - ZERO HALLUCINATION & ZERO SUBJECT DRIFT: You MUST NOT invent new subjects, objects, or core concepts that are not explicitly requested by the user's input or the reference material. The core semantic meaning MUST remain identical to the user's intent.
-      - ALGORITHM OPTIMIZATION: To rank high and sell, components must lead to high commercial utility. Prioritize "authentic lifestyle", "diverse representation", "copy space", and "clean compositions".
-      - KEYWORD WEAVING & DENSITY STRATEGY: To maximize search visibility without keyword stuffing, you MUST weave 5-8 high-value commercial synonyms and LSI (Latent Semantic Indexing) keywords naturally across the components (subject, details, lighting, mood, style). 
-        - Do NOT repeat the exact same words. Use varied adjectives and nouns (e.g., instead of repeating "business", use "corporate, executive, professional, commercial, enterprise").
-        - The combined final prompt should read as a natural, highly descriptive sentence that inherently contains a dense cluster of unique, searchable stock keywords.
-      - NO SIMILAR CONTENT: Components must be vastly different to avoid rejection for similarity.
-      - ${getVariationInstructions(settings.variationLevel)}
-      - GENERATIVE AI COMPLIANCE: NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands.
-
-      Respond strictly with a JSON object following this schema:
-      {
-        "categories": [
-          {
-            "categoryName": string,
-            "subjects": string[],
-            "details": string[],
-            "lightings": string[],
-            "moods": string[],
-            "styles": string[],
-            "aspects": string[]
-          }
-        ]
-      }
-
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
       config: {
         systemInstruction: `You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. 
@@ -1688,17 +1667,12 @@ export async function generateAllPromptsBatch(
       }
     });
 
-    let text = response.text;
-    if (!text) throw new Error('No response from Gemini');
-    
-    const groundingSources = response.candidates?.[0]?.groundingMetadata?.groundingChunks?.map(chunk => chunk.web).filter(Boolean) as { uri: string, title: string }[] | undefined;
-
-    const data = extractJSON(text);
+    const result = extractJSON(response.text || '{}');
     const negativePrompt = settings.includeNegative ? ` ${settings.customNegativePrompt || '--no text, watermark, deformed, blurry, logos'}` : '';
     
     const resultsMap = new Map<string, string[]>();
     
-    for (const catData of data.categories) {
+    for (const catData of result.categories) {
       const generatedPrompts = new Set<string>();
       let attempts = 0;
       const maxAttempts = countPerCategory * 5;
@@ -1730,7 +1704,8 @@ export async function generateAllPromptsBatch(
       resultsMap.set(catData.categoryName, Array.from(generatedPrompts));
     }
     
-    return { promptsMap: resultsMap, groundingSources };
+    progressCallback?.({ current: 1, total: 1, message: 'Selesai!' });
+    return { promptsMap: resultsMap, groundingSources: result.groundingSources };
   } catch (error) {
     console.error("Batch generation failed:", error);
     throw new Error(handleGeminiError(error));

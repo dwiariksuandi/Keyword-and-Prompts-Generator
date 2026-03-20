@@ -9,12 +9,13 @@ import AnalysisTab from './components/AnalysisTab';
 import ResultsTab from './components/ResultsTab';
 import DonateTab from './components/DonateTab';
 import PromptTab from './components/PromptTab';
+import PromptWizard from './components/PromptWizard';
 import ChangelogTab from './components/ChangelogTab';
 import GuideTab from './components/GuideTab';
 import PipelineTab from './components/PipelineTab';
 import { ResultRow } from './components/ResultRow';
 
-type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline";
+type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline" | "wizard";
 
 export default function App() {
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -29,6 +30,7 @@ export default function App() {
   const [referenceFile, setReferenceFile] = useState<ReferenceFile | null>(null);
   const [referenceUrl, setReferenceUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [progress, setProgress] = useState<{ current: number, total: number, message: string } | null>(null);
   const [isPipelineRunning, setIsPipelineRunning] = useState(false);
   const [isAnalyzingAesthetic, setIsAnalyzingAesthetic] = useState(false);
   const [aestheticAnalysis, setAestheticAnalysis] = useState<AestheticAnalysis | null>(null);
@@ -711,6 +713,7 @@ export default function App() {
           </div>
           <div className="flex items-center gap-1">
             {[
+              { id: 'wizard', label: 'WIZARD' },
               { id: 'top', label: 'DASHBOARD' },
               { id: 'analysis', label: 'ANALYSIS' },
               { id: 'results', label: 'HISTORY' },
@@ -776,6 +779,17 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'wizard' && (
+          <PromptWizard 
+            keyword={keyword}
+            setKeyword={setKeyword}
+            contentType={contentType}
+            setContentType={setContentType}
+            onGenerate={handleAnalyze}
+            isGenerating={isAnalyzing}
+          />
+        )}
+        
         {activeTab === 'top' && (
           <>
             <TopTab 
