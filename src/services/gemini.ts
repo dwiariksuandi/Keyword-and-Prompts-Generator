@@ -2345,4 +2345,71 @@ ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
   return allMetadata;
 }
 
+export async function analyzeGlobalTrends(userNiches: string[], settings: AppSettings): Promise<{ niche: string, growthRate: number, isExploding: boolean, alertMessage: string }[]> {
+  const ai = getAI(settings.apiKey);
+  const prompt = `Analyze current global microstock trends for these niches: ${userNiches.join(', ')}. 
+  Compare them with real-time search data and identify if any are 'exploding' (growth > 50%).
+  Provide a growth rate and a short alert message for each.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              niche: { type: "STRING" },
+              growthRate: { type: "NUMBER" },
+              isExploding: { type: "BOOLEAN" },
+              alertMessage: { type: "STRING" }
+            },
+            required: ["niche", "growthRate", "isExploding", "alertMessage"]
+          }
+        }
+      }
+    });
+    return JSON.parse(response.text || '[]');
+  } catch (error) {
+    console.error("Trend analysis failed:", error);
+    return [];
+  }
+}
+
+export async function predictSalesPotential(prompt: string, category: string, settings: AppSettings): Promise<{ estimatedMonthlySales: number, confidenceScore: number, topSellingFactors: string[] }> {
+  const ai = getAI(settings.apiKey);
+  const systemPrompt = `You are a Sales Data Scientist for Adobe Stock. 
+  Predict the monthly sales potential (number of downloads) for an asset generated from this prompt: "${prompt}" in the category "${category}".
+  Base your prediction on current market demand, visual trends, and historical performance of similar assets.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: "Predict sales potential.",
+      config: {
+        systemInstruction: systemPrompt,
+        tools: [{ googleSearch: {} }],
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            estimatedMonthlySales: { type: "NUMBER" },
+            confidenceScore: { type: "NUMBER" },
+            topSellingFactors: { type: "ARRAY", items: { type: "STRING" } }
+          },
+          required: ["estimatedMonthlySales", "confidenceScore", "topSellingFactors"]
+        }
+      }
+    });
+    return JSON.parse(response.text || '{}');
+  } catch (error) {
+    console.error("Sales prediction failed:", error);
+    return { estimatedMonthlySales: 0, confidenceScore: 0, topSellingFactors: [] };
+  }
+}
+
 

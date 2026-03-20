@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, TrendingUp, TrendingDown, Minus, Sparkles, FileText, Zap } from 'lucide-react';
+import { Star, TrendingUp, TrendingDown, Minus, Sparkles, FileText, Zap, DollarSign, Users, Share2 } from 'lucide-react';
 import { CategoryResult } from '../types';
 import { motion } from 'motion/react';
 
@@ -47,9 +47,11 @@ interface ResultRowProps {
   result: CategoryResult;
   onToggleStar: (id: string) => void;
   onViewPrompts: (id: string) => void;
+  onPredictSales?: (id: string) => void;
+  onShare?: (id: string) => void;
 }
 
-export const ResultRow: React.FC<ResultRowProps> = ({ result, onToggleStar, onViewPrompts }) => {
+export const ResultRow: React.FC<ResultRowProps> = ({ result, onToggleStar, onViewPrompts, onPredictSales, onShare }) => {
   return (
     <motion.tr 
       initial={{ opacity: 0, x: -10 }}
@@ -123,6 +125,36 @@ export const ResultRow: React.FC<ResultRowProps> = ({ result, onToggleStar, onVi
       <td className="px-6 py-5 align-middle">
         <div className="flex justify-center">
           <OpportunityScore score={result.opportunityScore} />
+        </div>
+      </td>
+      <td className="px-6 py-5 align-middle">
+        <div className="flex flex-col items-center gap-1">
+          <button 
+            onClick={() => onPredictSales?.(result.id)}
+            className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all group/sales"
+            title="AI Sales Predictor"
+          >
+            <DollarSign size={16} className="group-hover/sales:scale-110 transition-transform" />
+          </button>
+          <span className="text-[8px] font-mono text-slate-500 uppercase tracking-tighter">Predict</span>
+        </div>
+      </td>
+      <td className="px-6 py-5 align-middle">
+        <div className="flex flex-col items-center gap-1">
+          <button 
+            onClick={() => onShare?.(result.id)}
+            className={`p-2 rounded-lg border transition-all group/share ${
+              result.isShared 
+                ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' 
+                : 'bg-white/5 text-slate-500 border-white/10 hover:text-white'
+            }`}
+            title="Collaborative Vault"
+          >
+            <Share2 size={16} className="group-hover/share:scale-110 transition-transform" />
+          </button>
+          <span className="text-[8px] font-mono text-slate-500 uppercase tracking-tighter">
+            {result.isShared ? 'Shared' : 'Private'}
+          </span>
         </div>
       </td>
       <td className="px-6 py-5 align-middle text-right">

@@ -27,6 +27,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == resource.data.userId;
     }
 
+    function isSharedWithMe() {
+      return isAuthenticated() && 
+             resource.data.isShared == true && 
+             request.auth.token.email in resource.data.sharedWith;
+    }
+
     function hasRequiredFields(fields) {
       return request.resource.data.keys().hasAll(fields);
     }
@@ -59,11 +65,16 @@ service cloud.firestore {
       allow update: if isOwner(userId) && isValidUser(request.resource.data);
       
       match /results/{resultId} {
-        allow read: if isOwner(userId);
+        allow read: if isOwner(userId) || isSharedWithMe();
         allow create: if isOwner(userId) && isValidResult(request.resource.data);
         allow update: if isOwner(userId) && isValidResult(request.resource.data);
         allow delete: if isOwner(userId);
       }
+    }
+
+    match /global_trends/{trendId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Hanya admin yang bisa menulis tren global
     }
 
     // Default Deny

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, polishMetadata, generateImagePreview, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt, refinePrompts, analyzeCompetitorIntel } from './services/gemini';
+import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, polishMetadata, generateImagePreview, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt, refinePrompts, analyzeCompetitorIntel, analyzeGlobalTrends, predictSalesPotential } from './services/gemini';
 import { validateAdobeMetadata } from './services/validator';
 import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis } from './types';
 import Settings from './components/Settings';
@@ -16,7 +16,7 @@ import GuideTab from './components/GuideTab';
 import PipelineTab from './components/PipelineTab';
 import IntelligenceTab from './components/IntelligenceTab';
 import { ResultRow } from './components/ResultRow';
-import { Eye, LogIn, LogOut, User as UserIcon, Cloud, CloudOff } from 'lucide-react';
+import { Eye, LogIn, LogOut, User as UserIcon, Cloud, CloudOff, ShieldAlert, Users, TrendingUp, DollarSign } from 'lucide-react';
 import { 
   auth, 
   db, 
@@ -100,6 +100,11 @@ export default function App() {
   // Filters and Sort
   const [sortBy, setSortBy] = useState("opportunity");
   const [filterCompetition, setFilterCompetition] = useState("all");
+  
+  // New Features State
+  const [globalTrends, setGlobalTrends] = useState<{ niche: string, growthRate: number, isExploding: boolean, alertMessage: string }[]>([]);
+  const [isCheckingTrends, setIsCheckingTrends] = useState(false);
+  const [showTrendAlerts, setShowTrendAlerts] = useState(false);
 
   const [errorModal, setErrorModal] = useState<{show: boolean, title: string, message: string}>({
     show: false,
@@ -107,6 +112,30 @@ export default function App() {
     message: ''
   });
   const [toast, setToast] = useState<{show: boolean, message: string}>({show: false, message: ''});
+
+  // Watchdog Trend Checker
+  useEffect(() => {
+    if (user && results.length > 0 && settings.apiKey) {
+      const checkTrends = async () => {
+        setIsCheckingTrends(true);
+        try {
+          const niches = results.map(r => r.categoryName);
+          const trends = await analyzeGlobalTrends(niches, settings);
+          setGlobalTrends(trends);
+          if (trends.some(t => t.isExploding)) {
+            setShowTrendAlerts(true);
+          }
+        } catch (error) {
+          console.error("Trend watchdog failed:", error);
+        } finally {
+          setIsCheckingTrends(false);
+        }
+      };
+      
+      const timer = setTimeout(checkTrends, 5000); // Check after 5s of inactivity
+      return () => clearTimeout(timer);
+    }
+  }, [results, user, settings.apiKey]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -765,6 +794,64 @@ export default function App() {
       });
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleShareResult = async (id: string) => {
+    if (!user) {
+      setToast({ show: true, message: "Please login to share results." });
+      return;
+    }
+    
+    const result = results.find(r => r.id === id);
+    if (!result) return;
+
+    const newSharedState = !result.isShared;
+    const email = prompt("Enter email to share with (leave empty to toggle private):");
+    
+    try {
+      const updatedResult = {
+        ...result,
+        isShared: newSharedState,
+        sharedWith: email ? [...(result.sharedWith || []), email] : (result.sharedWith || [])
+      };
+      
+      setResults(prev => prev.map(r => r.id === id ? updatedResult : r));
+      await saveResultToCloud(updatedResult);
+      setToast({ show: true, message: newSharedState ? "Result shared successfully!" : "Result set to private." });
+    } catch (error) {
+      console.error("Sharing failed:", error);
+    }
+  };
+
+  const handlePredictSales = async (id: string) => {
+    if (!settings.apiKey) {
+      setToast({ show: true, message: "API Key required for prediction." });
+      return;
+    }
+
+    const result = results.find(r => r.id === id);
+    if (!result) return;
+
+    setToast({ show: true, message: "AI is analyzing market data..." });
+    
+    try {
+      const prediction = await predictSalesPotential(result.categoryName, result.contentType, settings);
+      const updatedResult = {
+        ...result,
+        salesData: prediction
+      };
+      
+      setResults(prev => prev.map(r => r.id === id ? updatedResult : r));
+      await saveResultToCloud(updatedResult);
+      
+      setErrorModal({
+        show: true,
+        title: "Sales Potential Analysis",
+        message: `Estimated Monthly Sales: ${prediction.estimatedMonthlySales} downloads\nConfidence: ${prediction.confidenceScore}%\n\nKey Factors:\n${prediction.topSellingFactors.map(f => `• ${f}`).join('\n')}`
+      });
+    } catch (error) {
+      console.error("Prediction failed:", error);
     }
   };
 
@@ -1431,6 +1518,8 @@ export default function App() {
                           <th className="px-6 py-4 font-bold">Competition</th>
                           <th className="px-6 py-4 font-bold">Trend</th>
                           <th className="px-6 py-4 font-bold text-center">Opportunity</th>
+                          <th className="px-6 py-4 font-bold text-center">Sales</th>
+                          <th className="px-6 py-4 font-bold text-center">Vault</th>
                           <th className="px-6 py-4 font-bold text-right">Protocol</th>
                         </tr>
                       </thead>
@@ -1441,6 +1530,8 @@ export default function App() {
                             result={result} 
                             onToggleStar={handleToggleStar}
                             onViewPrompts={handleViewPrompts}
+                            onPredictSales={handlePredictSales}
+                            onShare={handleShareResult}
                           />
                         ))}
                       </tbody>
@@ -1543,6 +1634,51 @@ export default function App() {
                 >
                   DISMISS
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Trend Watchdog Alerts */}
+      <AnimatePresence>
+        {showTrendAlerts && globalTrends.length > 0 && (
+          <div className="fixed bottom-24 right-8 z-[100] w-full max-w-sm">
+            <motion.div
+              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 50, scale: 0.9 }}
+              className="glass-panel border-cyan-500/30 p-6 shadow-2xl relative overflow-hidden group"
+            >
+              <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500" />
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center flex-shrink-0 border border-cyan-500/20">
+                  <TrendingUp className="w-5 h-5 text-cyan-400 animate-pulse" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="text-white font-bold text-sm tracking-tight">Watchdog Alert</h4>
+                    <button 
+                      onClick={() => setShowTrendAlerts(false)}
+                      className="text-slate-500 hover:text-white transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-3">Global Market Intelligence</p>
+                  
+                  <div className="space-y-3">
+                    {globalTrends.filter(t => t.isExploding).map((trend, idx) => (
+                      <div key={idx} className="bg-white/5 rounded-xl p-3 border border-white/5 hover:border-cyan-500/30 transition-all">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold text-white">{trend.niche}</span>
+                          <span className="text-[10px] font-black text-emerald-400">+{trend.growthRate}%</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-relaxed italic">"{trend.alertMessage}"</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>

@@ -38,9 +38,33 @@
         "competitionScore": { "type": "number" },
         "generatedPrompts": { "type": "array", "items": { "type": "string" } },
         "metadata": { "type": "array" },
+        "isShared": { "type": "boolean", "description": "Status berbagi folder." },
+        "sharedWith": { "type": "array", "items": { "type": "string" }, "description": "Daftar email yang diberi akses." },
+        "salesData": { "$ref": "SalesPrediction" },
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "categoryName", "timestamp"]
+    },
+    "SalesPrediction": {
+      "title": "Sales Prediction",
+      "description": "Prediksi potensi penjualan berbasis AI.",
+      "type": "object",
+      "properties": {
+        "estimatedMonthlySales": { "type": "number" },
+        "confidenceScore": { "type": "number" },
+        "topSellingFactors": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "GlobalTrend": {
+      "title": "Global Trend",
+      "description": "Data tren global yang dipantau oleh Watchdog.",
+      "type": "object",
+      "properties": {
+        "niche": { "type": "string" },
+        "growthRate": { "type": "number" },
+        "isExploding": { "type": "boolean" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "firestore": {
@@ -51,6 +75,10 @@
     "/users/{userId}/results/{resultId}": {
       "schema": "ResearchResult",
       "description": "Koleksi hasil riset milik pengguna."
+    },
+    "/global_trends/{trendId}": {
+      "schema": "GlobalTrend",
+      "description": "Koleksi tren global publik."
     }
   }
 }

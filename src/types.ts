@@ -95,6 +95,13 @@ export interface CategoryResult {
   metadata?: { title: string; description?: string; keywords: string[] }[];
   groundingSources?: { uri: string; title: string }[];
   competitorIntel?: CompetitorAnalysis;
+  isShared?: boolean;
+  sharedWith?: string[];
+  salesData?: {
+    estimatedMonthlySales: number;
+    confidenceScore: number;
+    topSellingFactors: string[];
+  };
 }
 
 export interface HistoryItem {
