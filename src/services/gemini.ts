@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import { KeywordAnalysisSchema, AestheticAnalysisSchema, PromptSchema, PromptDirectSchema, type Prompt } from '../schemas';
 import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult } from '../types';
 import { logger } from './logger';
@@ -29,7 +30,7 @@ async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings,
       
       Respond ONLY with valid JSON following the schema.`,
       responseMimeType: "application/json",
-      responseSchema: schema,
+      responseSchema: zodToJsonSchema(schema) as any,
       thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
     }
   });
@@ -386,16 +387,43 @@ function extractJSON(text: string) {
     const cleanedText = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
     return JSON.parse(cleanedText);
   } catch (e) {
-    const startArr = text.indexOf('[');
-    const endArr = text.lastIndexOf(']');
-    const startObj = text.indexOf('{');
-    const endObj = text.lastIndexOf('}');
+    // Try to find the first complete JSON block
+    let start = -1;
+    let end = -1;
     
-    if (startArr !== -1 && endArr !== -1 && (startObj === -1 || startArr < startObj)) {
-      return JSON.parse(text.substring(startArr, endArr + 1));
-    } else if (startObj !== -1 && endObj !== -1) {
-      return JSON.parse(text.substring(startObj, endObj + 1));
+    const startArr = text.indexOf('[');
+    const startObj = text.indexOf('{');
+    
+    if (startArr !== -1 && (startObj === -1 || startArr < startObj)) {
+        start = startArr;
+        // Find matching ']'
+        let count = 0;
+        for (let i = start; i < text.length; i++) {
+            if (text[i] === '[') count++;
+            if (text[i] === ']') count--;
+            if (count === 0) {
+                end = i;
+                break;
+            }
+        }
+    } else if (startObj !== -1) {
+        start = startObj;
+        // Find matching '}'
+        let count = 0;
+        for (let i = start; i < text.length; i++) {
+            if (text[i] === '{') count++;
+            if (text[i] === '}') count--;
+            if (count === 0) {
+                end = i;
+                break;
+            }
+        }
     }
+    
+    if (start !== -1 && end !== -1) {
+        return JSON.parse(text.substring(start, end + 1));
+    }
+    
     throw new Error("Could not find valid JSON in response");
   }
 }
@@ -413,6 +441,44 @@ export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean
   } catch (error) {
     console.error("API Key validation failed:", error);
     return { isValid: false, error: handleGeminiError(error) };
+  }
+}
+
+export async function fetchTrendingKeywords(keyword: string, settings: AppSettings): Promise<string[]> {
+  const ai = getAI(settings.apiKey);
+  
+  const promptText = `Analyze the keyword '${keyword}' and provide 5-10 highly relevant, trending, and commercially valuable microstock keyword suggestions for Adobe Stock. 
+  
+  CRITICAL: Use Google Search to ensure these keywords are currently trending or in high demand.
+  
+  Respond strictly with a JSON array of strings.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3-flash-preview',
+      contents: [{ text: promptText }],
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: "ARRAY",
+          items: { type: "STRING" },
+        },
+      },
+    });
+
+    return extractJSON(response.text || '[]');
+  } catch (error) {
+    logger.log({
+      timestamp: new Date().toISOString(),
+      functionName: 'fetchTrendingKeywords',
+      input: { keyword },
+      output: null,
+      status: 'error',
+      latencyMs: 0,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    return [];
   }
 }
 
@@ -532,16 +598,16 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
         tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseSchema: {
-          type: Type.OBJECT,
+          type: "OBJECT",
           properties: {
-            detectedContentType: { type: Type.STRING },
-            colorPalette: { type: Type.ARRAY, items: { type: Type.STRING } },
-            lighting: { type: Type.STRING },
-            mood: { type: Type.STRING },
-            artisticStyle: { type: Type.STRING },
-            composition: { type: Type.STRING },
-            suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
-            marketGaps: { type: Type.ARRAY, items: { type: Type.STRING } }
+            detectedContentType: { type: "STRING" },
+            colorPalette: { type: "ARRAY", items: { type: "STRING" } },
+            lighting: { type: "STRING" },
+            mood: { type: "STRING" },
+            artisticStyle: { type: "STRING" },
+            composition: { type: "STRING" },
+            suggestions: { type: "ARRAY", items: { type: "STRING" } },
+            marketGaps: { type: "ARRAY", items: { type: "STRING" } }
           },
           required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions", "marketGaps"]
         },
@@ -634,16 +700,16 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
         tools: [{ googleSearch: {} }, { urlContext: {} }],
         responseMimeType: "application/json",
         responseSchema: {
-          type: Type.OBJECT,
+          type: "OBJECT",
           properties: {
-            detectedContentType: { type: Type.STRING },
-            colorPalette: { type: Type.ARRAY, items: { type: Type.STRING } },
-            lighting: { type: Type.STRING },
-            mood: { type: Type.STRING },
-            artisticStyle: { type: Type.STRING },
-            composition: { type: Type.STRING },
-            suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
-            marketGaps: { type: Type.ARRAY, items: { type: Type.STRING } }
+            detectedContentType: { type: "STRING" },
+            colorPalette: { type: "ARRAY", items: { type: "STRING" } },
+            lighting: { type: "STRING" },
+            mood: { type: "STRING" },
+            artisticStyle: { type: "STRING" },
+            composition: { type: "STRING" },
+            suggestions: { type: "ARRAY", items: { type: "STRING" } },
+            marketGaps: { type: "ARRAY", items: { type: "STRING" } }
           },
           required: ["detectedContentType", "colorPalette", "lighting", "mood", "artisticStyle", "composition", "suggestions", "marketGaps"]
         },
@@ -707,6 +773,12 @@ export async function analyzeKeyword(keyword: string, contentType: string, categ
 ${getContentTypeInstructions(contentType)}
 
 CRITICAL: You MUST use Google Search to find REAL, CURRENT data, trends, and search volumes for Adobe Stock and the microstock industry. Do not rely solely on your internal knowledge; ground your analysis in actual, up-to-date market realities to avoid bias.
+
+VISUAL GAP ANALYSIS: For each potential niche, you MUST perform a simulated "Visual Gap Analysis":
+1. Search for the top-performing assets in this niche on Adobe Stock (via Google Search).
+2. Analyze their visual characteristics: lighting, composition, subject diversity, and aesthetic style.
+3. Identify what is MISSING or outdated in these top assets (e.g., "too generic", "lacks diverse representation", "outdated lighting/aesthetic", "missing modern technology context").
+4. Your "creativeAdvice" MUST directly address these gaps to provide a competitive advantage.
 
 Respond strictly with a JSON array of objects. Each object MUST follow this schema:
 {
@@ -777,10 +849,18 @@ For each niche, you MUST provide realistic, data-backed market metrics based on 
 13. assetTypeSuitability: Array of best-suited asset types (e.g., ["Photo", "Vector", "Video"]).
 14. buyerPersona: A specific description of the target buyer.
 15. visualTrends: An array of 3-5 specific 2026 visual trends dominating this niche.
-16. creativeAdvice: Highly specific art direction based on current design trends.
+16. creativeAdvice: Highly specific art direction based on current design trends AND your Visual Gap Analysis.
 17. metadataStrategy: Specific advice on structuring the Title (50-60 chars, front-loaded with primary intent) and Description (140-160 chars, radical specificity) for this niche.
 
 CRITICAL: Ensure mathematical and logical consistency. If competition is 95/100 (oversaturated), the opportunity score MUST be low (under 40) unless the volume is exceptionally massive. Prioritize finding "Blue Ocean" niches (High Opportunity).
+
+SELF-CORRECTION PROTOCOL: Before finalizing each niche analysis, evaluate it against these criteria:
+1. Is the niche specific enough to be a "Blue Ocean"? (Avoid generic categories).
+2. Are the metrics (volume, competition, opportunity) logically consistent?
+3. Does the creative advice directly address the identified "Visual Gap"?
+4. Is the metadata strategy front-loaded with primary intent?
+5. If it fails any check, refine the analysis immediately before finalizing the JSON output.
+
 Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
   const parts: any[] = [{ text: promptText }];
@@ -928,21 +1008,21 @@ export async function scorePrompts(
         tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
-          type: Type.ARRAY,
+          type: "ARRAY",
           items: {
-            type: Type.OBJECT,
+            type: "OBJECT",
             properties: {
-              prompt: { type: Type.STRING },
-              score: { type: Type.INTEGER },
-              density: { type: Type.INTEGER },
-              clarity: { type: Type.INTEGER },
-              specificity: { type: Type.INTEGER },
-              adherence: { type: Type.NUMBER },
-              feedback: { type: Type.STRING },
-              keywordFeedback: { type: Type.STRING },
-              clarityFeedback: { type: Type.STRING },
-              specificityFeedback: { type: Type.STRING },
-              adherenceFeedback: { type: Type.STRING }
+              prompt: { type: "STRING" },
+              score: { type: "INTEGER" },
+              density: { type: "INTEGER" },
+              clarity: { type: "INTEGER" },
+              specificity: { type: "INTEGER" },
+              adherence: { type: "NUMBER" },
+              feedback: { type: "STRING" },
+              keywordFeedback: { type: "STRING" },
+              clarityFeedback: { type: "STRING" },
+              specificityFeedback: { type: "STRING" },
+              adherenceFeedback: { type: "STRING" }
             },
             required: ["prompt", "score", "density", "clarity", "specificity", "adherence", "feedback", "keywordFeedback", "clarityFeedback", "specificityFeedback", "adherenceFeedback"]
           }
@@ -1247,15 +1327,23 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
       contents: { parts: partsSmall },
       config: {
         systemInstruction: `You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. 
+        
         CORE ENGINE: ${settings.model || 'gemini-3-flash-preview'}.
         SYNTHESIS BLUEPRINT: ${template.name}.
         ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
-        ADOBE STOCK ALGORITHM: Focus on high-demand commercial utility and technical perfection.`,
+        ADOBE STOCK ALGORITHM: Focus on high-demand commercial utility and technical perfection.
+        
+        SELF-CORRECTION PROTOCOL: Before finalizing each prompt, evaluate it against these criteria:
+        1. Does it strictly avoid trademarked/copyrighted elements?
+        2. Is it free of any literal text, watermarks, or signatures?
+        3. Does it include high-value commercial synonyms and LSI keywords?
+        4. Is the composition and lighting technically precise and commercially viable?
+        5. If it fails any check, refine the prompt immediately before finalizing the JSON output.`,
         tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING },
+          type: "ARRAY",
+          items: { type: "STRING" },
         },
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       },
@@ -1525,8 +1613,8 @@ export async function optimizePrompts(
           tools: [{ googleSearch: {} }],
           responseMimeType: 'application/json',
           responseSchema: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
+            type: "ARRAY",
+            items: { type: "STRING" },
           },
           thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
         },
@@ -1632,10 +1720,11 @@ export async function generateAllPromptsBatch(
       Asset Type Suitability: ${c.assetTypeSuitability ? c.assetTypeSuitability.join(', ') : 'N/A'}`
   ).join('\n    ');
 
+  let response: any;
   progressCallback?.({ current: 0, total: 1, message: 'Memulai pembuatan prompt...' });
 
   try {
-    const response = await ai.models.generateContent({
+    response = await ai.models.generateContent({
       model: settings.model || 'gemini-3-flash-preview',
       contents: `Generate rich prompt components for multiple niches based on the core keyword '${keyword}'. The target asset type is '${contentType}'.
       ${referenceUrl ? `\nReference URL to analyze for context: ${referenceUrl}` : ''}
@@ -1667,6 +1756,7 @@ export async function generateAllPromptsBatch(
       }
     });
 
+    console.log("Gemini raw response:", response.text);
     const result = extractJSON(response.text || '{}');
     const negativePrompt = settings.includeNegative ? ` ${settings.customNegativePrompt || '--no text, watermark, deformed, blurry, logos'}` : '';
     
@@ -1708,7 +1798,7 @@ export async function generateAllPromptsBatch(
     return { promptsMap: resultsMap, groundingSources: result.groundingSources };
   } catch (error) {
     console.error("Batch generation failed:", error);
-    throw new Error(handleGeminiError(error));
+    throw new Error(`Batch generation failed. Raw response: ${response?.text || 'No response'}. Error: ${error}`);
   }
 }
 
@@ -1757,12 +1847,12 @@ ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
           tools: [{ googleSearch: {} }],
           responseMimeType: 'application/json',
           responseSchema: {
-            type: Type.ARRAY,
+            type: "ARRAY",
             items: {
-              type: Type.OBJECT,
+              type: "OBJECT",
               properties: {
-                title: { type: Type.STRING },
-                keywords: { type: Type.ARRAY, items: { type: Type.STRING } }
+                title: { type: "STRING" },
+                keywords: { type: "ARRAY", items: { type: "STRING" } }
               },
               required: ["title", "keywords"]
             }

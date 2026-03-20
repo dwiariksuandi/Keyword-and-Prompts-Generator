@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronRight, ChevronLeft, Sparkles, Target, Zap, CheckCircle2 } from 'lucide-react';
+import { AppSettings } from '../types';
+import { fetchTrendingKeywords } from '../services/gemini';
 
 interface PromptWizardProps {
   keyword: string;
@@ -9,10 +11,25 @@ interface PromptWizardProps {
   setContentType: React.Dispatch<React.SetStateAction<string>>;
   onGenerate: () => void;
   isGenerating: boolean;
+  settings: AppSettings;
 }
 
-export default function PromptWizard({ keyword, setKeyword, contentType, setContentType, onGenerate, isGenerating }: PromptWizardProps) {
+export default function PromptWizard({ keyword, setKeyword, contentType, setContentType, onGenerate, isGenerating, settings }: PromptWizardProps) {
   const [step, setStep] = useState(1);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      if (keyword.trim().length > 2) {
+        const results = await fetchTrendingKeywords(keyword, settings);
+        setSuggestions(results);
+      } else {
+        setSuggestions([]);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(handler);
+  }, [keyword, settings]);
 
   const steps = [
     { id: 1, title: 'Input Niche', description: 'Define your creative concept' },
@@ -60,6 +77,19 @@ export default function PromptWizard({ keyword, setKeyword, contentType, setCont
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
             />
+            {suggestions.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {suggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setKeyword(prev => prev ? `${prev}, ${s}` : s)}
+                    className="px-3 py-1 bg-white/5 hover:bg-accent/20 rounded-full text-xs text-slate-300 hover:text-accent transition-all border border-white/5"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

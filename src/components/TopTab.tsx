@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap, Upload, Image as ImageIcon, Film, X, Link as LinkIcon, Loader2, Cpu, Globe, Activity, Database, Terminal, Palette, Layers, Box, ChevronDown, ChevronUp, Type } from 'lucide-react';
 import { CategoryResult, AppSettings, ReferenceFile, AestheticAnalysis } from '../types';
+import { fetchTrendingKeywords } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
 import FormField from './FormField';
 import LoadingIndicator from './LoadingIndicator';
@@ -26,6 +27,7 @@ interface TopTabProps {
   isAnalyzingAesthetic: boolean;
   aestheticAnalysis: AestheticAnalysis | null;
   setAestheticAnalysis: React.Dispatch<React.SetStateAction<AestheticAnalysis | null>>;
+  settings: AppSettings;
 }
 
 const suggestionKeywords = [
@@ -78,13 +80,34 @@ export default function TopTab({
   sortBy, setSortBy, filterCompetition, setFilterCompetition,
   referenceFile, setReferenceFile,
   referenceUrl, setReferenceUrl,
-  onAnalyzeAesthetic, isAnalyzingAesthetic, aestheticAnalysis, setAestheticAnalysis
+  onAnalyzeAesthetic, isAnalyzingAesthetic, aestheticAnalysis, setAestheticAnalysis,
+  settings
 }: TopTabProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [realtimeSuggestions, setRealtimeSuggestions] = useState<string[]>([]);
   const [isAestheticExpanded, setIsAestheticExpanded] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      if (keyword.trim().length > 2) {
+        const results = await fetchTrendingKeywords(keyword, settings);
+        setRealtimeSuggestions(results);
+      } else {
+        setRealtimeSuggestions([]);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(handler);
+  }, [keyword, settings]);
+
+  useEffect(() => {
+    const allSuggestions = [...suggestionKeywords, ...realtimeSuggestions];
+    const filtered = allSuggestions.filter(s => s.toLowerCase().includes(keyword.toLowerCase()));
+    setFilteredSuggestions(filtered.slice(0, 10));
+  }, [keyword, realtimeSuggestions]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

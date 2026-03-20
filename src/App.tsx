@@ -787,6 +787,7 @@ export default function App() {
             setContentType={setContentType}
             onGenerate={handleAnalyze}
             isGenerating={isAnalyzing}
+            settings={settings}
           />
         )}
         
@@ -813,6 +814,7 @@ export default function App() {
               setReferenceFile={setReferenceFile}
               referenceUrl={referenceUrl}
               setReferenceUrl={setReferenceUrl}
+              settings={settings}
             />
 
             {results.length > 0 && (
