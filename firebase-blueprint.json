@@ -55,17 +55,6 @@
         "topSellingFactors": { "type": "array", "items": { "type": "string" } }
       }
     },
-    "GlobalTrend": {
-      "title": "Global Trend",
-      "description": "Data tren global yang dipantau oleh Watchdog.",
-      "type": "object",
-      "properties": {
-        "niche": { "type": "string" },
-        "growthRate": { "type": "number" },
-        "isExploding": { "type": "boolean" },
-        "lastUpdated": { "type": "string", "format": "date-time" }
-      }
-    },
     "SalesRecord": {
       "title": "Sales Record",
       "description": "Data penjualan asli dari Adobe Stock CSV.",
@@ -93,10 +82,6 @@
     "/users/{userId}/sales_records/{recordId}": {
       "schema": "SalesRecord",
       "description": "Koleksi data penjualan asli pengguna."
-    },
-    "/global_trends/{trendId}": {
-      "schema": "GlobalTrend",
-      "description": "Koleksi tren global publik."
     }
   }
 }

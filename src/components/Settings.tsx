@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Key, Save, Check, AlertCircle, LogOut, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe, Zap, TrendingUp } from 'lucide-react';
+import { Key, Save, Check, AlertCircle, LogOut, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe, Zap, TrendingUp, Eye, EyeOff } from 'lucide-react';
 import { AppSettings, PromptTemplate } from '../types';
 import { promptTemplates } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'motion/react';
 interface SettingsProps {
   settings: AppSettings;
   setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
-  onEndSession: () => void;
   onSavePreferences?: () => void;
   prefsSaved?: boolean;
   prefsValidationMessage?: { type: 'success' | 'error', text: string } | null;
@@ -18,7 +17,6 @@ const CONTENT_TYPES = ['Photo', 'Illustration', 'Vector', 'Background', 'Video',
 export default function Settings({ 
   settings, 
   setSettings, 
-  onEndSession,
   onSavePreferences,
   prefsSaved,
   prefsValidationMessage
@@ -74,48 +72,6 @@ export default function Settings({
       </div>
 
       <div className="space-y-8">
-        {/* API Key Section */}
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className="glass-panel p-8"
-        >
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
-              <Key className="w-6 h-6 text-accent" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white font-display">Neural Link</h2>
-              <p className="text-sm text-slate-500 font-light">Active session authentication status.</p>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center gap-4 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.05)]">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="font-medium tracking-wide">Secure Connection Established</span>
-            </div>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onEndSession}
-              className="w-full flex items-center justify-center gap-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold py-4 rounded-2xl transition-all border border-red-500/20"
-            >
-              <LogOut size={20} />
-              Terminate Session
-            </motion.button>
-            
-            <div className="p-4 bg-slate-900/40 rounded-xl border border-white/5">
-              <p className="text-[11px] text-slate-500 leading-relaxed font-light">
-                <strong className="text-slate-400 uppercase tracking-widest mr-2">Quota Protocol:</strong> 
-                Gemini API limits are tied to your Google Cloud Project. Creating new keys within the same project will not reset quotas. For fresh allocation, initialize a new project in Google AI Studio.
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
         {/* Model Selection */}
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
@@ -327,43 +283,6 @@ export default function Settings({
             </div>
 
             <div className="pt-8 border-t border-white/5 space-y-6">
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
-                      <Zap size={18} className="text-cyan-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white tracking-tight">Auto-Pilot Production</h3>
-                      <p className="text-xs text-slate-500 font-light">Auto-generate prompts for exploding trends.</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSettings({ ...settings, autoPilotEnabled: !settings.autoPilotEnabled })}
-                    className={`w-14 h-7 rounded-full transition-all relative p-1 ${
-                      settings.autoPilotEnabled ? "bg-cyan-500" : "bg-slate-800"
-                    }`}
-                  >
-                    <motion.div
-                      animate={{ x: settings.autoPilotEnabled ? 28 : 0 }}
-                      className="w-5 h-5 rounded-full bg-white shadow-lg"
-                    />
-                  </button>
-                </div>
-                {settings.autoPilotEnabled && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="pl-14 p-4 bg-cyan-500/5 border border-cyan-500/10 rounded-2xl"
-                  >
-                    <p className="text-[10px] text-cyan-400 leading-relaxed font-medium">
-                      <TrendingUp size={10} className="inline mr-1" /> 
-                      Watchdog akan otomatis memicu produksi prompt saat mendeteksi niche yang sedang meledak.
-                    </p>
-                  </motion.div>
-                )}
-              </div>
-
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">

@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronUp, Filter, BarChart3, Target, Lightbulb, Wand2,
   Heart, ExternalLink, Coffee, CreditCard, Gift
 } from "lucide-react"
+import Settings from "../../src/components/Settings"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -656,70 +657,6 @@ export default function KeywordResearchApp() {
               </div>
 
               <div className="space-y-6">
-                {/* API Key Section */}
-                <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-teal-500/20 flex items-center justify-center">
-                      <Key className="w-5 h-5 text-teal-400" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-white">API Key</h2>
-                      <p className="text-sm text-gray-400">Enter your Google Gemini API key</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <Input
-                        type={showApiKey ? "text" : "password"}
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="Enter your API key..."
-                        className="bg-[#0d1117] border-[#30363d] text-white pr-20 h-12"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowApiKey(!showApiKey)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white hover:bg-transparent"
-                      >
-                        {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
-                    </div>
-
-                    <Button
-                      onClick={handleSaveApiKey}
-                      disabled={!apiKey.trim()}
-                      className="bg-teal-500 hover:bg-teal-600 text-white w-full h-11"
-                    >
-                      {apiKeySaved ? (
-                        <>
-                          <Check className="w-4 h-4 mr-2" />
-                          Saved!
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-4 h-4 mr-2" />
-                          Save API Key
-                        </>
-                      )}
-                    </Button>
-
-                    <p className="text-xs text-gray-500">
-                      Get your API key from{" "}
-                      <a
-                        href="https://makersuite.google.com/app/apikey"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-teal-400 hover:underline"
-                      >
-                        Google AI Studio
-                      </a>
-                    </p>
-                  </div>
-                </div>
-
                 {/* Model Selection */}
                 <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-6">
                   <h2 className="text-lg font-semibold text-white mb-4">AI Model</h2>

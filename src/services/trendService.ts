@@ -11,6 +11,7 @@ import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import { AppSettings } from '../types';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { z } from 'zod';
+import { generateContentWithFallback, getAI } from './gemini';
 
 function zodToJsonSchemaNoSchema(schema: any) {
   const jsonSchema = zodToJsonSchema(schema) as any;
@@ -47,7 +48,7 @@ export const TrendSchema = z.object({
 export const TrendListSchema = z.array(TrendSchema);
 
 export async function getTrendForecast(niche: string | undefined, settings: AppSettings): Promise<Trend[]> {
-  const ai = new GoogleGenAI({ apiKey: settings.apiKey });
+  const ai = getAI();
   
   const promptText = `Perform an advanced, data-driven Market Trend Intelligence analysis for the niche: '${niche || 'general microstock'}'.
   
@@ -66,7 +67,7 @@ export async function getTrendForecast(niche: string | undefined, settings: AppS
   Respond strictly with a JSON array of 5-8 objects. Ensure all fields are present and valid.`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithFallback(ai, {
       model: settings.model || 'gemini-3.1-pro-preview',
       contents: [{ text: promptText }],
       config: {
@@ -85,7 +86,7 @@ export async function getTrendForecast(niche: string | undefined, settings: AppS
 }
 
 export async function refineTrendForecast(previousTrends: Trend[], feedback: string, settings: AppSettings): Promise<Trend[]> {
-  const ai = new GoogleGenAI({ apiKey: settings.apiKey });
+  const ai = getAI();
   
   const promptText = `Review and refine the following trend analysis: ${JSON.stringify(previousTrends)}.
   
@@ -107,7 +108,7 @@ export async function refineTrendForecast(previousTrends: Trend[], feedback: str
   Respond strictly with a JSON array of 5-8 objects. Ensure all fields are present and valid.`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithFallback(ai, {
       model: settings.model || 'gemini-3.1-pro-preview',
       contents: [{ text: promptText }],
       config: {

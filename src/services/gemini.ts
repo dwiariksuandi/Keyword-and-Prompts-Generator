@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { KeywordAnalysisSchema, AestheticAnalysisSchema, PromptSchema, PromptDirectSchema, TrendForecastSchema, type Prompt, type PromptDirect } from '../schemas';
-import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult, CompetitorAnalysis, GlobalTrend, SalesRecord, TrendForecast } from '../types';
+import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult, CompetitorAnalysis, SalesRecord, TrendForecast } from '../types';
 import { logger } from './logger';
 
 function zodToJsonSchemaNoSchema(schema: any) {
@@ -14,11 +14,43 @@ function zodToJsonSchemaNoSchema(schema: any) {
 
 // ... (rest of the file)
 
+
+export async function generateContentWithFallback(
+  ai: any,
+  params: any,
+  retries = 3,
+  delay = 1000
+): Promise<any> {
+  try {
+    return await ai.models.generateContent(params);
+  } catch (error: any) {
+    const errorString = error instanceof Error ? error.message : String(error);
+    if ((errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) && retries > 0) {
+      console.warn(`Quota exceeded, retrying in ${delay}ms... (${retries} retries left)`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return await generateContentWithFallback(ai, params, retries - 1, delay * 2);
+    }
+    
+    // Fallback to flash model if still failing
+    if (errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) {
+      console.warn("Quota exceeded for model, falling back to flash model");
+      const fallbackParams = { ...params, model: 'gemini-3-flash-preview' };
+      try {
+        return await ai.models.generateContent(fallbackParams);
+      } catch (fallbackError) {
+        throw new Error(handleGeminiError(fallbackError));
+      }
+    }
+    
+    throw new Error(handleGeminiError(error));
+  }
+}
+
 async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings, categoryName: string): Promise<T> {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   const prompt = `Data: ${JSON.stringify(data)}`;
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithFallback(ai, {
     model: settings.model || 'gemini-3.1-pro-preview',
     contents: [{ text: prompt }],
     config: {
@@ -298,15 +330,14 @@ export const promptTemplates: PromptTemplate[] = [
   }
 ];
 
-export const getAI = (apiKey?: string) => {
+export const getAI = () => {
   const envApiKey = typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : (import.meta as any).env?.VITE_GEMINI_API_KEY;
-  const finalApiKey = apiKey?.trim() || envApiKey || '';
   
-  if (!finalApiKey) {
-    throw new Error("API key is missing. Please enter your Gemini API key in the settings.");
+  if (!envApiKey) {
+    throw new Error("GEMINI_API_KEY environment variable is missing.");
   }
   
-  return new GoogleGenAI({ apiKey: finalApiKey });
+  return new GoogleGenAI({ apiKey: envApiKey });
 };
 
 export function handleGeminiError(error: any): string {
@@ -467,24 +498,8 @@ export function extractJSON(text: string) {
   }
 }
 
-export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean; error?: string }> {
-  try {
-    const ai = getAI(apiKey);
-    // A simple, fast call to verify the key
-    await ai.models.generateContent({
-      model: 'gemini-3.1-pro-preview',
-      contents: 'hi',
-      config: { maxOutputTokens: 1 }
-    });
-    return { isValid: true };
-  } catch (error) {
-    console.error("API Key validation failed:", error);
-    return { isValid: false, error: handleGeminiError(error) };
-  }
-}
-
 export async function fetchTrendingKeywords(keyword: string, settings: AppSettings, contentType: string): Promise<{ keyword: string; relevanceScore: number }[]> {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   
   const promptText = `Analyze the keyword '${keyword}' for the content type '${contentType}' and provide 5-10 highly relevant, trending, and commercially valuable microstock keyword suggestions for the GLOBAL market on Adobe Stock.
 
@@ -552,7 +567,7 @@ export function generateNanoBananaPrompt(
 }
 
 export async function refinePrompts(prompts: string[], contentType: string, settings: AppSettings): Promise<string[]> {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   
   const promptText = `Review the following ${prompts.length} image generation prompts for Adobe Stock commercial viability:
   ${prompts.map((p, i) => `${i + 1}. ${p}`).join('\n')}
@@ -668,7 +683,7 @@ function getVariationInstructions(level: 'Low' | 'Medium' | 'High'): string {
 }
 
 export async function analyzeAestheticReference(referenceFile: ReferenceFile, settings: AppSettings, contentType: string): Promise<AestheticAnalysis> {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   
   const promptText = `Analyze the provided image reference and extract its "Aesthetic DNA" optimized for the '${contentType}' category. 
   Focus on identifying the core visual elements that define its unique style and suggest how to incorporate them into high-quality image generation prompts for Adobe Stock.
@@ -694,7 +709,7 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
 
   const startTime = Date.now();
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithFallback(ai, {
       model: referenceFile ? 'gemini-3.1-flash-image-preview' : (settings.model || 'gemini-3.1-pro-preview'),
       contents: [
         { text: promptText },
@@ -775,7 +790,7 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
 }
 
 export async function analyzeUrlAesthetic(url: string, settings: AppSettings, contentType: string): Promise<AestheticAnalysis> {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   
   const promptText = `Analyze the content and visual style of this specific URL: ${url}
   You MUST use the Google Search tool to fetch and deeply analyze the content of this URL.
@@ -877,7 +892,7 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
 }
 
 export async function analyzeKeyword(keyword: string, contentType: string, categoryName: string, settings: AppSettings, referenceFile?: ReferenceFile, referenceUrl?: string) {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   
   const promptText = `Perform an exhaustive, data-driven microstock market analysis targeting the asset type: '${contentType}'.
 
@@ -1068,7 +1083,7 @@ export async function scorePrompts(
   visualTrends?: string[],
   creativeAdvice?: string
 ): Promise<PromptScore[]> {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   
   // Chunking to avoid token limits (max 15 per request for scoring)
   const chunkSize = 15;
@@ -1195,7 +1210,7 @@ export async function generatePrompts(
   assetTypeSuitability?: string[],
   progressCallback?: (progress: { current: number, total: number, message: string }) => void
 ) {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
     : (settings.templateId?.[contentType] || 'midjourney-photo');
@@ -1291,10 +1306,10 @@ export async function generatePrompts(
         SYNTHESIS BLUEPRINT: You are generating components for the ${template.name} platform using its specific structural logic.
         ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}
         ADOBE STOCK ALGORITHM: Prioritize high-demand commercial themes, authentic representation, and technical excellence.
-        
-        CHAIN-OF-THOUGHT: Before generating the final JSON, perform a step-by-step analysis of the market saturation, visual gaps, and commercial utility of your generated prompts within a <thinking> block.
-        Respond with the <thinking> block followed by ONLY valid JSON.`,
+        Respond ONLY with valid JSON.`,
         tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json",
+        responseSchema: zodToJsonSchemaNoSchema(PromptSchema) as any,
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
@@ -1494,7 +1509,7 @@ export async function generatePromptsDirectly(
   referenceUrl?: string,
   progressCallback?: (progress: { current: number, total: number, message: string }) => void
 ) {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   const startTime = Date.now();
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
@@ -1589,6 +1604,8 @@ export async function generatePromptsDirectly(
         systemInstruction: `You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components.
         Respond ONLY with valid JSON.`,
         tools: tools,
+        responseMimeType: "application/json",
+        responseSchema: zodToJsonSchemaNoSchema(PromptSchema) as any,
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
@@ -1604,16 +1621,19 @@ export async function generatePromptsDirectly(
     const prompts: string[] = [];
     const usedCombinations = new Set();
     
+    // Fallback for empty arrays to prevent crashes
+    const getRand = (arr: any[]) => (arr && arr.length > 0) ? arr[Math.floor(Math.random() * arr.length)] : '';
+    
     while (prompts.length < count) {
-      const s = components.subjects[Math.floor(Math.random() * components.subjects.length)];
-      const a = components.actions[Math.floor(Math.random() * components.actions.length)];
-      const c = components.contexts[Math.floor(Math.random() * components.contexts.length)];
-      const cam = components.cinematography[Math.floor(Math.random() * components.cinematography.length)];
-      const l = components.lightings[Math.floor(Math.random() * components.lightings.length)];
-      const m = components.moods[Math.floor(Math.random() * components.moods.length)];
-      const st = components.styles[Math.floor(Math.random() * components.styles.length)];
-      const asp = components.aspects[Math.floor(Math.random() * components.aspects.length)];
-      const snd = contentType === 'Video' ? components.soundstage[Math.floor(Math.random() * components.soundstage.length)] : '';
+      const s = getRand(components.subjects);
+      const a = getRand(components.actions);
+      const c = getRand(components.contexts);
+      const cam = getRand(components.cinematography);
+      const l = getRand(components.lightings);
+      const m = getRand(components.moods);
+      const st = getRand(components.styles);
+      const asp = getRand(components.aspects);
+      const snd = contentType === 'Video' ? getRand(components.soundstage || []) : '';
       
       const comboKey = `${s}-${a}-${c}-${cam}-${l}-${m}-${st}-${asp}-${snd}`;
       if (!usedCombinations.has(comboKey)) {
@@ -1722,6 +1742,8 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
         ADOBE STOCK ALGORITHM: Extract aesthetic essence and apply it to commercially viable concepts.
         Respond ONLY with valid JSON.`,
         tools: tools,
+        responseMimeType: "application/json",
+        responseSchema: zodToJsonSchemaNoSchema(PromptDirectSchema) as any,
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
@@ -1799,7 +1821,7 @@ export async function optimizePrompts(
   creativeAdvice?: string,
   competitorIntel?: CompetitorAnalysis
 ) {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
     : (settings.templateId?.[contentType] || 'midjourney-photo');
@@ -1989,7 +2011,7 @@ export async function analyzeCompetitorIntel(
   contentType: string, 
   settings: AppSettings
 ): Promise<CompetitorAnalysis> {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   
   const promptText = `Perform a deep "Competitor Intelligence & Market Takeover" analysis for the niche '${niche}' on Adobe Stock (${contentType}).
   
@@ -2042,6 +2064,59 @@ export async function analyzeCompetitorIntel(
     config: {
       systemInstruction: "You are a Senior Market Intelligence Analyst for Adobe Stock. Your goal is to provide actionable, data-driven insights to help a contributor outperform their top competitors. Respond ONLY with valid JSON.",
       tools: [{ googleSearch: {} }],
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          competitorName: { type: "STRING" },
+          niche: { type: "STRING" },
+          aestheticDNA: {
+            type: "OBJECT",
+            properties: {
+              lighting: { type: "STRING" },
+              composition: { type: "STRING" },
+              colorPalette: { type: "ARRAY", items: { type: "STRING" } },
+              technicalSpecs: { type: "STRING" }
+            },
+            required: ["lighting", "composition", "colorPalette", "technicalSpecs"]
+          },
+          keywordHijack: {
+            type: "OBJECT",
+            properties: {
+              winningKeywords: { type: "ARRAY", items: { type: "STRING" } },
+              missedGaps: { type: "ARRAY", items: { type: "STRING" } }
+            },
+            required: ["winningKeywords", "missedGaps"]
+          },
+          counterStrategy: {
+            type: "OBJECT",
+            properties: {
+              dominantStyle: { type: "STRING" },
+              recommendedPivot: { type: "STRING" },
+              pivotReason: { type: "STRING" }
+            },
+            required: ["dominantStyle", "recommendedPivot", "pivotReason"]
+          },
+          metadataBenchmark: {
+            type: "OBJECT",
+            properties: {
+              titleScore: { type: "NUMBER" },
+              descriptionScore: { type: "NUMBER" },
+              recommendations: { type: "ARRAY", items: { type: "STRING" } }
+            },
+            required: ["titleScore", "descriptionScore", "recommendations"]
+          },
+          marketVelocity: {
+            type: "OBJECT",
+            properties: {
+              status: { type: "STRING" },
+              trendAlert: { type: "STRING" }
+            },
+            required: ["status", "trendAlert"]
+          }
+        },
+        required: ["competitorName", "niche", "aestheticDNA", "keywordHijack", "counterStrategy", "metadataBenchmark", "marketVelocity"]
+      },
       thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
     }
   });
@@ -2066,7 +2141,7 @@ export async function generateAllPromptsBatch(
   referenceUrl?: string,
   progressCallback?: (progress: { current: number, total: number, message: string }) => void
 ): Promise<{ promptsMap: Map<string, string[]>, groundingSources?: { uri: string, title: string }[] }> {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
     : (settings.templateId?.[contentType] || 'nanobanana-photo');
@@ -2109,13 +2184,16 @@ export async function generateAllPromptsBatch(
       
       CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for these niches. Ensure your generated components reflect REAL market demand and current design trends, specifically tailoring the subjects, environments, and overall vibe to appeal directly to the Buyer Persona and Creative Advice provided for each niche.
 
-      For EACH niche, provide:
-      1. ${itemsNeeded} highly distinct subjects.
-      2. ${itemsNeeded} specific and varied details/actions/camera angles. ${contentType === 'Video' ? 'Include Cinematography (Camera movement, Composition, Lens & focus) and Action.' : 'Include Action, Location/context, and Composition.'}
-      3. ${itemsNeeded} distinct lighting styles.
-      4. ${itemsNeeded} mood/atmosphere descriptions. ${contentType === 'Video' ? 'Include Soundstage details (Dialogue, SFX, Ambient noise).' : ''}
-      5. ${itemsNeeded} artistic styles/mediums.
-      6. 5 aspect ratios (e.g., "16:9", "4:3", "1:1").
+      For EACH niche, provide an object in a JSON array with the following structure:
+      {
+        "nicheName": "The name of the niche",
+        "subjects": ["subject1", "subject2", ...],
+        "details_actions_composition": ["detail1", "detail2", ...],
+        "lighting_styles": ["lighting1", "lighting2", ...],
+        "mood_atmosphere": ["mood1", "mood2", ...],
+        "artistic_styles_mediums": ["style1", "style2", ...],
+        "aspect_ratios": ["16:9", "4:3", ...]
+      }
       
       Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.`,
       config: {
@@ -2125,17 +2203,36 @@ export async function generateAllPromptsBatch(
         ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
         ADOBE STOCK ALGORITHM: Use real-world data to inform your aesthetic choices. Respond ONLY with valid JSON.`,
         tools: referenceUrl ? [{ googleSearch: {} }, { urlContext: {} }] : [{ googleSearch: {} }],
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              nicheName: { type: "STRING" },
+              subjects: { type: "ARRAY", items: { type: "STRING" } },
+              details_actions_composition: { type: "ARRAY", items: { type: "STRING" } },
+              lighting_styles: { type: "ARRAY", items: { type: "STRING" } },
+              mood_atmosphere: { type: "ARRAY", items: { type: "STRING" } },
+              artistic_styles_mediums: { type: "ARRAY", items: { type: "STRING" } },
+              aspect_ratios: { type: "ARRAY", items: { type: "STRING" } }
+            },
+            required: ["nicheName", "subjects", "details_actions_composition", "lighting_styles", "mood_atmosphere", "artistic_styles_mediums", "aspect_ratios"]
+          }
+        },
         thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
       }
     });
 
     console.log("Gemini raw response:", response.text);
-    const result = extractJSON(response.text || '{}');
+    const result = extractJSON(response.text || '[]');
     const negativePrompt = settings.includeNegative ? ` ${settings.customNegativePrompt || '--no text, watermark, deformed, blurry, logos'}` : '';
     
     const resultsMap = new Map<string, string[]>();
     
-    for (const [nicheName, catData] of Object.entries(result)) {
+    for (const catData of result) {
+      if (!catData || typeof catData !== 'object' || !catData.nicheName) continue;
+      const nicheName = catData.nicheName;
       const generatedPrompts = new Set<string>();
       let attempts = 0;
       const maxAttempts = countPerCategory * 5;
@@ -2179,7 +2276,7 @@ export async function generateAllPromptsBatch(
     }
     
     progressCallback?.({ current: 1, total: 1, message: 'Selesai!' });
-    return { promptsMap: resultsMap, groundingSources: result.groundingSources };
+    return { promptsMap: resultsMap, groundingSources: result.groundingSources || [] };
   } catch (error) {
     console.error("Batch generation failed:", error);
     throw new Error(`Batch generation failed. Raw response: ${response?.text || 'No response'}. Error: ${error}`);
@@ -2192,7 +2289,7 @@ export async function polishMetadata(
   settings: AppSettings,
   contentType: string
 ) {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   
   try {
     const prompt = `You are an Adobe Stock SEO & CTR Optimization Expert. Your task is to "Polish" the following metadata sets for maximum search visibility and click-through rate.
@@ -2242,8 +2339,8 @@ export async function polishMetadata(
   }
 }
 
-export async function generateImagePreview(prompt: string, apiKey: string) {
-  const ai = getAI(apiKey);
+export async function generateImagePreview(prompt: string) {
+  const ai = getAI();
   
   try {
     const response = await ai.models.generateContent({
@@ -2275,7 +2372,7 @@ export async function generateAdobeStockMetadata(
   settings: AppSettings,
   contentType: string
 ): Promise<{ title: string, keywords: string[] }[]> {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   
   // Chunk prompts to avoid token limits (max 10 per request)
   const chunkSize = 10;
@@ -2346,7 +2443,7 @@ ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
 }
 
 export async function forecastSeasonalTrends(settings: AppSettings, historicalSales: SalesRecord[]): Promise<TrendForecast[]> {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   const currentDate = new Date().toISOString();
   
   const promptText = `As an Elite Market Analyst for Adobe Stock, perform an ADVANCED TREND FORECASTING for the next 3-6 months.
@@ -2391,43 +2488,8 @@ export async function forecastSeasonalTrends(settings: AppSettings, historicalSa
   }
 }
 
-export async function analyzeGlobalTrends(userNiches: string[], settings: AppSettings): Promise<{ niche: string, growthRate: number, isExploding: boolean, alertMessage: string }[]> {
-  const ai = getAI(settings.apiKey);
-  const prompt = `Analyze current global microstock trends for these niches: ${userNiches.join(', ')}. 
-  Compare them with real-time search data and identify if any are 'exploding' (growth > 50%).
-  Provide a growth rate and a short alert message for each.`;
-
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              niche: { type: "STRING" },
-              growthRate: { type: "NUMBER" },
-              isExploding: { type: "BOOLEAN" },
-              alertMessage: { type: "STRING" }
-            },
-            required: ["niche", "growthRate", "isExploding", "alertMessage"]
-          }
-        }
-      }
-    });
-    return JSON.parse(response.text || '[]');
-  } catch (error) {
-    console.error("Trend analysis failed:", error);
-    return [];
-  }
-}
-
 export async function predictSalesPotential(prompt: string, category: string, settings: AppSettings, historicalSales?: SalesRecord[]): Promise<{ estimatedMonthlySales: number, confidenceScore: number, topSellingFactors: string[] }> {
-  const ai = getAI(settings.apiKey);
+  const ai = getAI();
   
   const salesContext = historicalSales && historicalSales.length > 0 
     ? `\n\nHistorical Sales Context (Use this to refine prediction):\n${historicalSales.slice(0, 5).map(s => `- Asset: ${s.title}, Downloads: ${s.downloads}, Earnings: $${s.earnings}`).join('\n')}`

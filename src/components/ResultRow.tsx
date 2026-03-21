@@ -170,19 +170,11 @@ export const ResultRow: React.FC<ResultRowProps> = ({ result, onToggleStar, onVi
         >
           {result.generatedPrompts.length > 0 ? (
             <span className="flex items-center gap-2">
-              {result.isAutoPilotActive ? (
-                <><Loader2 size={14} className="animate-spin" /> Auto-Pilot</>
-              ) : (
-                <><FileText size={14} /> Assets</>
-              )}
+              <FileText size={14} /> Assets
             </span>
           ) : (
             <span className="flex items-center gap-2">
-              {result.isAutoPilotActive ? (
-                <><Loader2 size={14} className="animate-spin" /> Auto-Pilot</>
-              ) : (
-                <><Zap size={14} /> Synthesize</>
-              )}
+              <Zap size={14} /> Synthesize
             </span>
           )}
         </motion.button>

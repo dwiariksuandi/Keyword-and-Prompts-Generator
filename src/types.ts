@@ -102,23 +102,6 @@ export interface CategoryResult {
     confidenceScore: number;
     topSellingFactors: string[];
   };
-  isAutoPilotActive?: boolean;
-}
-
-export interface GlobalTrend {
-  niche: string;
-  growth: number;
-  demand: 'low' | 'medium' | 'high' | 'exploding';
-  competition: 'low' | 'medium' | 'high';
-  keywords: string[];
-  reason: string;
-}
-
-export interface TrendAlert {
-  id: string;
-  trend: GlobalTrend;
-  timestamp: string;
-  isRead: boolean;
 }
 
 export interface SalesRecord {
@@ -162,7 +145,6 @@ export interface TrendForecast {
 }
 
 export interface AppSettings {
-  apiKey: string;
   model: string;
   templateId: string | Record<string, string>;
   promptCount: number;
@@ -171,6 +153,5 @@ export interface AppSettings {
   customNegativePrompt?: string;
   autoSave: boolean;
   variationLevel: 'Low' | 'Medium' | 'High';
-  autoPilotEnabled: boolean;
   competitorIntel?: CompetitorAnalysis;
 }

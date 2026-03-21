@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Key, ArrowRight, Loader2, AlertCircle, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, validateApiKey, handleGeminiError, generateAdobeStockMetadata, polishMetadata, generateImagePreview, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt, refinePrompts, analyzeCompetitorIntel, analyzeGlobalTrends, predictSalesPotential, forecastSeasonalTrends } from './services/gemini';
+import { analyzeKeyword, generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, handleGeminiError, generateAdobeStockMetadata, polishMetadata, generateImagePreview, scorePrompts, analyzeAestheticReference, analyzeUrlAesthetic, refinePrompt, refinePrompts, analyzeCompetitorIntel, predictSalesPotential, forecastSeasonalTrends } from './services/gemini';
 import { validateAdobeMetadata } from './services/validator';
-import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis, SalesRecord, GlobalTrend, TrendAlert, TrendForecast } from './types';
+import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis, SalesRecord, TrendForecast } from './types';
 import Settings from './components/Settings';
 import TopTab from './components/TopTab';
 import AnalysisTab from './components/AnalysisTab';
@@ -51,11 +51,6 @@ const WORKFLOW_STEPS = [
 ];
 
 export default function App() {
-  const [isSessionActive, setIsSessionActive] = useState(false);
-  const [tempApiKey, setTempApiKey] = useState('');
-  const [isValidating, setIsValidating] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
-
   const [activeTab, setActiveTab] = useState<Tab>("top");
   const [selectedPromptCategoryId, setSelectedPromptCategoryId] = useState<string | null>(null);
   const [keyword, setKeyword] = useState('');
@@ -78,7 +73,6 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   
   const [settings, setSettings] = useState<AppSettings>({
-    apiKey: '',
     model: 'gemini-3.1-pro-preview',
     templateId: {
       'Photo': 'nanobanana-photo',
@@ -94,8 +88,7 @@ export default function App() {
     includeNegative: true,
     customNegativePrompt: '--no text, typography, words, letters, watermark, signature, logos, brands, trademark, copyright, recognizable characters, real people, celebrity, deformed, bad anatomy, extra limbs, missing fingers, mutated hands, poorly drawn face, asymmetrical eyes, blurry, out of focus, noise, artifacts, low resolution, pixelated, overexposed, underexposed, artificial look, plastic skin',
     autoSave: true,
-    variationLevel: 'Medium',
-    autoPilotEnabled: false
+    variationLevel: 'Medium'
   });
 
   const [prefsSaved, setPrefsSaved] = useState(false);
@@ -106,9 +99,6 @@ export default function App() {
   const [filterCompetition, setFilterCompetition] = useState("all");
   
   // New Features State
-  const [globalTrends, setGlobalTrends] = useState<{ niche: string, growthRate: number, isExploding: boolean, alertMessage: string }[]>([]);
-  const [isCheckingTrends, setIsCheckingTrends] = useState(false);
-  const [showTrendAlerts, setShowTrendAlerts] = useState(false);
   const [salesRecords, setSalesRecords] = useState<SalesRecord[]>([]);
   const [isParsingSales, setIsParsingSales] = useState(false);
   const [forecasts, setForecasts] = useState<TrendForecast[]>([]);
@@ -143,72 +133,12 @@ export default function App() {
     lastSavedResults.current = currentResultsStr;
   }, [results, user, settings.autoSave, isSyncing]);
 
-  // Watchdog Trend Checker
+  const resultsRef = React.useRef(results);
   useEffect(() => {
-    if (user && results.length > 0 && settings.apiKey) {
-      const checkTrends = async () => {
-        setIsCheckingTrends(true);
-        try {
-          const niches = results.map(r => r.categoryName);
-          const trends = await analyzeGlobalTrends(niches, settings);
-          setGlobalTrends(trends);
-          
-          if (trends.some(t => t.isExploding)) {
-            setShowTrendAlerts(true);
-            
-            // Auto-Pilot Production
-            if (settings.autoPilotEnabled) {
-              const explodingNiches = trends.filter(t => t.isExploding);
-              for (const trend of explodingNiches) {
-                const targetResult = results.find(r => r.categoryName === trend.niche);
-                if (targetResult && !targetResult.isAutoPilotActive) {
-                  handleAutoPilot(targetResult.id);
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.error("Trend watchdog failed:", error);
-        } finally {
-          setIsCheckingTrends(false);
-        }
-      };
-      
-      const timer = setTimeout(checkTrends, 5000); // Check after 5s of inactivity
-      return () => clearTimeout(timer);
-    }
-  }, [results, user, settings.apiKey, settings.autoPilotEnabled]);
+    resultsRef.current = results;
+  }, [results]);
 
-  const handleAutoPilot = async (id: string) => {
-    const result = results.find(r => r.id === id);
-    if (!result || result.isAutoPilotActive) return;
-
-    setResults(prev => prev.map(r => r.id === id ? { ...r, isAutoPilotActive: true } : r));
-    setToast({ show: true, message: `Auto-Pilot: Memulai produksi untuk ${result.categoryName}...` });
-
-    try {
-      const { prompts } = await generatePromptsDirectly(
-        settings.promptCount, 
-        settings, 
-        result.contentType, 
-        result.categoryName
-      );
-
-      const updatedResult = {
-        ...result,
-        generatedPrompts: prompts,
-        isAutoPilotActive: false,
-        isGeneratingPrompts: false
-      };
-
-      setResults(prev => prev.map(r => r.id === id ? updatedResult : r));
-      await saveResultToCloud(updatedResult);
-      setToast({ show: true, message: `Auto-Pilot: Berhasil memproduksi ${prompts.length} prompt untuk ${result.categoryName}!` });
-    } catch (error) {
-      console.error("Auto-pilot failed:", error);
-      setResults(prev => prev.map(r => r.id === id ? { ...r, isAutoPilotActive: false } : r));
-    }
-  };
+  const nichesString = JSON.stringify(results.map(r => r.categoryName).sort());
 
   const handleParseSalesCSV = async (file: File) => {
     if (!user) return;
@@ -284,11 +214,9 @@ export default function App() {
           } else {
             const cloudData = userDoc.data();
             if (cloudData.settings) {
-              // Only sync settings if local apiKey is empty or cloud has newer settings
               setSettings(prev => ({ 
                 ...prev, 
-                ...cloudData.settings, 
-                apiKey: prev.apiKey || cloudData.settings.apiKey 
+                ...cloudData.settings 
               }));
             }
           }
@@ -379,7 +307,6 @@ export default function App() {
   };
 
   const handleGenerateForecast = async () => {
-    if (!settings.apiKey) return;
     setIsForecasting(true);
     setToast({ show: true, message: "Menganalisis pola musiman & sinyal pasar global..." });
     try {
@@ -398,11 +325,14 @@ export default function App() {
     if (!user) return;
     try {
       const resultDocRef = doc(db, 'users', user.uid, 'results', result.id);
-      await setDoc(resultDocRef, {
+      // Sanitize the object to remove undefined fields
+      const dataToSave = JSON.parse(JSON.stringify({
         ...result,
         userId: user.uid,
         timestamp: new Date().toISOString()
-      }, { merge: true });
+      }));
+      
+      await setDoc(resultDocRef, dataToSave, { merge: true });
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/results/${result.id}`);
     }
@@ -419,7 +349,7 @@ export default function App() {
     const savedPrefs = localStorage.getItem('app_preferences');
     
     setSettings(s => {
-      const newSettings = { ...s, apiKey: '' }; // Always reset API key on load
+      const newSettings = { ...s };
       if (savedPrefs) {
         try {
           const parsed = JSON.parse(savedPrefs);
@@ -516,31 +446,6 @@ export default function App() {
     }
   };
 
-  const handleStartSession = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!tempApiKey.trim()) return;
-    
-    setIsValidating(true);
-    setValidationError(null);
-    
-    const validationResult = await validateApiKey(tempApiKey);
-    setIsValidating(false);
-
-    if (validationResult.isValid) {
-      setSettings(prev => ({ ...prev, apiKey: tempApiKey }));
-      setIsSessionActive(true);
-    } else {
-      setValidationError(validationResult.error || 'Invalid API Key. Please check and try again.');
-    }
-  };
-
-  const handleEndSession = () => {
-    setSettings(prev => ({ ...prev, apiKey: '' }));
-    setTempApiKey('');
-    setIsSessionActive(false);
-    setActiveTab('top');
-  };
-
   const handleSavePreferences = () => {
     const prefsToSave = {
       model: settings.model,
@@ -622,7 +527,7 @@ export default function App() {
   };
 
   const handleQuickGenerate = async () => {
-    if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) return;
+    if (!keyword?.trim() && !referenceFile && !referenceUrl?.trim()) return;
     setIsAnalyzing(true);
     setProgress({ current: 0, total: 100, message: 'Memulai Quick Intelligence...' });
     
@@ -882,7 +787,7 @@ export default function App() {
     setVisualizedImage(null);
     
     try {
-      const imageUrl = await generateImagePreview(prompt, settings.apiKey);
+      const imageUrl = await generateImagePreview(prompt);
       setVisualizedImage(imageUrl);
     } catch (error) {
       console.error("Visualization failed:", error);
@@ -986,11 +891,6 @@ export default function App() {
   };
 
   const handlePredictSales = async (id: string) => {
-    if (!settings.apiKey) {
-      setToast({ show: true, message: "API Key required for prediction." });
-      return;
-    }
-
     const result = results.find(r => r.id === id);
     if (!result) return;
 
@@ -1382,104 +1282,6 @@ export default function App() {
     }
   }).filter(c => filterCompetition === "all" || c.competition === filterCompetition);
 
-  if (!isSessionActive) {
-    return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4 selection:bg-cyan-500/30 relative overflow-hidden font-sans">
-        {/* Atmospheric Background */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/10 blur-[120px] rounded-full" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 blur-[120px] rounded-full" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-[0.03] pointer-events-none" 
-               style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-        </div>
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full glass-panel rounded-[2rem] p-10 shadow-2xl relative z-10 overflow-hidden scanline"
-        >
-          <div className="relative mb-10 text-center">
-            <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="w-20 h-20 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 rounded-3xl flex items-center justify-center mb-6 mx-auto futuristic-glow"
-            >
-              <Sparkles className="w-10 h-10 text-cyan-400" />
-            </motion.div>
-            
-            <h1 className="text-3xl font-display font-bold text-white mb-2 tracking-tight">
-              MICROSTOCK<span className="text-cyan-400">.</span>AI
-            </h1>
-            <p className="text-slate-400 text-sm font-light leading-relaxed max-w-[280px] mx-auto">
-              Advanced market intelligence for elite stock contributors.
-            </p>
-          </div>
-          
-          <form onSubmit={handleStartSession} className="space-y-8">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center px-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Access Protocol</label>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-[10px] text-cyan-500/70 hover:text-cyan-400 transition-colors uppercase tracking-wider">Get Key</a>
-              </div>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Key className="w-4 h-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
-                </div>
-                <input
-                  type="password"
-                  value={tempApiKey}
-                  onChange={(e) => setTempApiKey(e.target.value)}
-                  placeholder="Enter Gemini API Key"
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl text-white pl-11 pr-12 py-4 outline-none focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-600 font-mono text-sm"
-                />
-                {tempApiKey && (
-                  <button
-                    type="button"
-                    onClick={() => setTempApiKey('')}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-white transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              
-              {validationError && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="flex items-start gap-3 p-4 bg-red-500/5 border border-red-500/20 rounded-2xl text-red-400 text-xs"
-                >
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <p className="leading-relaxed">{validationError}</p>
-                </motion.div>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={!tempApiKey.trim() || isValidating}
-              className="w-full group relative flex items-center justify-center gap-3 bg-white text-black font-bold py-4 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="relative z-10 flex items-center gap-2 group-hover:text-white transition-colors">
-                {isValidating ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> INITIALIZING...</>
-                ) : (
-                  <>AUTHORIZE ACCESS <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
-                )}
-              </span>
-            </button>
-            
-            <p className="text-[10px] text-center text-slate-600 uppercase tracking-widest">
-              Secure Environment • v1.3.0
-            </p>
-          </form>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-cyan-500/30 relative">
       {/* Global Background Elements */}
@@ -1626,23 +1428,10 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'forecast' && (
-          <TrendForecastTab 
-            forecasts={forecasts}
-            onRefresh={handleGenerateForecast}
-            isRefreshing={isForecasting}
-            onSelectNiche={(niche) => {
-              setKeyword(niche);
-              setActiveTab('top');
-            }}
-          />
-        )}
-
         {activeTab === 'settings' && (
           <Settings 
             settings={settings} 
             setSettings={setSettings} 
-            onEndSession={handleEndSession}
             onSavePreferences={handleSavePreferences}
             prefsSaved={prefsSaved}
             prefsValidationMessage={prefsValidationMessage}
@@ -1831,51 +1620,6 @@ export default function App() {
                 >
                   DISMISS
                 </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Trend Watchdog Alerts */}
-      <AnimatePresence>
-        {showTrendAlerts && globalTrends.length > 0 && (
-          <div className="fixed bottom-24 right-8 z-[100] w-full max-w-sm">
-            <motion.div
-              initial={{ opacity: 0, x: 50, scale: 0.9 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 50, scale: 0.9 }}
-              className="glass-panel border-cyan-500/30 p-6 shadow-2xl relative overflow-hidden group"
-            >
-              <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500" />
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center flex-shrink-0 border border-cyan-500/20">
-                  <TrendingUp className="w-5 h-5 text-cyan-400 animate-pulse" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="text-white font-bold text-sm tracking-tight">Watchdog Alert</h4>
-                    <button 
-                      onClick={() => setShowTrendAlerts(false)}
-                      className="text-slate-500 hover:text-white transition-colors"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-3">Global Market Intelligence</p>
-                  
-                  <div className="space-y-3">
-                    {globalTrends.filter(t => t.isExploding).map((trend, idx) => (
-                      <div key={idx} className="bg-white/5 rounded-xl p-3 border border-white/5 hover:border-cyan-500/30 transition-all">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-bold text-white">{trend.niche}</span>
-                          <span className="text-[10px] font-black text-emerald-400">+{trend.growthRate}%</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 leading-relaxed italic">"{trend.alertMessage}"</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
             </motion.div>
           </div>

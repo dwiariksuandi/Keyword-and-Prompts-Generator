@@ -96,7 +96,7 @@ export default function TopTab({
 
   useEffect(() => {
     const handler = setTimeout(async () => {
-      if (keyword.trim().length > 2) {
+      if (keyword?.trim()?.length > 2) {
         const results = await fetchTrendingKeywords(keyword, settings, contentType);
         setRealtimeSuggestions(results);
       } else {
@@ -106,15 +106,6 @@ export default function TopTab({
 
     return () => clearTimeout(handler);
   }, [keyword, settings, contentType]);
-
-  useEffect(() => {
-    const allSuggestions = [
-      ...suggestionKeywords.map(s => ({ keyword: s, relevanceScore: 5 })),
-      ...realtimeSuggestions
-    ];
-    const filtered = allSuggestions.filter(s => s.keyword.toLowerCase().includes(keyword.toLowerCase()));
-    setFilteredSuggestions(filtered.sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, 10));
-  }, [keyword, realtimeSuggestions]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -144,21 +135,31 @@ export default function TopTab({
   };
 
   useEffect(() => {
-    if (keyword.trim().length > 0) {
-      const parts = keyword.split(',').map(p => p.trim().toLowerCase());
+    if (keyword?.trim()?.length > 0) {
+      const parts = (keyword || '').split(',').map(p => p.trim().toLowerCase());
       const lastPart = parts[parts.length - 1];
       
       if (lastPart) {
-        const filtered = suggestionKeywords
-          .filter(k => k.toLowerCase().includes(lastPart) && !parts.includes(k.toLowerCase()))
+        const allSuggestions = [
+          ...suggestionKeywords.map(s => ({ keyword: s, relevanceScore: 5 })),
+          ...realtimeSuggestions
+        ];
+        
+        const filtered = allSuggestions
+          .filter(s => s.keyword.toLowerCase().includes(lastPart) && !parts.includes(s.keyword.toLowerCase()))
           .sort((a, b) => {
-            const aStarts = a.toLowerCase().startsWith(lastPart);
-            const bStarts = b.toLowerCase().startsWith(lastPart);
+            if (b.relevanceScore !== a.relevanceScore) {
+              return b.relevanceScore - a.relevanceScore;
+            }
+            const aStarts = a.keyword.toLowerCase().startsWith(lastPart);
+            const bStarts = b.keyword.toLowerCase().startsWith(lastPart);
             if (aStarts && !bStarts) return -1;
             if (!aStarts && bStarts) return 1;
-            return a.localeCompare(b);
+            return a.keyword.localeCompare(b.keyword);
           })
-          .slice(0, 8);
+          .slice(0, 10)
+          .map(s => s.keyword);
+          
         setFilteredSuggestions(filtered);
         setShowSuggestions(isFocused && filtered.length > 0);
       } else {
@@ -169,7 +170,7 @@ export default function TopTab({
       setFilteredSuggestions(trendingKeywords);
       setShowSuggestions(isFocused);
     }
-  }, [keyword, isFocused]);
+  }, [keyword, isFocused, realtimeSuggestions]);
 
   return (
     <div className="max-w-6xl mx-auto px-6 pb-32 relative">
@@ -248,7 +249,7 @@ export default function TopTab({
             label="Primary Concept / Keywords"
             icon={<Type size={14} />}
             description="Describe your creative concept or enter neural keywords to generate prompts."
-            error={!keyword.trim() && !referenceFile && !referenceUrl.trim() ? "Please provide a keyword, reference file, or URL to begin analysis." : undefined}
+            error={!(keyword || '').trim() && !referenceFile && !(referenceUrl || '').trim() ? "Please provide a keyword, reference file, or URL to begin analysis." : undefined}
           >
             <div className="relative group mt-2">
               <div className="absolute -inset-1 bg-gradient-to-r from-accent/20 to-blue-500/20 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
@@ -271,7 +272,7 @@ export default function TopTab({
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     className="absolute top-full left-0 right-0 mt-4 glass-panel rounded-[2.5rem] shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar border-white/10 backdrop-blur-2xl"
                   >
-                    {!keyword.trim() && (
+                    {!(keyword || '').trim() && (
                       <div className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3 border-b border-white/5 bg-white/5">
                         <TrendingUp size={14} className="text-accent" /> Trending Neural Patterns
                       </div>
@@ -304,12 +305,12 @@ export default function TopTab({
             </div>
 
             {/* Keyword Suggestions Chips */}
-            {keyword.trim().length > 0 && (
+            {(keyword || '').trim().length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
                 {suggestionKeywords
                   .filter(k => {
                     const lowerK = k.toLowerCase();
-                    const parts = keyword.split(',').map(p => p.trim().toLowerCase());
+                    const parts = (keyword || '').split(',').map(p => p.trim().toLowerCase());
                     const lastPart = parts[parts.length - 1];
                     
                     if (!lastPart) return false;
@@ -469,7 +470,7 @@ export default function TopTab({
               whileHover={{ scale: 1.01, y: -1 }}
               whileTap={{ scale: 0.99 }}
               onClick={onQuickGenerate}
-              disabled={isAnalyzing || (!keyword.trim() && !referenceFile && !referenceUrl.trim())}
+              disabled={isAnalyzing || (!(keyword || '').trim() && !referenceFile && !(referenceUrl || '').trim())}
               className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-2xl text-[9px] font-bold uppercase tracking-[0.3em] transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 shadow-xl"
             >
               {isAnalyzing ? (
@@ -485,7 +486,7 @@ export default function TopTab({
               whileHover={{ scale: 1.01, y: -1 }}
               whileTap={{ scale: 0.99 }}
               onClick={onAnalyze}
-              disabled={isAnalyzing || (!keyword.trim() && !referenceFile && !referenceUrl.trim())}
+              disabled={isAnalyzing || (!(keyword || '').trim() && !referenceFile && !(referenceUrl || '').trim())}
               className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white text-black px-10 py-4 rounded-2xl text-[9px] font-bold uppercase tracking-[0.3em] transition-all disabled:opacity-50 disabled:cursor-not-allowed futuristic-glow hover:bg-slate-200 shadow-2xl shadow-white/10"
             >
               {isAnalyzing ? (

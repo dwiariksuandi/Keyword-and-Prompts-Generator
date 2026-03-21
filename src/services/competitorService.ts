@@ -1,4 +1,4 @@
-import { getAI, extractJSON } from './gemini';
+import { getAI, extractJSON, generateContentWithFallback } from './gemini';
 import { ThinkingLevel } from '@google/genai';
 
 export interface VisualGap {
@@ -8,8 +8,8 @@ export interface VisualGap {
   opportunityScore: number; // 0-100
 }
 
-export async function analyzeCompetitorGaps(niche: string, apiKey?: string): Promise<VisualGap[]> {
-  const ai = getAI(apiKey);
+export async function analyzeCompetitorGaps(niche: string): Promise<VisualGap[]> {
+  const ai = getAI();
   
   const prompt = `Perform a deep "Visual Gap Analysis" for the microstock niche: '${niche}'.
   
@@ -30,7 +30,7 @@ export async function analyzeCompetitorGaps(niche: string, apiKey?: string): Pro
   Respond ONLY with a JSON array of objects following the VisualGap interface.`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithFallback(ai, {
       model: 'gemini-3-flash-preview',
       contents: [{ text: prompt }],
       config: {

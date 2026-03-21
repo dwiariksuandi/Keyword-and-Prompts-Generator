@@ -79,11 +79,6 @@ service cloud.firestore {
       }
     }
 
-    match /global_trends/{trendId} {
-      allow read: if isAuthenticated();
-      allow write: if false; // Hanya admin yang bisa menulis tren global
-    }
-
     // Default Deny
     match /{document=**} {
       allow read, write: if false;

@@ -64,7 +64,7 @@ export default function PromptWizard({
 
   useEffect(() => {
     const handler = setTimeout(async () => {
-      if (keyword.trim().length > 2) {
+      if (keyword?.trim()?.length > 2) {
         const results = await fetchTrendingKeywords(keyword, settings, contentType);
         setSuggestions(results);
       } else {
