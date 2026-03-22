@@ -53,6 +53,7 @@ export function TabRenderer({ activeTab, logic }: { activeTab: string, logic: an
         <Settings 
           settings={settings} 
           setSettings={setSettings} 
+          results={results}
           onEndSession={handleEndSession}
           onSavePreferences={handleSavePreferences}
           prefsSaved={prefsSaved}

@@ -2,6 +2,7 @@ import { AppSettings, ReferenceFile } from '../types';
 import { ThinkingLevel } from '@google/genai';
 import { getAI, extractJSON, getContentTypeInstructions, getVariationInstructions } from './geminiUtils';
 import { PROMPT_TEMPLATES } from '../constants/promptTemplates';
+import { PROMPTING_GUIDELINES } from '../constants/promptingGuidelines';
 
 export async function generatePrompts(
   categoryName: string, 
@@ -17,16 +18,11 @@ export async function generatePrompts(
   return generatePromptsDirectly(categoryName, contentType, settings, count, referenceFile, referenceUrl);
 }
 
-export async function generatePromptsDirectly(
-  categoryName: string, 
-  contentType: string, 
-  settings: AppSettings, 
-  count: number = 10, 
-  referenceFile?: ReferenceFile, 
+function buildPromptContext(
+  settings: AppSettings,
+  referenceFile?: ReferenceFile,
   referenceUrl?: string
-): Promise<string[]> {
-  const ai = getAI(settings.apiKey);
-  
+): string {
   const referenceContext = referenceFile ? `
   REFERENCE FILE ANALYSIS (Aesthetic DNA):
   - Use the visual DNA from the provided reference file to guide the aesthetic of these prompts.
@@ -44,8 +40,31 @@ export async function generatePromptsDirectly(
   (CRITICAL: All generated prompts MUST align with this creator's Aesthetic DNA. Use their signature styles, themes, and technical strengths as a baseline.)
   ` : '';
 
+  return `${referenceContext}${urlContext}${aestheticContext}`;
+}
+
+export async function generatePromptsDirectly(
+  categoryName: string, 
+  contentType: string, 
+  settings: AppSettings, 
+  count: number = 10, 
+  referenceFile?: ReferenceFile, 
+  referenceUrl?: string
+): Promise<string[]> {
+  const ai = getAI(settings.apiKey);
+  
+  const formula = contentType === 'Video' ? PROMPTING_GUIDELINES.videoFormula : PROMPTING_GUIDELINES.imageFormula;
+  
   const promptText = `Generate ${count} unique, high-end AI prompts for the category: '${categoryName}'.
   Target Content Type: ${contentType}
+  
+  USE THIS PROMPTING FORMULA (CRITICAL):
+  ${formula}
+  
+  CREATIVE DIRECTOR CONTROLS:
+  - Lighting: ${PROMPTING_GUIDELINES.creativeDirectorTips.lighting}
+  - Camera/Lens: ${PROMPTING_GUIDELINES.creativeDirectorTips.camera}
+  - Materiality: ${PROMPTING_GUIDELINES.creativeDirectorTips.materiality}
   
   ADOBE STOCK COMPLIANCE (CRITICAL):
   - No "similar content": Each prompt must be distinct.
@@ -53,9 +72,7 @@ export async function generatePromptsDirectly(
   - AI Transparency: Do not use real artist names or copyrighted brands.
   - Quality: Use technical keywords appropriate for ${contentType}.
   
-  ${referenceContext}
-  ${urlContext}
-  ${aestheticContext}
+  ${buildPromptContext(settings, referenceFile, referenceUrl)}
   ${getContentTypeInstructions(contentType)}
   ${getVariationInstructions(settings.variationLevel || 'Medium')}
   

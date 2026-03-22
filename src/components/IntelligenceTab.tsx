@@ -175,14 +175,15 @@ export default function IntelligenceTab({
                           <div>
                             <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-3">Chromatic Profile</div>
                             <div className="flex flex-wrap gap-2">
-                              {category.competitorIntel.aestheticDNA.colorPalette?.map((color, i) => (
-                                <div 
-                                  key={`${category.id}-color-${i}`} 
-                                  className="w-10 h-10 rounded-xl border border-white/10 shadow-2xl"
-                                  style={{ backgroundColor: color }}
-                                  title={color}
-                                />
-                              ))}
+                              {Array.isArray(category.competitorIntel.aestheticDNA.colorPalette) &&
+                                category.competitorIntel.aestheticDNA.colorPalette.map((color, i) => (
+                                  <div 
+                                    key={`${category.id}-color-${i}`} 
+                                    className="w-10 h-10 rounded-xl border border-white/10 shadow-2xl"
+                                    style={{ backgroundColor: color }}
+                                    title={color}
+                                  />
+                                ))}
                             </div>
                           </div>
                         </>

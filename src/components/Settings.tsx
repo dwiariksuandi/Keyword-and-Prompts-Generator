@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Key, Save, Check, AlertCircle, LogOut, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe, UserCircle, Loader2, Trash2 } from 'lucide-react';
-import { AppSettings, PromptTemplate } from '../types';
+import { Key, Save, Check, AlertCircle, LogOut, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe, UserCircle, Loader2, Trash2, FileUp } from 'lucide-react';
+import { AppSettings, PromptTemplate, CategoryResult } from '../types';
 import { promptTemplates, analyzePortfolioAesthetic } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
+import { transformToJSONL } from '../services/fineTuningService';
 
 interface SettingsProps {
   settings: AppSettings;
   setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
+  results: CategoryResult[];
   onEndSession: () => void;
   onSavePreferences?: () => void;
   prefsSaved?: boolean;
@@ -18,6 +20,7 @@ const CONTENT_TYPES = ['Photo', 'Illustration', 'Vector', 'Background', 'Video',
 export default function Settings({ 
   settings, 
   setSettings, 
+  results,
   onEndSession,
   onSavePreferences,
   prefsSaved,
@@ -27,6 +30,26 @@ export default function Settings({
   const [portfolioUrl, setPortfolioUrl] = useState(settings.creatorProfile?.portfolioUrl || '');
   const [isAnalyzingPortfolio, setIsAnalyzingPortfolio] = useState(false);
   const [portfolioError, setPortfolioError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportFineTuningData = async () => {
+    setIsExporting(true);
+    try {
+      const data = transformToJSONL(results);
+      const response = await fetch('/api/finetuning/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data })
+      });
+      if (!response.ok) throw new Error('Failed to export data');
+      alert('Data exported successfully!');
+    } catch (error) {
+      console.error(error);
+      alert('Failed to export data');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleAnalyzePortfolio = async () => {
     if (!portfolioUrl) {
@@ -357,12 +380,12 @@ export default function Settings({
                   onBlur={() => {
                     let val = settings.promptCount;
                     if (val < 1) val = 1;
-                    if (val > 1500) val = 1500;
+                    if (val > 5000) val = 5000;
                     setSettings({ ...settings, promptCount: val });
                   }}
                   className="w-full bg-black/40 border border-white/5 rounded-2xl text-white px-6 py-4 outline-none focus:border-accent transition-all font-mono"
                   min="1"
-                  max="1500"
+                  max="5000"
                 />
                 <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600 uppercase tracking-widest">Prompts</div>
               </div>
@@ -506,6 +529,34 @@ export default function Settings({
             </div>
           </div>
         </motion.div>
+
+          {/* Fine-tuning Export */}
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.45 }}
+            className="glass-panel p-8 mb-8"
+          >
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
+                <FileUp className="w-6 h-6 text-accent" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white font-display">Fine-Tuning Pipeline</h2>
+                <p className="text-sm text-slate-500 font-light">Export high-rated prompts for model training.</p>
+              </div>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleExportFineTuningData}
+              disabled={isExporting}
+              className="w-full flex items-center justify-center gap-3 bg-accent/10 hover:bg-accent/20 text-accent font-bold py-4 rounded-2xl transition-all border border-accent/20 disabled:opacity-50"
+            >
+              {isExporting ? <Loader2 className="animate-spin" /> : <FileUp size={20} />}
+              {isExporting ? 'Exporting...' : 'Export High-Rated Prompts (JSONL)'}
+            </motion.button>
+          </motion.div>
 
         {/* Save Preferences Button */}
         <motion.div 

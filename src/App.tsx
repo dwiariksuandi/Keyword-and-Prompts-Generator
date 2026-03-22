@@ -211,6 +211,7 @@ export default function App() {
             <Settings 
               settings={settings} 
               setSettings={setSettings} 
+              results={results}
               onEndSession={handleEndSession}
               onSavePreferences={handleSavePreferences}
               prefsSaved={prefsSaved}

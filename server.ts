@@ -93,6 +93,19 @@ async function startServer() {
       res.json(featureFlags);
     });
 
+    // Fine-tuning data export
+    app.post("/api/finetuning/export", (req, res) => {
+      const { data } = req.body;
+      if (!data) {
+        return res.status(400).json({ error: "Data is required" });
+      }
+      
+      const filePath = path.join(__dirname, 'finetuning_data.jsonl');
+      fs.appendFileSync(filePath, data + '\n');
+      
+      res.json({ status: "ok", message: "Data exported successfully" });
+    });
+
     // Vite middleware for development
     if (process.env.NODE_ENV !== "production") {
       const vite = await createViteServer({

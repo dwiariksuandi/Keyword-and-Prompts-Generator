@@ -21,7 +21,7 @@ export const usePromptGeneration = () => {
     if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) return;
     setIsAnalyzing(true);
     try {
-      const actualCountToGenerate = Math.min(settings.promptCount, 1500);
+      const actualCountToGenerate = Math.min(settings.promptCount, 5000);
       const prompts = await generatePromptsDirectly(
         keyword || (referenceFile ? referenceFile.name : 'Quick Generation'),
         contentType,
@@ -98,7 +98,7 @@ export const usePromptGeneration = () => {
     setResults(prev => prev.map(r => r.id === id ? { ...r, isGeneratingPrompts: true } : r));
     
     try {
-      const actualCountToGenerate = Math.min(settings.promptCount, 1500); 
+      const actualCountToGenerate = Math.min(settings.promptCount, 5000); 
       const prompts = await generatePrompts(
         result.categoryName,
         result.contentType,
