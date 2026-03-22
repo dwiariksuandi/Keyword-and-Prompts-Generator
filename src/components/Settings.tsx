@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Key, Save, Check, AlertCircle, LogOut, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe, UserCircle, Loader2, Trash2, FileUp } from 'lucide-react';
+import { Key, Save, Check, AlertCircle, LogOut, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe, UserCircle, Loader2, Trash2, FileUp, Sparkles } from 'lucide-react';
 import { AppSettings, PromptTemplate, CategoryResult } from '../types';
 import { promptTemplates, analyzePortfolioAesthetic } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
 import { transformToJSONL } from '../services/fineTuningService';
+import { validatePromptAI } from '../services/aiValidationService';
+import DataQualityDashboard from './DataQualityDashboard';
 
 interface SettingsProps {
   settings: AppSettings;
@@ -31,6 +33,22 @@ export default function Settings({
   const [isAnalyzingPortfolio, setIsAnalyzingPortfolio] = useState(false);
   const [portfolioError, setPortfolioError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isValidatingAI, setIsValidatingAI] = useState(false);
+
+  const handleRunAIValidation = async () => {
+    setIsValidatingAI(true);
+    for (const category of results) {
+      if (category.promptScores) {
+        for (const score of category.promptScores) {
+          if (!score.aiValidation) {
+            const validation = await validatePromptAI(score.optimizedPrompt || score.prompt);
+            score.aiValidation = validation;
+          }
+        }
+      }
+    }
+    setIsValidatingAI(false);
+  };
 
   const handleExportFineTuningData = async () => {
     setIsExporting(true);
@@ -546,16 +564,32 @@ export default function Settings({
                 <p className="text-sm text-slate-500 font-light">Export high-rated prompts for model training.</p>
               </div>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleExportFineTuningData}
-              disabled={isExporting}
-              className="w-full flex items-center justify-center gap-3 bg-accent/10 hover:bg-accent/20 text-accent font-bold py-4 rounded-2xl transition-all border border-accent/20 disabled:opacity-50"
-            >
-              {isExporting ? <Loader2 className="animate-spin" /> : <FileUp size={20} />}
-              {isExporting ? 'Exporting...' : 'Export High-Rated Prompts (JSONL)'}
-            </motion.button>
+            
+            <DataQualityDashboard results={results} />
+
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleRunAIValidation}
+                disabled={isValidatingAI}
+                className="flex items-center justify-center gap-3 bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-2xl transition-all border border-white/10 disabled:opacity-50"
+              >
+                {isValidatingAI ? <Loader2 className="animate-spin" /> : <Sparkles size={20} />}
+                {isValidatingAI ? 'Validating...' : 'Run AI Validation'}
+              </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleExportFineTuningData}
+                disabled={isExporting}
+                className="flex items-center justify-center gap-3 bg-accent/10 hover:bg-accent/20 text-accent font-bold py-4 rounded-2xl transition-all border border-accent/20 disabled:opacity-50"
+              >
+                {isExporting ? <Loader2 className="animate-spin" /> : <FileUp size={20} />}
+                {isExporting ? 'Exporting...' : 'Export (JSONL)'}
+              </motion.button>
+            </div>
           </motion.div>
 
         {/* Save Preferences Button */}

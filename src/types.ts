@@ -22,6 +22,11 @@ export interface PromptScore {
   specificityFeedback?: string;
   adherenceFeedback?: string;
   groundingSources?: { uri: string; title?: string }[];
+  aiValidation?: {
+    isValid: boolean;
+    score: number;
+    reason: string;
+  };
 }
 
 export interface AestheticAnalysis {
