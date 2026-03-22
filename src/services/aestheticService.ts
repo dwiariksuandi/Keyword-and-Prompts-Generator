@@ -1,5 +1,5 @@
 import { AppSettings, ReferenceFile } from '../types';
-import { getAI, extractJSON, getContentTypeInstructions } from './geminiUtils';
+import { getAI, extractJSON, getContentTypeInstructions } from './gemini';
 import { ThinkingLevel } from '@google/genai';
 
 export async function analyzeAestheticReference(file: ReferenceFile, contentType: string, settings: AppSettings) {

@@ -1,6 +1,6 @@
 import { AppSettings, ReferenceFile } from '../types';
 import { ThinkingLevel } from '@google/genai';
-import { getAI, extractJSON, getContentTypeInstructions, getVariationInstructions } from './geminiUtils';
+import { getAI, extractJSON, getContentTypeInstructions, getVariationInstructions } from './gemini';
 import { PROMPT_TEMPLATES } from '../constants/promptTemplates';
 import { PROMPTING_GUIDELINES } from '../constants/promptingGuidelines';
 

@@ -6,7 +6,7 @@ import { z } from 'zod';
 type KeywordAnalysis = z.infer<typeof KeywordAnalysisSchema>;
 import { AppSettings, ReferenceFile } from '../types';
 import { logger } from './logger';
-import { getAI, handleGeminiError, extractJSON, zodToJsonSchemaNoSchema, generateContentWithFallback, getContentTypeInstructions } from './geminiUtils';
+import { getAI, handleGeminiError, extractJSON, zodToJsonSchemaNoSchema, generateContentWithFallback, getContentTypeInstructions } from './gemini';
 
 export async function analyzeKeyword(
   keyword: string, 

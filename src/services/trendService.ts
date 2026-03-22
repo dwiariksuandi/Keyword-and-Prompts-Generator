@@ -1,7 +1,7 @@
 import { AppSettings, TrendForecast } from '../types';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { z } from 'zod';
-import { getAI } from './geminiUtils';
+import { getAI } from './gemini';
 import { ThinkingLevel } from '@google/genai';
 import { TREND_ANALYSIS_PROMPT_V1, TREND_REFINEMENT_PROMPT_V1 } from '../prompts/trendPrompts';
 

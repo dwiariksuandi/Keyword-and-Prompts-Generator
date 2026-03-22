@@ -1,4 +1,4 @@
-import { getAI } from './geminiUtils';
+import { getAI } from './gemini';
 
 export async function getEmbedding(text: string, apiKey: string): Promise<number[]> {
   const ai = getAI(apiKey);

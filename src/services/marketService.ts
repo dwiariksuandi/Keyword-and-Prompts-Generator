@@ -1,5 +1,5 @@
 import { AppSettings, ReferenceFile } from '../types';
-import { getAI, extractJSON, getContentTypeInstructions } from './geminiUtils';
+import { getAI, extractJSON, getContentTypeInstructions } from './gemini';
 import { ThinkingLevel } from '@google/genai';
 import { fetchRealTimeMarketData } from './ragService';
 import { cacheService } from './cacheService';

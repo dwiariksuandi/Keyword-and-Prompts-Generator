@@ -1,4 +1,4 @@
-import { getAI } from './geminiUtils';
+import { getAI } from './gemini';
 import { AppSettings } from '../types';
 
 export interface MarketData {
