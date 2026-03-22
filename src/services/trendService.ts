@@ -3,11 +3,21 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { z } from 'zod';
 import { getAI } from './geminiUtils';
 import { ThinkingLevel } from '@google/genai';
+import { TREND_ANALYSIS_PROMPT_V1, TREND_REFINEMENT_PROMPT_V1 } from '../prompts/trendPrompts';
 
 function zodToJsonSchemaNoSchema(schema: any) {
   const jsonSchema = zodToJsonSchema(schema) as any;
   delete jsonSchema.$schema;
   return jsonSchema;
+}
+
+// Validasi semantik tambahan
+function validateTrendData(trends: TrendForecast[]): TrendForecast[] {
+  return trends.map(trend => ({
+    ...trend,
+    growthPotential: Math.min(trend.growthPotential, 500),
+    confidence: Math.min(Math.max(trend.confidence, 0), 100),
+  }));
 }
 
 export const TrendSchema = z.object({
@@ -30,23 +40,7 @@ export const TrendListSchema = z.array(TrendSchema);
 export async function getTrendForecast(niche: string | undefined, settings: AppSettings): Promise<TrendForecast[]> {
   const ai = getAI(settings.apiKey);
   
-  const promptText = `[Persona]: Anda adalah seorang Analis Tren Pasar Senior dengan spesialisasi dalam industri microstock.
-  [Task]: Lakukan analisis intelijen tren pasar yang mendalam dan berbasis data untuk niche: '${niche || 'general microstock'}'.
-  [Constraints]:
-  1. Gunakan GOOGLE SEARCH untuk mengidentifikasi tren REAL, SAAT INI, dan MUNCUL untuk tahun 2026.
-  2. Fokus pada data yang dapat ditindaklanjuti untuk kreator konten.
-  [Output Format]:
-  Berikan respons strictly dalam format JSON array dari 5-8 objek dengan field berikut:
-  - trend: Nama tren yang jelas.
-  - forecast: Deskripsi singkat tentang arah tren.
-  - niche: Niche spesifik.
-  - isHighPriority: boolean.
-  - confidence: 0-100.
-  - growthPotential: 0-500 (persentase).
-  - reasoning: Alasan mendalam di balik tren ini.
-  - marketGap: Apa yang saat ini hilang di pasar.
-  - visualStyle: Arahan artistik (pencahayaan, komposisi, mood).
-  - recommendedKeywords: array string.`;
+  const promptText = TREND_ANALYSIS_PROMPT_V1.replace('{{niche}}', niche || 'general microstock');
 
   try {
     const response = await ai.models.generateContent({
@@ -60,7 +54,8 @@ export async function getTrendForecast(niche: string | undefined, settings: AppS
       }
     });
 
-    return TrendListSchema.parse(JSON.parse(response.text || '[]')) as TrendForecast[];
+    const parsed = TrendListSchema.parse(JSON.parse(response.text || '[]')) as TrendForecast[];
+    return validateTrendData(parsed);
   } catch (error) {
     console.error("Trend analysis failed:", error);
     return [];
@@ -70,26 +65,9 @@ export async function getTrendForecast(niche: string | undefined, settings: AppS
 export async function refineTrendForecast(previousTrends: TrendForecast[], feedback: string, settings: AppSettings): Promise<TrendForecast[]> {
   const ai = getAI(settings.apiKey);
   
-  const promptText = `Review and refine the following trend analysis: ${JSON.stringify(previousTrends)}.
-  
-  User Feedback: '${feedback}'.
-  
-  CRITICAL INSTRUCTIONS:
-  1. Address the user's feedback directly while maintaining data integrity.
-  2. USE GOOGLE SEARCH to re-verify trends and find new data points.
-  3. Provide:
-     - trend: Name of the trend.
-     - forecast: Short forecast description.
-     - niche: Specific niche name.
-     - isHighPriority: boolean.
-     - confidence: 0-100.
-     - growthPotential: 0-500.
-     - reasoning: Why this trend?
-     - marketGap: What is missing?
-     - visualStyle: Art direction.
-     - recommendedKeywords: string[].
-  
-  Respond strictly with a JSON array of 5-8 objects.`;
+  const promptText = TREND_REFINEMENT_PROMPT_V1
+    .replace('{{previousTrends}}', JSON.stringify(previousTrends))
+    .replace('{{feedback}}', feedback);
 
   try {
     const response = await ai.models.generateContent({
@@ -103,7 +81,8 @@ export async function refineTrendForecast(previousTrends: TrendForecast[], feedb
       }
     });
 
-    return TrendListSchema.parse(JSON.parse(response.text || '[]')) as TrendForecast[];
+    const parsed = TrendListSchema.parse(JSON.parse(response.text || '[]')) as TrendForecast[];
+    return validateTrendData(parsed);
   } catch (error) {
     console.error("Trend refinement failed:", error);
     return previousTrends;
