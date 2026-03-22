@@ -45,6 +45,10 @@ export const TabRenderer: React.FC<TabRendererProps> = ({ activeTab, logic }) =>
           setAestheticAnalysis={logic.setAestheticAnalysis}
           settings={logic.settings}
           onSelectTrend={logic.handleTrendToPrompts}
+          isPipelineRunning={logic.isPipelineRunning}
+          agentTasks={logic.agentTasks}
+          onRunAgenticWorkflow={logic.handleRunAgenticWorkflow}
+          isFeatureEnabled={logic.isFeatureEnabled}
         />
       );
     case "intelligence":
@@ -104,6 +108,8 @@ export const TabRenderer: React.FC<TabRendererProps> = ({ activeTab, logic }) =>
           onGenerateMetadata={logic.handleGenerateMetadata}
           onPolishMetadata={logic.handlePolishMetadata}
           onVisualize={logic.handleVisualizePrompt}
+          onRatePrompt={logic.handleRatePrompt}
+          onOptimizePrompt={logic.handleOptimizePrompt}
           promptsCount={logic.settings.promptCount}
           setPromptsCount={(count: any) => logic.setSettings((s: any) => ({ ...s, promptCount: typeof count === 'function' ? count(s.promptCount) : count }))}
           onShowToast={(msg: string) => logic.setToast({ show: true, message: msg })}
@@ -138,6 +144,7 @@ export const TabRenderer: React.FC<TabRendererProps> = ({ activeTab, logic }) =>
           onSavePreferences={logic.handleSavePreferences}
           prefsSaved={logic.prefsSaved}
           prefsValidationMessage={logic.prefsValidationMessage}
+          abTests={logic.abTests}
         />
       );
     case "donate":

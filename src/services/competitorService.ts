@@ -45,8 +45,11 @@ export async function analyzeCompetitorGaps(niche: string): Promise<VisualGap[]>
     
     const parsed = extractJSON(text);
     return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in analyzeCompetitorGaps:', error);
+    if (error.message === 'QUOTA_EXCEEDED') {
+      throw error;
+    }
     return [];
   }
 }

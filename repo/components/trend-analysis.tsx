@@ -155,20 +155,20 @@ export function TrendAnalysis() {
               <AreaChart data={mockTrendData}>
                 <defs>
                   <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="oklch(0.65 0.24 265)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="oklch(0.65 0.24 265)" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#5d75e8" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#5d75e8" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.25 0.01 260)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#333845" />
                 <XAxis
                   dataKey="date"
-                  stroke="oklch(0.65 0 0)"
+                  stroke="#a6a6a6"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
-                  stroke="oklch(0.65 0 0)"
+                  stroke="#a6a6a6"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
@@ -176,17 +176,17 @@ export function TrendAnalysis() {
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "oklch(0.12 0.01 260)",
-                    border: "1px solid oklch(0.25 0.01 260)",
+                    backgroundColor: "#1c1e26",
+                    border: "1px solid #333845",
                     borderRadius: "8px",
-                    color: "oklch(0.98 0 0)",
+                    color: "#fcfcfc",
                   }}
                   formatter={(value: number) => [formatNumber(value), "Volume"]}
                 />
                 <Area
                   type="monotone"
                   dataKey="volume"
-                  stroke="oklch(0.65 0.24 265)"
+                  stroke="#5d75e8"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorVolume)"

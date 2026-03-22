@@ -139,6 +139,24 @@ const ResultRow: React.FC<ResultRowProps> = ({
               <h3 className="text-xl font-black text-white group-hover:text-white transition-colors uppercase tracking-tight">
                 {result.categoryName}
               </h3>
+              {result.rejectionRisk && result.rejectionRisk.riskLevel !== 'Low' && (
+                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-tighter ${
+                  result.rejectionRisk.riskLevel === 'High' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                }`} title={result.rejectionRisk.reason}>
+                  <AlertCircle className="w-2.5 h-2.5" />
+                  Risk: {result.rejectionRisk.riskLevel}
+                </div>
+              )}
+              {result.isBlueOcean && (
+                <motion.span 
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-[9px] font-black rounded-lg border border-emerald-500/30 uppercase tracking-widest flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  Blue Ocean
+                </motion.span>
+              )}
               {result.isShared && (
                 <span className="px-3 py-1 bg-white/10 text-white text-[9px] font-black rounded-lg border border-white/10 uppercase tracking-widest">
                   Shared
@@ -198,10 +216,17 @@ const ResultRow: React.FC<ResultRowProps> = ({
                 {result.competition}
               </span>
             </div>
-            <div className="flex flex-col items-end">
-              <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-2">Intent</span>
-              <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">{result.commercialIntent || 'Commercial'}</span>
-            </div>
+            {result.groundingScore !== undefined ? (
+              <div className="flex flex-col items-end">
+                <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-2">Grounding</span>
+                <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest">{result.groundingScore}%</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-end">
+                <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-2">Intent</span>
+                <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">{result.commercialIntent || 'Commercial'}</span>
+              </div>
+            )}
           </div>
         </div>
       </td>
@@ -219,7 +244,10 @@ const ResultRow: React.FC<ResultRowProps> = ({
                 fill="transparent"
                 className="text-white/5"
               />
-              <circle
+              <motion.circle
+                initial={{ strokeDashoffset: 226.2 }}
+                animate={{ strokeDashoffset: 226.2 * (1 - result.opportunityScore / 100) }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
                 cx="40"
                 cy="40"
                 r="36"
@@ -227,12 +255,11 @@ const ResultRow: React.FC<ResultRowProps> = ({
                 strokeWidth="4"
                 fill="transparent"
                 strokeDasharray={226.2}
-                strokeDashoffset={226.2 * (1 - result.opportunityScore / 100)}
-                className="text-white"
+                className={result.opportunityScore > 80 ? "text-emerald-500" : result.opportunityScore > 60 ? "text-white" : "text-white/40"}
                 strokeLinecap="round"
               />
             </svg>
-            <span className="absolute text-xl font-black text-white tracking-tighter">
+            <span className={`absolute text-xl font-black tracking-tighter ${result.opportunityScore > 80 ? "text-emerald-500" : "text-white"}`}>
               {result.opportunityScore}
             </span>
           </div>

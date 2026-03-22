@@ -5,6 +5,8 @@ import { promptTemplates } from '../services/promptUtils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApiStore } from '../store/useApiStore';
 import { GoogleGenAI } from '@google/genai';
+import { abTestingService } from '../services/abTesting';
+import { Activity } from 'lucide-react';
 
 interface SettingsProps {
   settings: AppSettings;
@@ -12,6 +14,7 @@ interface SettingsProps {
   onSavePreferences?: () => void;
   prefsSaved?: boolean;
   prefsValidationMessage?: { type: 'success' | 'error', text: string } | null;
+  abTests?: Record<string, 'A' | 'B'>;
 }
 
 const CONTENT_TYPES = ['Photo', 'Illustration', 'Vector', 'Background', 'Video', '3D Render'];
@@ -21,7 +24,8 @@ export default function Settings({
   setSettings, 
   onSavePreferences,
   prefsSaved,
-  prefsValidationMessage
+  prefsValidationMessage,
+  abTests = {}
 }: SettingsProps) {
   const { apiKey, setApiKey, clearApiKey } = useApiStore();
   const [manualApiKey, setManualApiKey] = useState(apiKey);
@@ -361,6 +365,29 @@ export default function Settings({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-6">
                   <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-xl">
+                    <Zap size={20} className="text-white/40" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-white uppercase tracking-widest">Auto-Validation (Critic Agent)</h3>
+                    <p className="text-[10px] text-white/20 font-black uppercase tracking-widest mt-1">Enable secondary AI analysis for quality control</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSettings({ ...settings, enableAutoValidation: !settings.enableAutoValidation })}
+                  className={`w-16 h-8 rounded-full transition-all relative p-1.5 duration-500 ${
+                    settings.enableAutoValidation ? "bg-white" : "bg-white/5 border border-white/10"
+                  }`}
+                >
+                  <motion.div
+                    animate={{ x: settings.enableAutoValidation ? 32 : 0 }}
+                    className={`w-5 h-5 rounded-full shadow-2xl transition-colors duration-500 ${settings.enableAutoValidation ? 'bg-black' : 'bg-white/20'}`}
+                  />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-xl">
                     <Database size={20} className="text-white/40" />
                   </div>
                   <div>
@@ -427,6 +454,58 @@ export default function Settings({
                 </AnimatePresence>
               </div>
             </div>
+          </div>
+        </motion.div>
+
+        {/* A/B Testing Configuration */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.45 }}
+          className="bg-[#0A0A0A] p-12 rounded-[3rem] border border-white/5 shadow-2xl"
+        >
+          <div className="flex items-center gap-6 mb-12">
+            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-xl">
+              <Activity className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-white uppercase tracking-tighter">A/B Testing Lab</h2>
+              <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] mt-1">Experimental Feature Control</p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {Object.entries(abTests).map(([testId, variant]) => (
+              <div key={testId} className="flex items-center justify-between p-8 bg-white/[0.02] rounded-[2rem] border border-white/5">
+                <div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-widest">{testId.replace(/-/g, ' ')}</h3>
+                  <p className="text-[10px] text-white/20 font-black uppercase tracking-widest mt-1">Active Variant: {variant}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      abTestingService.setVariant(testId, 'A');
+                      window.location.reload(); // Reload to apply new variant
+                    }}
+                    className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${variant === 'A' ? 'bg-white text-black' : 'bg-white/5 text-white/20 border border-white/10'}`}
+                  >
+                    Variant A
+                  </button>
+                  <button
+                    onClick={() => {
+                      abTestingService.setVariant(testId, 'B');
+                      window.location.reload(); // Reload to apply new variant
+                    }}
+                    className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${variant === 'B' ? 'bg-white text-black' : 'bg-white/5 text-white/20 border border-white/10'}`}
+                  >
+                    Variant B
+                  </button>
+                </div>
+              </div>
+            ))}
+            {Object.keys(abTests).length === 0 && (
+              <p className="text-[10px] text-white/20 font-black uppercase tracking-widest text-center py-8">No active A/B tests found.</p>
+            )}
           </div>
         </motion.div>
 

@@ -29,6 +29,8 @@ export const CategoryResultSchema = z.object({
   isGeneratingMetadata: z.boolean().optional(),
   metadata: z.array(z.object({ title: z.string(), description: z.string().optional(), keywords: z.array(z.string()) })).optional(),
   groundingSources: z.array(z.object({ uri: z.string(), title: z.string() })).optional(),
+  groundingScore: z.number().optional(),
+  rejectionRisk: z.object({ riskLevel: z.enum(['Low', 'Medium', 'High']), reason: z.string() }).optional(),
   competitorIntel: z.any().optional(),
   salesData: z.object({
     estimatedMonthlySales: z.number(),
@@ -42,10 +44,13 @@ export const AestheticAnalysisSchema = z.object({
   mood: z.string(),
   artisticStyle: z.string(),
   composition: z.string(),
+  visualStyle: z.string().optional(),
   suggestions: z.array(z.string()),
   detectedContentType: z.string().optional(),
   marketGaps: z.array(z.string()).optional(),
   groundingSources: z.array(z.object({ uri: z.string(), title: z.string() })).optional(),
+  groundingScore: z.number().optional(),
+  rejectionRisk: z.object({ riskLevel: z.enum(['Low', 'Medium', 'High']), reason: z.string() }).optional(),
 });
 
 export const KeywordAnalysisSchema = z.array(z.object({
@@ -69,7 +74,9 @@ export const KeywordAnalysisSchema = z.array(z.object({
   visualTrends: z.array(z.string()),
   creativeAdvice: z.string(),
   metadataStrategy: z.string(),
-  groundingSources: z.array(z.object({ uri: z.string(), title: z.string() })).optional()
+  groundingSources: z.array(z.object({ uri: z.string(), title: z.string() })).optional(),
+  groundingScore: z.number().optional(),
+  rejectionRisk: z.object({ riskLevel: z.enum(['Low', 'Medium', 'High']), reason: z.string() }).optional()
 }));
 
 export const PromptSchema = z.object({

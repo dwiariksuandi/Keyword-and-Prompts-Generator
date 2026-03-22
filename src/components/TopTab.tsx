@@ -1,13 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap, Upload, Image as ImageIcon, Film, X, Link as LinkIcon, Loader2, Cpu, Globe, Activity, Database, Terminal, Palette, Layers, Box, ChevronDown, ChevronUp, Type } from 'lucide-react';
 import { CategoryResult, AppSettings, ReferenceFile, AestheticAnalysis } from '../types';
-import { fetchTrendingKeywords } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
-import TrendForecast from './TrendForecast';
-import CompetitorGapAnalysis from './CompetitorGapAnalysis';
 import FormField from './FormField';
-import LoadingIndicator from './LoadingIndicator';
-import MarketMap from './MarketMap';
 
 interface TopTabProps {
   keyword: string;
@@ -31,7 +26,7 @@ interface TopTabProps {
   aestheticAnalysis: AestheticAnalysis | null;
   setAestheticAnalysis: React.Dispatch<React.SetStateAction<AestheticAnalysis | null>>;
   settings: AppSettings;
-  onSelectTrend?: (niche: string) => void;
+  setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
 }
 
 const suggestionKeywords = [
@@ -85,27 +80,13 @@ export default function TopTab({
   referenceFile, setReferenceFile,
   referenceUrl, setReferenceUrl,
   onAnalyzeAesthetic, isAnalyzingAesthetic, aestheticAnalysis, setAestheticAnalysis,
-  settings, onSelectTrend
+  settings, setSettings
 }: TopTabProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [filteredSuggestions, setFilteredSuggestions] = useState<{ keyword: string; relevanceScore: number }[]>([]);
-  const [realtimeSuggestions, setRealtimeSuggestions] = useState<{ keyword: string; relevanceScore: number }[]>([]);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
   const [isAestheticExpanded, setIsAestheticExpanded] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const handler = setTimeout(async () => {
-      if (keyword?.trim()?.length > 2) {
-        const results = await fetchTrendingKeywords(keyword, settings, contentType);
-        setRealtimeSuggestions(results);
-      } else {
-        setRealtimeSuggestions([]);
-      }
-    }, 500); // 500ms debounce
-
-    return () => clearTimeout(handler);
-  }, [keyword, settings, contentType]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -135,41 +116,25 @@ export default function TopTab({
   };
 
   useEffect(() => {
-    if (keyword?.trim()?.length > 0) {
-      const parts = (keyword || '').split(',').map(p => p.trim().toLowerCase());
-      const lastPart = parts[parts.length - 1];
-      
-      if (lastPart) {
-        const allSuggestions = [
-          ...suggestionKeywords.map(s => ({ keyword: s, relevanceScore: 5 })),
-          ...realtimeSuggestions
-        ];
-        
-        const filtered = allSuggestions
-          .filter(s => s.keyword.toLowerCase().includes(lastPart) && !parts.includes(s.keyword.toLowerCase()))
-          .sort((a, b) => {
-            if (b.relevanceScore !== a.relevanceScore) {
-              return b.relevanceScore - a.relevanceScore;
-            }
-            const aStarts = a.keyword.toLowerCase().startsWith(lastPart);
-            const bStarts = b.keyword.toLowerCase().startsWith(lastPart);
-            if (aStarts && !bStarts) return -1;
-            if (!aStarts && bStarts) return 1;
-            return a.keyword.localeCompare(b.keyword);
-          })
-          .slice(0, 10);
-          
-        setFilteredSuggestions(filtered);
-        setShowSuggestions(isFocused && filtered.length > 0);
-      } else {
-        setFilteredSuggestions(trendingKeywords.map(k => ({ keyword: k, relevanceScore: 10 })));
-        setShowSuggestions(isFocused);
-      }
+    if (keyword.trim().length > 0) {
+      const lowerKeyword = keyword.toLowerCase();
+      const filtered = suggestionKeywords
+        .filter(k => k.toLowerCase().includes(lowerKeyword))
+        .sort((a, b) => {
+          const aStarts = a.toLowerCase().startsWith(lowerKeyword);
+          const bStarts = b.toLowerCase().startsWith(lowerKeyword);
+          if (aStarts && !bStarts) return -1;
+          if (!aStarts && bStarts) return 1;
+          return a.localeCompare(b);
+        })
+        .slice(0, 8);
+      setFilteredSuggestions(filtered);
+      setShowSuggestions(isFocused && filtered.length > 0);
     } else {
-      setFilteredSuggestions(trendingKeywords.map(k => ({ keyword: k, relevanceScore: 10 })));
+      setFilteredSuggestions(trendingKeywords);
       setShowSuggestions(isFocused);
     }
-  }, [keyword, isFocused, realtimeSuggestions]);
+  }, [keyword, isFocused]);
 
   return (
     <div className="max-w-6xl mx-auto px-6 pb-32 relative">
@@ -242,13 +207,56 @@ export default function TopTab({
           </div>
         </div>
 
+        {/* Intent Targeting Options */}
+        <div className="px-6 py-4 sm:px-10 border-b border-white/5 bg-black/20">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+            <div className="flex items-center gap-3 shrink-0">
+              <Target size={14} className="text-accent" />
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em]">Precision Targeting</span>
+            </div>
+            <div className="flex flex-wrap gap-4 flex-1">
+              <select 
+                value={settings.intent?.targetPlatform || 'Adobe Stock'}
+                onChange={(e) => setSettings(s => ({ ...s, intent: { ...s.intent, targetPlatform: e.target.value, primaryGoal: s.intent?.primaryGoal || 'Portfolio Building', timeCommitment: s.intent?.timeCommitment || 'Part-time' } }))}
+                className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 outline-none focus:border-accent/40 transition-colors"
+              >
+                <option value="Adobe Stock">Adobe Stock</option>
+                <option value="Shutterstock">Shutterstock</option>
+                <option value="Freepik">Freepik</option>
+                <option value="Getty Images">Getty Images</option>
+                <option value="General Microstock">General Microstock</option>
+              </select>
+
+              <select 
+                value={settings.intent?.primaryGoal || 'Portfolio Building'}
+                onChange={(e) => setSettings(s => ({ ...s, intent: { ...s.intent, primaryGoal: e.target.value, targetPlatform: s.intent?.targetPlatform || 'Adobe Stock', timeCommitment: s.intent?.timeCommitment || 'Part-time' } }))}
+                className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 outline-none focus:border-accent/40 transition-colors"
+              >
+                <option value="Portfolio Building">Portfolio Building (Long-term)</option>
+                <option value="Quick Passive Income">Quick Passive Income (Trends)</option>
+                <option value="Style Experimentation">Style Experimentation</option>
+              </select>
+
+              <select 
+                value={settings.intent?.timeCommitment || 'Part-time'}
+                onChange={(e) => setSettings(s => ({ ...s, intent: { ...s.intent, timeCommitment: e.target.value, targetPlatform: s.intent?.targetPlatform || 'Adobe Stock', primaryGoal: s.intent?.primaryGoal || 'Portfolio Building' } }))}
+                className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 outline-none focus:border-accent/40 transition-colors"
+              >
+                <option value="Limited">Limited Time (&lt; 5 hrs/week)</option>
+                <option value="Part-time">Part-time (5-20 hrs/week)</option>
+                <option value="Full-time">Full-time (20+ hrs/week)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         {/* Main Input Area */}
         <div className="p-6 sm:p-10 space-y-8 sm:space-y-10 relative">
           <FormField
             label="Primary Concept / Keywords"
             icon={<Type size={14} />}
             description="Describe your creative concept or enter neural keywords to generate prompts."
-            error={!(keyword || '').trim() && !referenceFile && !(referenceUrl || '').trim() ? "Please provide a keyword, reference file, or URL to begin analysis." : undefined}
+            error={!keyword.trim() && !referenceFile && !referenceUrl.trim() ? "Please provide a keyword, reference file, or URL to begin analysis." : undefined}
           >
             <div className="relative group mt-2">
               <div className="absolute -inset-1 bg-gradient-to-r from-accent/20 to-blue-500/20 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
@@ -260,8 +268,6 @@ export default function TopTab({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setTimeout(() => setIsFocused(false), 200)}
               />
-              <TrendForecast niche={keyword} settings={settings} onSelect={onSelectTrend || setKeyword} />
-              <CompetitorGapAnalysis niche={keyword} onSelect={onSelectTrend || setKeyword} />
               
               <AnimatePresence>
                 {showSuggestions && filteredSuggestions.length > 0 && (
@@ -271,71 +277,31 @@ export default function TopTab({
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     className="absolute top-full left-0 right-0 mt-4 glass-panel rounded-[2.5rem] shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar border-white/10 backdrop-blur-2xl"
                   >
-                    {!(keyword || '').trim() && (
+                    {!keyword.trim() && (
                       <div className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3 border-b border-white/5 bg-white/5">
                         <TrendingUp size={14} className="text-accent" /> Trending Neural Patterns
                       </div>
                     )}
                     {filteredSuggestions.map((suggestion, i) => (
                       <button
-                        key={`suggestion-${suggestion.keyword}-${i}`}
-                        className="w-full text-left px-8 py-5 text-sm text-slate-300 hover:bg-white/5 hover:text-accent transition-all border-b border-white/5 last:border-0 flex items-center justify-between group"
+                        key={i}
+                        className="w-full text-left px-8 py-5 text-sm text-slate-300 hover:bg-white/5 hover:text-accent transition-all border-b border-white/5 last:border-0 flex items-center gap-5 group"
                         onClick={() => {
-                          const parts = keyword.split(',');
-                          parts.pop(); // Remove the partial last part
-                          const newKeyword = [...parts, suggestion.keyword].map(p => p.trim()).filter(Boolean).join(', ');
-                          setKeyword(newKeyword + ', ');
+                          setKeyword(suggestion);
                           setIsFocused(false);
                           setShowSuggestions(false);
                         }}
                       >
-                        <div className="flex items-center gap-5">
-                          <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-accent/30 group-hover:bg-accent/5 transition-all">
-                            <Search size={14} className="text-slate-600 group-hover:text-accent transition-colors" />
-                          </div>
-                          {suggestion.keyword}
+                        <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-accent/30 group-hover:bg-accent/5 transition-all">
+                          <Search size={14} className="text-slate-600 group-hover:text-accent transition-colors" />
                         </div>
-                        <span className="text-[10px] bg-white/5 px-2 py-1 rounded text-slate-500 group-hover:text-accent">Score: {suggestion.relevanceScore}</span>
+                        <span className="font-light tracking-wide">{suggestion}</span>
                       </button>
                     ))}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
-
-            {/* Keyword Suggestions Chips */}
-            {(keyword || '').trim().length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {suggestionKeywords
-                  .filter(k => {
-                    const lowerK = k.toLowerCase();
-                    const parts = (keyword || '').split(',').map(p => p.trim().toLowerCase());
-                    const lastPart = parts[parts.length - 1];
-                    
-                    if (!lastPart) return false;
-                    
-                    // Match if the suggestion includes the last typed part, 
-                    // and the suggestion isn't already in the list of parts
-                    return lowerK.includes(lastPart) && !parts.includes(lowerK);
-                  })
-                  .slice(0, 6)
-                  .map((suggestion, idx) => (
-                    <button
-                      key={`chip-${suggestion}-${idx}`}
-                      onClick={() => {
-                        const parts = keyword.split(',');
-                        parts.pop(); // Remove the partial last part
-                        const newKeyword = [...parts, suggestion].map(p => p.trim()).filter(Boolean).join(', ');
-                        setKeyword(newKeyword + ', ');
-                      }}
-                      className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs text-slate-300 transition-colors flex items-center gap-1.5"
-                    >
-                      <Sparkles size={12} className="text-accent" />
-                      {suggestion}
-                    </button>
-                  ))}
-              </div>
-            )}
           </FormField>
 
           {/* Reference Tools Section */}
@@ -469,11 +435,11 @@ export default function TopTab({
               whileHover={{ scale: 1.01, y: -1 }}
               whileTap={{ scale: 0.99 }}
               onClick={onQuickGenerate}
-              disabled={isAnalyzing || (!(keyword || '').trim() && !referenceFile && !(referenceUrl || '').trim())}
+              disabled={isAnalyzing || (!keyword.trim() && !referenceFile && !referenceUrl.trim())}
               className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-2xl text-[9px] font-bold uppercase tracking-[0.3em] transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 shadow-xl"
             >
               {isAnalyzing ? (
-                <LoadingIndicator size="sm" />
+                <Loader2 size={16} className="animate-spin" />
               ) : (
                 <>
                   <Zap size={16} className="text-accent" />
@@ -485,12 +451,12 @@ export default function TopTab({
               whileHover={{ scale: 1.01, y: -1 }}
               whileTap={{ scale: 0.99 }}
               onClick={onAnalyze}
-              disabled={isAnalyzing || (!(keyword || '').trim() && !referenceFile && !(referenceUrl || '').trim())}
+              disabled={isAnalyzing || (!keyword.trim() && !referenceFile && !referenceUrl.trim())}
               className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white text-black px-10 py-4 rounded-2xl text-[9px] font-bold uppercase tracking-[0.3em] transition-all disabled:opacity-50 disabled:cursor-not-allowed futuristic-glow hover:bg-slate-200 shadow-2xl shadow-white/10"
             >
               {isAnalyzing ? (
                 <>
-                  <LoadingIndicator size="sm" />
+                  <Loader2 size={16} className="animate-spin" />
                   <span>Processing Neural Data...</span>
                 </>
               ) : (
@@ -607,7 +573,7 @@ export default function TopTab({
                           </div>
                           <div className="flex flex-wrap gap-2 bg-white/5 p-4 rounded-2xl border border-white/5">
                             {aestheticAnalysis.colorPalette.map((color, i) => (
-                              <span key={`color-${color}-${i}`} className="px-3 py-1.5 bg-black/40 rounded-xl text-[10px] text-slate-300 border border-white/10 font-mono uppercase tracking-wider">
+                              <span key={i} className="px-3 py-1.5 bg-black/40 rounded-xl text-[10px] text-slate-300 border border-white/10 font-mono uppercase tracking-wider">
                                 {color}
                               </span>
                             ))}
@@ -623,7 +589,7 @@ export default function TopTab({
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {aestheticAnalysis.suggestions.map((suggestion, i) => (
                               <motion.button 
-                                key={`aesthetic-suggestion-${i}`} 
+                                key={i} 
                                 whileHover={{ scale: 1.02, backgroundColor: 'rgba(0,255,255,0.08)' }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => setKeyword(prev => prev ? `${prev}, ${suggestion}` : suggestion)}
@@ -635,48 +601,6 @@ export default function TopTab({
                             ))}
                           </div>
                         </div>
-
-                        {/* Market Gaps */}
-                        {aestheticAnalysis.marketGaps && aestheticAnalysis.marketGaps.length > 0 && (
-                          <div className="space-y-3 lg:col-span-4">
-                            <div className="flex items-center gap-2">
-                              <TrendingUp size={14} className="text-emerald-400" />
-                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Market Gaps & Opportunities</span>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                              {aestheticAnalysis.marketGaps.map((gap, i) => (
-                                <div 
-                                  key={`market-gap-${i}`} 
-                                  className="text-left p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 flex items-start gap-3 group"
-                                >
-                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-                                  <span className="text-xs text-slate-300 font-light leading-relaxed">{gap}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Grounding Sources */}
-                        {aestheticAnalysis.groundingSources && aestheticAnalysis.groundingSources.length > 0 && (
-                          <div className="space-y-3 lg:col-span-4 mt-4">
-                            <div className="flex items-center gap-2">
-                              <Globe size={14} className="text-emerald-400" />
-                              <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-[0.2em]">Real-Time Sources</span>
-                            </div>
-                            <div className="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10">
-                              <ul className="space-y-2">
-                                {aestheticAnalysis.groundingSources.map((source, idx) => (
-                                  <li key={`source-${source.uri}-${idx}`} className="text-xs text-slate-300 font-light truncate">
-                                    <a href={source.uri} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors underline decoration-emerald-500/30 underline-offset-4">
-                                      {source.title || source.uri}
-                                    </a>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -763,10 +687,6 @@ export default function TopTab({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {results.length > 0 && (
-        <MarketMap results={results} onSelect={onSelectTrend} />
-      )}
     </div>
   );
 }

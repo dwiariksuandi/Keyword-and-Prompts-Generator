@@ -19,10 +19,12 @@ import {
 } from 'lucide-react';
 import { CategoryResult, HistoryItem } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
+import { NeuralMarketMap } from './NeuralMarketMap';
 
 interface ResultsTabProps {
   results: CategoryResult[];
   history: HistoryItem[];
+  keyword?: string;
   onClearHistory: () => void;
   onLoadHistory: (item: HistoryItem) => void;
   onGenerateMetadata: (categoryId: string) => void;
@@ -33,6 +35,7 @@ interface ResultsTabProps {
 export default function ResultsTab({ 
   results, 
   history, 
+  keyword = '',
   onClearHistory, 
   onLoadHistory, 
   onGenerateMetadata, 
@@ -143,6 +146,16 @@ export default function ResultsTab({
           </motion.button>
         )}
       </div>
+
+      {results.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="mb-12"
+        >
+          <NeuralMarketMap keyword={keyword} results={results} />
+        </motion.div>
+      )}
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -20,7 +20,7 @@ function zodToJsonSchemaNoSchema(schema: any) {
 }
 
 export const TrendSchema = z.object({
-  id: z.string().optional().transform(val => val || Math.random().toString(36).substring(7)),
+  id: z.string().optional().transform(val => `trend-${val || Math.random().toString(36).substring(7)}-${Math.random().toString(36).substring(5)}`),
   niche: z.string(),
   forecastScore: z.preprocess((val) => {
     if (typeof val === 'string') {

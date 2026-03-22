@@ -7,19 +7,16 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export default function TrendForecast({ niche, settings, onSelect }: { niche?: string, settings: AppSettings, onSelect?: (niche: string) => void }) {
   const [trends, setTrends] = useState<Trend[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Record<string, string>>({});
   const [refining, setRefining] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    async function fetchTrends() {
-      setLoading(true);
-      const data = await getTrendForecast(niche, settings);
-      setTrends(data);
-      setLoading(false);
-    }
-    fetchTrends();
-  }, [niche, settings]);
+  const fetchTrends = async () => {
+    setLoading(true);
+    const data = await getTrendForecast(niche, settings);
+    setTrends(data);
+    setLoading(false);
+  };
 
   const handleRefine = async (trend: Trend) => {
     const trendFeedback = feedback[trend.id] || '';
@@ -47,6 +44,17 @@ export default function TrendForecast({ niche, settings, onSelect }: { niche?: s
         </div>
       </div>
       <div className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">Analyzing 2026 Market Dynamics...</div>
+    </div>
+  );
+
+  if (trends.length === 0) return (
+    <div className="flex flex-col items-center justify-center p-12 space-y-6 bg-white/[0.02] rounded-[2.5rem] border border-white/5">
+      <button 
+        onClick={fetchTrends}
+        className="text-white bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl transition-all font-black uppercase tracking-widest text-xs"
+      >
+        Mulai Analisis Tren
+      </button>
     </div>
   );
 

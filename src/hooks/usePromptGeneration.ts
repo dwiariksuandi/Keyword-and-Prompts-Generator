@@ -1,24 +1,294 @@
-import { useState, useCallback } from 'react';
-import { generatePrompts } from '../services/promptService';
-import { generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, refinePrompts } from '../services/gemini';
-import { AppSettings, CategoryResult } from '../types';
+import { useState } from 'react';
+import { CategoryResult } from '../types';
+import { generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, scorePrompts, handleGeminiError, generateAdobeStockMetadata } from '../services/gemini';
+import { useAppStore } from '../store/useAppStore';
 
-export function usePromptGeneration(
-  settings: AppSettings,
-  updateResult: (id: string, updater: (r: CategoryResult) => CategoryResult) => void
-) {
-  const [isGeneratingPrompts, setIsGeneratingPrompts] = useState(false);
+export const usePromptGeneration = () => {
+  const {
+    keyword,
+    contentType,
+    referenceFile,
+    referenceUrl,
+    settings,
+    results, setResults,
+    setHistory,
+    setErrorModal,
+    setToast,
+    setIsAnalyzing
+  } = useAppStore();
 
-  const handleGeneratePrompts = useCallback(async (categoryId: string, categoryName: string, contentType: string) => {
-    updateResult(categoryId, c => ({ ...c, isGeneratingPrompts: true }));
+  const handleQuickGenerate = async () => {
+    if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) return;
+    setIsAnalyzing(true);
     try {
-      const prompts = await generatePrompts(categoryName, contentType, settings);
-      updateResult(categoryId, c => ({ ...c, generatedPrompts: prompts, isGeneratingPrompts: false }));
-    } catch (error) {
-      console.error(error);
-      updateResult(categoryId, c => ({ ...c, isGeneratingPrompts: false }));
-    }
-  }, [settings, updateResult]);
+      const actualCountToGenerate = Math.min(settings.promptCount, 1500);
+      const prompts = await generatePromptsDirectly(
+        actualCountToGenerate, 
+        settings, 
+        contentType, 
+        keyword || undefined, 
+        referenceFile || undefined, 
+        referenceUrl || undefined
+      );
 
-  return { isGeneratingPrompts, handleGeneratePrompts };
-}
+      const quickResult: CategoryResult = {
+        id: 'quick-' + Math.random().toString(36).substring(7),
+        categoryName: keyword || (referenceFile ? referenceFile.name : 'Quick Generation'),
+        contentType: contentType,
+        mainKeywords: keyword ? [keyword] : [],
+        volumeLevel: 'Medium',
+        volumeNumber: 0,
+        competition: 'Medium',
+        competitionScore: 0,
+        trend: 'stable',
+        trendPercent: 0,
+        trendForecast: 'stable',
+        riskLevel: 'Medium',
+        riskFactors: [],
+        difficultyScore: 0,
+        opportunityScore: 100,
+        buyerPersona: 'General',
+        visualTrends: [],
+        creativeAdvice: 'Directly generated from reference.',
+        generatedPrompts: prompts,
+        isGeneratingPrompts: true, 
+        isUpgrading: false,
+        isStarred: true,
+      };
+
+      setResults(prev => [quickResult, ...prev]);
+      // setActiveTab('prompt'); // This should be handled in App.tsx
+
+      try {
+        const scores = await scorePrompts(
+          prompts, 
+          settings, 
+          contentType, 
+          quickResult.categoryName,
+          quickResult.buyerPersona,
+          quickResult.visualTrends,
+          quickResult.creativeAdvice
+        );
+        setResults(prev => prev.map(r => r.id === quickResult.id ? { ...r, promptScores: scores, isGeneratingPrompts: false } : r));
+      } catch (scoreError) {
+        console.error("Scoring failed:", scoreError);
+        setResults(prev => prev.map(r => r.id === quickResult.id ? { ...r, isGeneratingPrompts: false } : r));
+      }
+      
+      setHistory(prev => [{
+        id: Date.now().toString(),
+        query: `Quick: ${keyword || (referenceUrl ? referenceUrl : referenceFile?.name)}`,
+        contentType: contentType,
+        timestamp: new Date().toISOString(),
+        categoryCount: 1,
+        promptCount: prompts.length
+      }, ...prev.slice(0, 9)]);
+
+    } catch (error) {
+      console.error("Quick generation failed:", error);
+      setErrorModal({
+        show: true,
+        title: 'Gagal Generate Prompt',
+        message: handleGeminiError(error)
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleGeneratePrompts = async (id: string) => {
+    const result = results.find(r => r.id === id);
+    if (!result) return;
+
+    setResults(prev => prev.map(r => r.id === id ? { ...r, isGeneratingPrompts: true } : r));
+    
+    try {
+      const actualCountToGenerate = Math.min(settings.promptCount, 1500); 
+      const prompts = await generatePrompts(
+        keyword, 
+        result.categoryName, 
+        actualCountToGenerate, 
+        settings, 
+        result.contentType,
+        referenceFile || undefined,
+        referenceUrl || undefined,
+        result.buyerPersona,
+        result.visualTrends,
+        result.creativeAdvice
+      );
+
+      const scores = await scorePrompts(
+        prompts, 
+        settings, 
+        result.contentType, 
+        result.categoryName,
+        result.buyerPersona,
+        result.visualTrends,
+        result.creativeAdvice
+      );
+
+      setResults(prev => prev.map(r => r.id === id ? { 
+        ...r, 
+        generatedPrompts: prompts,
+        promptScores: scores,
+        isGeneratingPrompts: false 
+      } : r));
+    } catch (error) {
+      console.error("Prompt generation failed:", error);
+      setErrorModal({
+        show: true,
+        title: 'Pembuatan Prompt Gagal',
+        message: handleGeminiError(error)
+      });
+      setResults(prev => prev.map(r => r.id === id ? { ...r, isGeneratingPrompts: false } : r));
+    }
+  };
+
+  const handleUpgradePrompts = async (categoryId: string) => {
+    const category = results.find(c => c.id === categoryId);
+    if (!category || category.generatedPrompts.length === 0) return;
+
+    setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isUpgrading: true } : c));
+    
+    try {
+      const optimizedPrompts = await optimizePrompts(
+        category.generatedPrompts, 
+        settings, 
+        category.contentType,
+        keyword || undefined,
+        category.categoryName,
+        referenceFile || undefined,
+        referenceUrl || undefined,
+        category.buyerPersona,
+        category.visualTrends,
+        category.creativeAdvice
+      );
+      
+      const scores = await scorePrompts(
+        optimizedPrompts, 
+        settings, 
+        category.contentType, 
+        category.categoryName,
+        category.buyerPersona,
+        category.visualTrends,
+        category.creativeAdvice
+      );
+
+      setResults(prev => prev.map(c => {
+        if (c.id === categoryId) {
+          return { ...c, generatedPrompts: optimizedPrompts, promptScores: scores, isUpgrading: false };
+        }
+        return c;
+      }));
+    } catch (error) {
+      console.error("Prompt optimization failed:", error);
+      setErrorModal({
+        show: true,
+        title: 'Optimasi Gagal',
+        message: handleGeminiError(error)
+      });
+      setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isUpgrading: false } : c));
+    }
+  };
+
+  const handleGenerateMetadata = async (categoryId: string) => {
+    const category = results.find(c => c.id === categoryId);
+    if (!category || category.generatedPrompts.length === 0) return;
+
+    setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isGeneratingMetadata: true } : c));
+    
+    try {
+      const metadata = await generateAdobeStockMetadata(
+        category.generatedPrompts, 
+        category.categoryName,
+        settings,
+        contentType
+      );
+      
+      setResults(prev => prev.map(c => {
+        if (c.id === categoryId) {
+          return { ...c, metadata, isGeneratingMetadata: false };
+        }
+        return c;
+      }));
+      setToast({ show: true, message: 'Metadata Adobe Stock berhasil dibuat!' });
+    } catch (error) {
+      console.error("Metadata generation failed:", error);
+      setErrorModal({
+        show: true,
+        title: 'Metadata Gagal',
+        message: handleGeminiError(error)
+      });
+      setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isGeneratingMetadata: false } : c));
+    }
+  };
+
+  const handleGenerateAllPrompts = async () => {
+    if (results.length === 0) return;
+    
+    setIsAnalyzing(true);
+    try {
+      const actualTotalCount = Math.min(settings.promptCount * results.length, 5000);
+      const promptMap = await generateAllPromptsBatch(
+        keyword,
+        results,
+        actualTotalCount,
+        settings,
+        contentType
+      );
+
+      const updatedResults = [...results];
+      
+      for (const result of updatedResults) {
+        const prompts = promptMap.get(result.categoryName) || [];
+        if (prompts.length > 0) {
+          result.generatedPrompts = prompts;
+          result.isGeneratingPrompts = true;
+        }
+      }
+      
+      setResults([...updatedResults]);
+      // setActiveTab('prompt'); // Handle in App.tsx
+
+      for (let i = 0; i < updatedResults.length; i++) {
+        const result = updatedResults[i];
+        if (result.generatedPrompts.length > 0) {
+          try {
+            const scores = await scorePrompts(
+              result.generatedPrompts, 
+              settings, 
+              result.contentType, 
+              result.categoryName,
+              result.buyerPersona,
+              result.visualTrends,
+              result.creativeAdvice
+            );
+            setResults(prev => prev.map(r => r.id === result.id ? { ...r, promptScores: scores, isGeneratingPrompts: false } : r));
+          } catch (scoreError) {
+            console.error(`Scoring failed for ${result.categoryName}:`, scoreError);
+            setResults(prev => prev.map(r => r.id === result.id ? { ...r, isGeneratingPrompts: false } : r));
+          }
+        }
+      }
+
+      setToast({ show: true, message: 'Semua prompt berhasil dibuat dan dinilai!' });
+    } catch (error) {
+      console.error("Batch generation failed:", error);
+      setErrorModal({
+        show: true,
+        title: 'Gagal Generate Massal',
+        message: handleGeminiError(error)
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  return {
+    handleQuickGenerate,
+    handleGeneratePrompts,
+    handleUpgradePrompts,
+    handleGenerateMetadata,
+    handleGenerateAllPrompts
+  };
+};
