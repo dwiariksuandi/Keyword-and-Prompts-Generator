@@ -1,7 +1,5 @@
 import { create } from 'zustand';
-import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis } from '../types';
-
-export type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "visual";
+import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis, Tab } from '../types';
 
 interface AppState {
   isSessionActive: boolean;
@@ -26,6 +24,8 @@ interface AppState {
   filterCompetition: string;
   errorModal: { show: boolean; title: string; message: string };
   toast: { show: boolean; message: string };
+  isPipelineRunning: boolean;
+  promptsCount: number;
 
   // Actions
   setIsSessionActive: (active: boolean) => void;
@@ -50,6 +50,8 @@ interface AppState {
   setFilterCompetition: (filter: string) => void;
   setErrorModal: (modal: { show: boolean; title: string; message: string }) => void;
   setToast: (toast: { show: boolean; message: string }) => void;
+  setIsPipelineRunning: (running: boolean) => void;
+  setPromptsCount: (count: number) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -93,6 +95,8 @@ export const useAppStore = create<AppState>((set) => ({
   filterCompetition: 'all',
   errorModal: { show: false, title: '', message: '' },
   toast: { show: false, message: '' },
+  isPipelineRunning: false,
+  promptsCount: 100,
 
   setIsSessionActive: (active) => set({ isSessionActive: active }),
   setTempApiKey: (key) => set({ tempApiKey: key }),
@@ -116,4 +120,6 @@ export const useAppStore = create<AppState>((set) => ({
   setFilterCompetition: (filter) => set({ filterCompetition: filter }),
   setErrorModal: (modal) => set({ errorModal: modal }),
   setToast: (toast) => set({ toast }),
+  setIsPipelineRunning: (running) => set({ isPipelineRunning: running }),
+  setPromptsCount: (count) => set({ promptsCount: count }),
 }));

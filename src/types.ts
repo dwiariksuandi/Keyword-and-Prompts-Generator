@@ -1,3 +1,5 @@
+export type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "visual";
+
 export interface ReferenceFile {
   data: string; // base64
   mimeType: string;
@@ -7,6 +9,8 @@ export interface ReferenceFile {
 
 export interface PromptScore {
   prompt: string;
+  optimizedPrompt?: string;
+  rating?: number;
   score: number;
   density: number;
   clarity: number;
@@ -17,6 +21,7 @@ export interface PromptScore {
   clarityFeedback?: string;
   specificityFeedback?: string;
   adherenceFeedback?: string;
+  groundingSources?: string[];
 }
 
 export interface AestheticAnalysis {
@@ -55,6 +60,7 @@ export interface CategoryResult {
   isStarred: boolean;
   isGeneratingMetadata?: boolean;
   metadata?: { title: string; keywords: string[] }[];
+  competitorIntel?: CompetitorAnalysis[];
 }
 
 export interface HistoryItem {
@@ -99,3 +105,49 @@ export interface AppSettings {
   intent?: AnalysisIntent;
   creatorProfile?: CreatorProfile;
 }
+
+// Missing types
+export interface ABTestLog { id: string; testId: string; variant: string; timestamp: string; }
+export interface CompetitorAnalysis { id: string; name: string; strengths: string[]; weaknesses: string[]; }
+export interface AgentTask { id: string; name: string; status: 'pending' | 'running' | 'completed'; }
+export interface PromptOptimizationRequest { prompt: string; }
+export interface TrendForecast {
+  id: string;
+  trend: string;
+  forecast: string;
+  niche: string;
+  isHighPriority: boolean;
+  predictionDate: string;
+  confidence: number;
+  growthPotential: number;
+  reasoning: string;
+  marketGap: string;
+  visualStyle: string;
+  recommendedKeywords: string[];
+}
+
+export interface SalesRecord {
+  id: string;
+  amount: number;
+  date: string;
+  earnings: number;
+  downloads: number;
+  assetId: string;
+  title: string;
+}
+
+export interface FeatureFlag {
+  id: string;
+  enabled: boolean;
+  rolloutPercentage: number;
+}
+
+export interface PromptFeedback {
+  id: string;
+  promptId: string;
+  rating: number;
+  comment: string;
+  timestamp: string;
+  selectionCount: number;
+}
+export const WORKFLOW_STEPS = ["input", "analysis", "results", "prompt"];

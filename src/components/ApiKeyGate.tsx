@@ -34,7 +34,7 @@ export const ApiKeyGate: React.FC<ApiKeyGateProps> = ({ onKeySubmit }) => {
     
     try {
       const result = await validateApiKey(key.trim());
-      if (result.valid) {
+      if (result.isValid) {
         setValidationSuccess(true);
         setTimeout(() => {
           setApiKey(key.trim(), keyName || `Key ${apiKeys.length + 1}`);
@@ -46,7 +46,7 @@ export const ApiKeyGate: React.FC<ApiKeyGateProps> = ({ onKeySubmit }) => {
           setShowAddForm(false);
         }, 1500);
       } else {
-        setError(result.message);
+        setError(result.error || 'API Key tidak valid');
         setIsValidating(false);
       }
     } catch (err) {

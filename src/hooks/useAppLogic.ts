@@ -4,6 +4,7 @@ import { useSession } from './useSession';
 import { useAnalysis } from './useAnalysis';
 import { usePromptGeneration } from './usePromptGeneration';
 import { useHistory } from './useHistory';
+import { HistoryItem } from '../types';
 
 export const useAppLogic = () => {
   const {
@@ -90,7 +91,7 @@ export const useAppLogic = () => {
     }, 3000);
   };
 
-  const handleLoadHistory = (item: any) => {
+  const handleLoadHistory = (item: HistoryItem) => {
     analysis.setKeyword(item.query);
     analysis.setContentType(item.contentType || 'Photo');
     setActiveTab("top");
