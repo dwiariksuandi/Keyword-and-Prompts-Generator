@@ -1,4 +1,5 @@
-import { useAppStore } from '../store/useAppStore';
+import { useMarketStore } from '../store/useMarketStore';
+import { usePromptStore } from '../store/usePromptStore';
 import { useUIStore } from '../store/useUIStore';
 import { analyzeCompetitorIntel, predictSalesPotential } from '../services/marketService';
 import { getTrendForecast } from '../services/trendService';
@@ -7,7 +8,10 @@ import { CategoryResult } from '../types';
 export const useMarketIntelligence = () => {
   const {
     settings,
-    keyword,
+    keyword
+  } = usePromptStore();
+
+  const {
     results, setResults,
     isAnalyzingCompetitor, setIsAnalyzingCompetitor,
     isMonitoring, setIsMonitoring,
@@ -15,7 +19,7 @@ export const useMarketIntelligence = () => {
     isRefreshingForecasts, setIsRefreshingForecasts,
     salesRecords,
     isParsingSalesCSV, setIsParsingSalesCSV
-  } = useAppStore();
+  } = useMarketStore();
 
   const {
     setToast,

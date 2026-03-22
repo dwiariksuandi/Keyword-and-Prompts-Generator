@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { CategoryResult } from '../types';
 import { generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, scorePrompts, handleGeminiError, generateAdobeStockMetadata } from '../services/gemini';
-import { useAppStore } from '../store/useAppStore';
+import { usePromptStore } from '../store/usePromptStore';
+import { useMarketStore } from '../store/useMarketStore';
 import { useUIStore } from '../store/useUIStore';
 
 export const usePromptGeneration = () => {
@@ -10,15 +11,18 @@ export const usePromptGeneration = () => {
     contentType,
     referenceFile,
     referenceUrl,
-    settings,
+    settings
+  } = usePromptStore();
+
+  const {
     results, setResults,
-    setHistory,
-    setIsAnalyzing
-  } = useAppStore();
+    setHistory
+  } = useMarketStore();
 
   const {
     setErrorModal,
-    setToast
+    setToast,
+    setIsAnalyzing
   } = useUIStore();
 
   const handleQuickGenerate = async () => {

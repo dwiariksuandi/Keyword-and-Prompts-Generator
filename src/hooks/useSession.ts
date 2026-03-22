@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import React from 'react';
 import { validateApiKey } from '../services/gemini';
-import { useAppStore } from '../store/useAppStore';
+import { usePromptStore } from '../store/usePromptStore';
 import { useUIStore } from '../store/useUIStore';
+import { useSessionStore } from '../store/useSessionStore';
 
 export const useSession = () => {
   const {
-    tempApiKey, setTempApiKey,
+    tempApiKey, setTempApiKey
+  } = useSessionStore();
+
+  const {
     setSettings
-  } = useAppStore();
+  } = usePromptStore();
 
   const {
     isSessionActive, setIsSessionActive,

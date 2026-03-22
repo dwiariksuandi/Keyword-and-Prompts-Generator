@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { analyzeKeyword, analyzeAestheticReference, analyzeUrlAesthetic, handleGeminiError } from '../services/gemini';
-import { useAppStore } from '../store/useAppStore';
+import { useMarketStore } from '../store/useMarketStore';
+import { usePromptStore } from '../store/usePromptStore';
 import { useUIStore } from '../store/useUIStore';
 import { vectorStoreService } from '../services/vectorStore';
 
@@ -10,17 +11,23 @@ export const useAnalysis = () => {
     contentType, setContentType,
     referenceFile, setReferenceFile,
     referenceUrl, setReferenceUrl,
-    isAnalyzing, setIsAnalyzing,
-    isAnalyzingAesthetic, setIsAnalyzingAesthetic,
-    aestheticAnalysis, setAestheticAnalysis,
-    settings,
+    settings
+  } = usePromptStore();
+
+  const {
     setResults,
     setHistory
-  } = useAppStore();
+  } = useMarketStore();
 
   const {
     setErrorModal,
-    setToast
+    setToast,
+    setIsAnalyzing,
+    setIsAnalyzingAesthetic,
+    setAestheticAnalysis,
+    isAnalyzing,
+    isAnalyzingAesthetic,
+    aestheticAnalysis
   } = useUIStore();
 
   const handleAnalyzeAesthetic = async () => {

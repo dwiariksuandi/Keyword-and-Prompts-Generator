@@ -1,4 +1,4 @@
-import { useAppStore } from '../store/useAppStore';
+import { useMarketStore } from '../store/useMarketStore';
 import { useUIStore } from '../store/useUIStore';
 import { CategoryResult, HistoryItem } from '../types';
 
@@ -8,7 +8,7 @@ export const useHistory = () => {
     history, setHistory,
     sortBy,
     filterCompetition
-  } = useAppStore();
+  } = useMarketStore();
 
   const { setToast } = useUIStore();
 

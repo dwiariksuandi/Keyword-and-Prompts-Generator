@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
-import { useAppStore } from '../store/useAppStore';
 import { useUIStore } from '../store/useUIStore';
+import { useMarketStore } from '../store/useMarketStore';
+import { usePromptStore } from '../store/usePromptStore';
+import { usePipelineStore } from '../store/usePipelineStore';
+import { useSessionStore } from '../store/useSessionStore';
 import { useSession } from './useSession';
 import { useAnalysis } from './useAnalysis';
 import { usePromptGeneration } from './usePromptGeneration';
@@ -12,20 +15,34 @@ export const useAppLogic = () => {
   const {
     selectedPromptCategoryId, setSelectedPromptCategoryId,
     settings, setSettings,
-    history, setHistory,
+    keyword, setKeyword,
+    contentType, setContentType,
+    referenceFile, setReferenceFile,
+    referenceUrl, setReferenceUrl,
+    promptsCount, setPromptsCount
+  } = usePromptStore();
+
+  const {
+    tempApiKey, setTempApiKey
+  } = useSessionStore();
+
+  const {
     results, setResults,
-    sortBy, setSortBy,
-    filterCompetition, setFilterCompetition,
-    isPipelineRunning, setIsPipelineRunning,
-    pipelineTasks, setPipelineTasks,
-    promptsCount, setPromptsCount,
+    history, setHistory,
+    forecasts, setForecasts,
+    salesRecords, setSalesRecords,
     isAnalyzingCompetitor, setIsAnalyzingCompetitor,
     isMonitoring, setIsMonitoring,
-    forecasts, setForecasts,
     isRefreshingForecasts, setIsRefreshingForecasts,
-    salesRecords, setSalesRecords,
-    isParsingSalesCSV, setIsParsingSalesCSV
-  } = useAppStore();
+    isParsingSalesCSV, setIsParsingSalesCSV,
+    sortBy, setSortBy,
+    filterCompetition, setFilterCompetition
+  } = useMarketStore();
+
+  const {
+    isPipelineRunning, setIsPipelineRunning,
+    pipelineTasks, setPipelineTasks
+  } = usePipelineStore();
 
   const {
     activeTab, setActiveTab,
