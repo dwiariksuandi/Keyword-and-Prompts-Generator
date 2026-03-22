@@ -30,21 +30,23 @@ export const TrendListSchema = z.array(TrendSchema);
 export async function getTrendForecast(niche: string | undefined, settings: AppSettings): Promise<TrendForecast[]> {
   const ai = getAI(settings.apiKey);
   
-  const promptText = `Perform an advanced, data-driven Market Trend Intelligence analysis for the niche: '${niche || 'general microstock'}'.
-  
-  CRITICAL INSTRUCTIONS:
-  1. USE GOOGLE SEARCH to identify REAL, CURRENT, and EMERGING trends for 2026 in the microstock industry.
-  2. Provide for each trend:
-     - niche: Specific niche name.
-     - isHighPriority: boolean.
-     - confidence: 0-100.
-     - growthPotential: 0-500 (percentage).
-     - reasoning: Why this trend?
-     - marketGap: What is missing?
-     - visualStyle: Art direction.
-     - recommendedKeywords: string[].
-  
-  Respond strictly with a JSON array of 5-8 objects.`;
+  const promptText = `[Persona]: Anda adalah seorang Analis Tren Pasar Senior dengan spesialisasi dalam industri microstock.
+  [Task]: Lakukan analisis intelijen tren pasar yang mendalam dan berbasis data untuk niche: '${niche || 'general microstock'}'.
+  [Constraints]:
+  1. Gunakan GOOGLE SEARCH untuk mengidentifikasi tren REAL, SAAT INI, dan MUNCUL untuk tahun 2026.
+  2. Fokus pada data yang dapat ditindaklanjuti untuk kreator konten.
+  [Output Format]:
+  Berikan respons strictly dalam format JSON array dari 5-8 objek dengan field berikut:
+  - trend: Nama tren yang jelas.
+  - forecast: Deskripsi singkat tentang arah tren.
+  - niche: Niche spesifik.
+  - isHighPriority: boolean.
+  - confidence: 0-100.
+  - growthPotential: 0-500 (persentase).
+  - reasoning: Alasan mendalam di balik tren ini.
+  - marketGap: Apa yang saat ini hilang di pasar.
+  - visualStyle: Arahan artistik (pencahayaan, komposisi, mood).
+  - recommendedKeywords: array string.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -76,6 +78,8 @@ export async function refineTrendForecast(previousTrends: TrendForecast[], feedb
   1. Address the user's feedback directly while maintaining data integrity.
   2. USE GOOGLE SEARCH to re-verify trends and find new data points.
   3. Provide:
+     - trend: Name of the trend.
+     - forecast: Short forecast description.
      - niche: Specific niche name.
      - isHighPriority: boolean.
      - confidence: 0-100.
