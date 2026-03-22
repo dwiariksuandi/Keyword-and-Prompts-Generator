@@ -1,5 +1,5 @@
 {
   "name": "Adobe Stock Keyword Researcher",
-  "description": "An AI-powered tool for analyzing trends, keywords, and generating prompts for Adobe Stock contributors.",
+  "description": "An AI-powered tool for analyzing trends, keywords, and generating prompts for Adobe Stock contributors. Vercel-ready with serverless API support.",
   "requestFramePermissions": []
 }
