@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { analyzeKeyword, analyzeCompetitorIntel, predictSalesPotential, handleGeminiError } from '../services/gemini';
+import { analyzeMarketNiches, analyzeCompetitorIntel, predictSalesPotential, handleGeminiError } from '../services/gemini';
 import { CategoryResult, AppSettings, SalesRecord } from '../types';
 
 export function useMarketAnalysis(settings: AppSettings, salesRecords: SalesRecord[]) {
@@ -14,7 +14,7 @@ export function useMarketAnalysis(settings: AppSettings, salesRecords: SalesReco
   const handleAnalyze = async (keyword: string, contentType: string, referenceFile: any, referenceUrl: string) => {
     setIsAnalyzing(true);
     try {
-      const data = await analyzeKeyword(keyword, contentType, settings, referenceFile || undefined, referenceUrl || undefined);
+      const data = await analyzeMarketNiches(keyword, contentType, settings, referenceFile || undefined, referenceUrl || undefined);
       const formattedResults: CategoryResult[] = data.map((item: any) => ({
         id: `res-${Date.now()}-${Math.random().toString(36).substring(7)}`,
         categoryName: item.categoryName,

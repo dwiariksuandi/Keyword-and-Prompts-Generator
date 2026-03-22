@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { analyzeKeyword, analyzeAestheticReference, analyzeUrlAesthetic, handleGeminiError } from '../services/gemini';
+import { analyzeMarketNiches, analyzeAestheticReference, analyzeUrlAesthetic, handleGeminiError } from '../services/gemini';
 import { useMarketStore } from '../store/useMarketStore';
 import { usePromptStore } from '../store/usePromptStore';
 import { useUIStore } from '../store/useUIStore';
@@ -59,7 +59,7 @@ export const useAnalysis = () => {
     if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) return;
     setIsAnalyzing(true);
     try {
-      const data = await analyzeKeyword(keyword, contentType, settings, referenceFile || undefined, referenceUrl || undefined);
+      const data = await analyzeMarketNiches(keyword, contentType, settings, referenceFile || undefined, referenceUrl || undefined);
       
       // Vector Store: Add to vector store for future recommendations
       await vectorStoreService.add(data, settings.apiKey);

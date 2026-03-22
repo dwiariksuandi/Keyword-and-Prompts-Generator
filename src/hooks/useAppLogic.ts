@@ -182,6 +182,12 @@ export const useAppLogic = () => {
     setActiveTab("prompt");
   };
 
+  const sortedResults = [...results].sort((a, b) => {
+    if (sortBy === 'opportunity') return b.opportunityScore - a.opportunityScore;
+    if (sortBy === 'competition') return a.competitionScore - b.competitionScore;
+    return 0;
+  });
+
   return {
     ...session,
     ...analysis,
@@ -210,6 +216,7 @@ export const useAppLogic = () => {
     handleRunPipeline,
     isPipelineRunning,
     pipelineTasks,
-    progress
+    progress,
+    sortedResults
   };
 };

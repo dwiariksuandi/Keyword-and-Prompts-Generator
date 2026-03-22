@@ -3,8 +3,9 @@ import { getAI, extractJSON, getContentTypeInstructions } from './gemini';
 import { ThinkingLevel } from '@google/genai';
 import { fetchRealTimeMarketData } from './ragService';
 import { cacheService } from './cacheService';
+import { MARKET_ANALYSIS_PROMPT } from '../prompts/marketPrompts';
 
-export async function analyzeKeyword(
+export async function analyzeMarketNiches(
   keyword: string, 
   contentType: string, 
   settings: AppSettings, 
@@ -34,48 +35,17 @@ export async function analyzeKeyword(
   (CRITICAL: The Creative Director Agent MUST prioritize niches and visual trends that align with or complement this creator's existing Aesthetic DNA. Do not suggest styles that are completely disconnected from their proven strengths. The recommendations MUST be "tepat sasaran" based on their portfolio.)
   ` : '';
 
-  const promptText = `Perform an elite, multi-agent market analysis targeting asset type: '${contentType}'.
-  
-  MARKET CONTEXT (Real-Time Data):
-  - Trends: ${marketData.trends.join(', ')}
-  - Competitor Insights: ${marketData.competitorInsights}
-  - Market Gaps: ${marketData.marketGaps.join(', ')}
-
-  ${intentContext}
-  ${portfolioContext}
-  ${getContentTypeInstructions(contentType)}
-  
-  AGENT ROLES:
-  - Market Analyst Agent: Identify high-volume, low-competition niches based on market data.
-  - Creative Director Agent: Define visual trends, buyer personas, and art direction.
-  - Trend Forecaster Agent: Predict 6-month trajectory and future market shifts.
-  - Risk Assessment Agent: Evaluate saturation, copyright risks, and barrier to entry.
-  - Prompt Engineer Agent: Synthesize all insights into actionable, commercially lucrative sub-niches.
-
-  Respond strictly with a JSON array of objects following this schema:
-  {
-    "categoryName": string,
-    "mainKeywords": string[],
-    "volumeLevel": "High" | "Medium" | "Low",
-    "volumeNumber": number,
-    "competition": "High" | "Medium" | "Low",
-    "competitionScore": number,
-    "trend": "up" | "down" | "stable",
-    "trendPercent": number,
-    "trendForecast": "up" | "down" | "stable",
-    "riskLevel": "High" | "Medium" | "Low",
-    "riskFactors": string[],
-    "difficultyScore": number,
-    "opportunityScore": number,
-    "buyerPersona": string,
-    "visualTrends": string[],
-    "creativeAdvice": string
-  }
-  
-  ${keyword ? `The broad keyword context is: '${keyword}'.` : ''}
-  ${referenceUrl ? `Reference URL: ${referenceUrl}` : ''}
-  
-  Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
+  const promptText = MARKET_ANALYSIS_PROMPT
+    .replace('{contentType}', contentType)
+    .replace('{trends}', marketData.trends.join(', '))
+    .replace('{competitorInsights}', marketData.competitorInsights)
+    .replace('{marketGaps}', marketData.marketGaps.join(', '))
+    .replace('{intentContext}', intentContext)
+    .replace('{portfolioContext}', portfolioContext)
+    .replace('{contentTypeInstructions}', getContentTypeInstructions(contentType))
+    .replace('{keywordContext}', keyword ? `The broad keyword context is: '${keyword}'.` : '')
+    .replace('{referenceUrlContext}', referenceUrl ? `Reference URL: ${referenceUrl}` : '')
+    .replace('{language}', settings.language === 'id' ? 'Indonesian' : 'English');
 
   const response = await ai.models.generateContent({
     model: settings.model || 'gemini-3-flash-preview',
@@ -100,7 +70,7 @@ export async function analyzeKeyword(
 }
 
 export async function fetchTrendingKeywords(keyword: string, settings: AppSettings, contentType: string) {
-  const data = await analyzeKeyword(keyword, contentType, settings);
+  const data = await analyzeMarketNiches(keyword, contentType, settings);
   return data.flatMap((item: any) => item.mainKeywords);
 }
 
