@@ -1,3 +1,13 @@
+export type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "pipeline" | "wizard" | "intelligence" | "sales" | "forecast";
+
+export const WORKFLOW_STEPS = [
+  { id: 'top', label: '01. RESEARCH', description: 'Cari Niche Menguntungkan' },
+  { id: 'intelligence', label: '02. INTEL', description: 'Bedah Strategi Kompetitor' },
+  { id: 'forecast', label: '03. FORECAST', description: 'Prediksi Tren Masa Depan' },
+  { id: 'pipeline', label: '04. PRODUCTION', description: 'Produksi Aset Otomatis' },
+  { id: 'prompt', label: '05. VAULT', description: 'Hasil & Metadata' }
+];
+
 export interface ReferenceFile {
   data: string; // base64
   mimeType: string;
@@ -76,8 +86,10 @@ export interface CategoryResult {
   trend: 'up' | 'down' | 'stable' | 'explosive' | 'cyclical';
   trendPercent: number;
   difficultyScore: number;
+  demandScore?: number;
   opportunityScore: number;
   nicheScore?: number;
+  isBlueOcean?: boolean;
   demandVariance?: 'Stable' | 'Seasonal' | 'Viral' | 'Emerging';
   keiScore?: number;
   commercialIntent?: 'Informational' | 'Navigational' | 'Commercial' | 'Transactional' | 'Brand Awareness';
@@ -95,8 +107,6 @@ export interface CategoryResult {
   metadata?: { title: string; description?: string; keywords: string[] }[];
   groundingSources?: { uri: string; title: string }[];
   competitorIntel?: CompetitorAnalysis;
-  isShared?: boolean;
-  sharedWith?: string[];
   salesData?: {
     estimatedMonthlySales: number;
     confidenceScore: number;
@@ -154,4 +164,5 @@ export interface AppSettings {
   autoSave: boolean;
   variationLevel: 'Low' | 'Medium' | 'High';
   competitorIntel?: CompetitorAnalysis;
+  geminiApiKey?: string;
 }

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Key, Save, Check, AlertCircle, LogOut, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe, Zap, TrendingUp, Eye, EyeOff } from 'lucide-react';
+import { Key, Save, Check, AlertCircle, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe, Zap, TrendingUp, Eye, EyeOff, CheckCircle2, Loader2 } from 'lucide-react';
 import { AppSettings, PromptTemplate } from '../types';
-import { promptTemplates } from '../services/gemini';
+import { promptTemplates } from '../services/promptUtils';
 import { motion, AnimatePresence } from 'motion/react';
+import { useApiStore } from '../store/useApiStore';
+import { GoogleGenAI } from '@google/genai';
 
 interface SettingsProps {
   settings: AppSettings;
@@ -21,6 +23,35 @@ export default function Settings({
   prefsSaved,
   prefsValidationMessage
 }: SettingsProps) {
+  const { apiKey, setApiKey, clearApiKey } = useApiStore();
+  const [manualApiKey, setManualApiKey] = useState(apiKey);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const handleValidateAndSave = async () => {
+    setIsValidating(true);
+    setValidationError(null);
+    try {
+      const ai = new GoogleGenAI({ apiKey: manualApiKey });
+      await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: 'ping',
+      });
+      setApiKey(manualApiKey);
+      if (onSavePreferences) onSavePreferences();
+    } catch (error) {
+      setValidationError('Kunci API tidak valid. Silakan periksa kembali.');
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleReset = () => {
+    setManualApiKey('');
+    clearApiKey();
+    setValidationError(null);
+  };
+
   const [activeContentTypeTab, setActiveContentTypeTab] = useState('Photo');
 
   const defaultTemplates: Record<string, string> = {
@@ -57,35 +88,90 @@ export default function Settings({
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-3xl mx-auto py-12 px-6"
+      className="max-w-4xl mx-auto py-16 px-6 space-y-16"
     >
-      <div className="text-center mb-12">
+      <div className="text-center space-y-6">
         <motion.div 
           initial={{ scale: 0.9 }}
           animate={{ scale: 1 }}
-          className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 mb-6 futuristic-glow"
+          className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] bg-white/5 border border-white/10 mb-4 shadow-2xl"
         >
-          <SettingsIcon className="w-8 h-8 text-accent" />
+          <SettingsIcon className="w-10 h-10 text-white" />
         </motion.div>
-        <h1 className="text-4xl font-bold text-white mb-3 tracking-tight font-display">System <span className="text-accent">Configuration</span></h1>
-        <p className="text-slate-400 font-light">Manage your neural parameters and API integration.</p>
+        <h1 className="text-6xl font-black text-white tracking-tighter uppercase leading-none">
+          System <span className="text-white/40">Configuration</span>
+        </h1>
+        <p className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Manage your neural parameters and API integration.</p>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-12">
+        {/* API Key Configuration */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-[#0A0A0A] p-12 rounded-[3rem] border border-white/5 shadow-2xl"
+        >
+          <div className="flex items-center gap-6 mb-12">
+            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-xl">
+              <Key className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-white uppercase tracking-tighter">API Configuration</h2>
+              <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] mt-1">Manual Gemini API Key Management</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block">Gemini API Key</label>
+            <input
+              type="password"
+              value={manualApiKey}
+              onChange={(e) => setManualApiKey(e.target.value)}
+              className="w-full bg-white/[0.02] border border-white/10 rounded-[2rem] text-white px-8 py-5 outline-none focus:border-white/30 transition-all font-mono text-sm"
+              placeholder="AIza..."
+            />
+            <div className="flex gap-4 pt-4">
+              <button
+                onClick={handleReset}
+                className="px-8 py-4 rounded-full bg-white/5 hover:bg-white/10 text-white font-bold uppercase tracking-widest text-[10px] transition-all"
+              >
+                Reset
+              </button>
+              <button
+                onClick={handleValidateAndSave}
+                disabled={isValidating}
+                className="px-8 py-4 rounded-full bg-white text-black font-bold uppercase tracking-widest text-[10px] hover:bg-white/90 transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                {isValidating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {isValidating ? 'Validasi...' : 'Submit'}
+              </button>
+            </div>
+            {validationError && (
+              <p className="text-[10px] text-red-500 font-bold mt-2 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                {validationError}
+              </p>
+            )}
+            <p className="text-[10px] text-white/20 font-medium">
+              * Kunci disimpan secara lokal di browser Anda. Gunakan dengan hati-hati.
+            </p>
+          </div>
+        </motion.div>
+
         {/* Model Selection */}
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass-panel p-8"
+          className="bg-[#0A0A0A] p-12 rounded-[3rem] border border-white/5 shadow-2xl"
         >
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
-              <Cpu className="w-6 h-6 text-accent" />
+          <div className="flex items-center gap-6 mb-12">
+            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-xl">
+              <Cpu className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white font-display">Core Engine</h2>
-              <p className="text-sm text-slate-500 font-light">Select the primary LLM for synthesis.</p>
+              <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Core Engine</h2>
+              <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] mt-1">Primary Synthesis LLM</p>
             </div>
           </div>
 
@@ -100,17 +186,17 @@ export default function Settings({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setSettings({ ...settings, model: model.id })}
-                className={`p-5 rounded-2xl border text-left transition-all duration-300 ${
+                className={`p-8 rounded-[2rem] border text-left transition-all duration-500 ${
                   settings.model === model.id
-                    ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,216,182,0.1)]"
-                    : "border-white/5 bg-black/20 hover:border-white/20"
+                    ? "border-white bg-white text-black shadow-xl"
+                    : "border-white/5 bg-white/[0.02] text-white/40 hover:border-white/20"
                 }`}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <p className={`font-bold tracking-tight ${settings.model === model.id ? 'text-accent' : 'text-white'}`}>{model.name}</p>
-                  {settings.model === model.id && <div className="w-2 h-2 rounded-full bg-accent futuristic-glow" />}
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-black uppercase tracking-tight text-lg">{model.name}</p>
+                  {settings.model === model.id && <div className="w-2.5 h-2.5 rounded-full bg-black" />}
                 </div>
-                <p className="text-xs text-slate-500 font-light">{model.desc}</p>
+                <p className={`text-[10px] font-black uppercase tracking-widest ${settings.model === model.id ? 'text-black/40' : 'text-white/20'}`}>{model.desc}</p>
               </motion.button>
             ))}
           </div>
@@ -121,29 +207,29 @@ export default function Settings({
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
-          className="glass-panel p-8"
+          className="bg-[#0A0A0A] p-12 rounded-[3rem] border border-white/5 shadow-2xl"
         >
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
-              <Layout className="w-6 h-6 text-accent" />
+          <div className="flex items-center gap-6 mb-12">
+            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-xl">
+              <Layout className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white font-display">Synthesis Blueprints</h2>
-              <p className="text-sm text-slate-500 font-light">Configure prompt templates for specific outputs.</p>
+              <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Synthesis Blueprints</h2>
+              <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] mt-1">Prompt Template Configuration</p>
             </div>
           </div>
           
-          <div className="flex overflow-x-auto pb-4 mb-6 gap-3 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+          <div className="flex overflow-x-auto pb-6 mb-10 gap-4 scrollbar-hide">
             {CONTENT_TYPES.map(type => (
               <motion.button
                 key={type}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setActiveContentTypeTab(type)}
-                className={`whitespace-nowrap px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+                className={`whitespace-nowrap px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 border ${
                   activeContentTypeTab === type
-                    ? 'bg-accent text-slate-900 futuristic-glow'
-                    : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'
+                    ? 'bg-white text-black border-white shadow-xl'
+                    : 'bg-white/5 text-white/40 hover:text-white border-white/10'
                 }`}
               >
                 {type}
@@ -151,7 +237,7 @@ export default function Settings({
             ))}
           </div>
 
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-4">
             {promptTemplates
               .filter(template => template.contentTypes.includes(activeContentTypeTab))
               .map((template) => (
@@ -159,19 +245,19 @@ export default function Settings({
                 key={template.id}
                 whileHover={{ x: 5 }}
                 onClick={() => handleTemplateChange(template.id)}
-                className={`w-full p-5 rounded-2xl border text-left transition-all duration-300 ${
+                className={`w-full p-8 rounded-[2rem] border text-left transition-all duration-500 ${
                   currentTemplateIds[activeContentTypeTab] === template.id
-                    ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(0,216,182,0.1)]"
-                    : "border-white/5 bg-black/20 hover:border-white/20"
+                    ? "border-white bg-white text-black shadow-xl"
+                    : "border-white/5 bg-white/[0.02] text-white/40 hover:border-white/20"
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <p className={`font-bold tracking-tight ${currentTemplateIds[activeContentTypeTab] === template.id ? 'text-accent' : 'text-white'}`}>{template.name}</p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="font-black uppercase tracking-tight text-lg">{template.name}</p>
                   {currentTemplateIds[activeContentTypeTab] === template.id && (
-                    <Check className="w-5 h-5 text-accent" />
+                    <Check className="w-6 h-6 text-black" />
                   )}
                 </div>
-                <p className="text-xs text-slate-500 font-light leading-relaxed">{template.description}</p>
+                <p className={`text-[10px] font-black uppercase tracking-widest leading-relaxed ${currentTemplateIds[activeContentTypeTab] === template.id ? 'text-black/40' : 'text-white/20'}`}>{template.description}</p>
               </motion.button>
             ))}
           </div>
@@ -182,21 +268,21 @@ export default function Settings({
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
-          className="glass-panel p-8"
+          className="bg-[#0A0A0A] p-12 rounded-[3rem] border border-white/5 shadow-2xl"
         >
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
-              <Sliders className="w-6 h-6 text-accent" />
+          <div className="flex items-center gap-6 mb-12">
+            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-xl">
+              <Sliders className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white font-display">Output Parameters</h2>
-              <p className="text-sm text-slate-500 font-light">Fine-tune the generation behavior.</p>
+              <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Output Parameters</h2>
+              <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] mt-1">Fine-tune Generation Behavior</p>
             </div>
           </div>
 
-          <div className="space-y-8">
-            <div>
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block">Default Synthesis Density</label>
+          <div className="space-y-12">
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block">Default Synthesis Density</label>
               <div className="relative">
                 <input
                   type="number"
@@ -208,20 +294,20 @@ export default function Settings({
                     if (val > 1500) val = 1500;
                     setSettings({ ...settings, promptCount: val });
                   }}
-                  className="w-full bg-black/40 border border-white/5 rounded-2xl text-white px-6 py-4 outline-none focus:border-accent transition-all font-mono"
+                  className="w-full bg-white/[0.02] border border-white/10 rounded-[2rem] text-white px-8 py-5 outline-none focus:border-white/30 transition-all font-black text-lg uppercase tracking-tighter"
                   min="1"
                   max="1500"
                 />
-                <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600 uppercase tracking-widest">Prompts</div>
+                <div className="absolute right-8 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/20 uppercase tracking-widest">Prompts</div>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block flex items-center gap-2">
-                  <Globe size={12} /> Language Protocol
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block flex items-center gap-3">
+                  <Globe size={14} /> Language Protocol
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   {[
                     { id: "en", name: "English" },
                     { id: "id", name: "Indonesian" },
@@ -231,10 +317,10 @@ export default function Settings({
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setSettings({ ...settings, language: lang.id })}
-                      className={`p-3 rounded-xl border text-sm font-bold transition-all ${
+                      className={`p-4 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${
                         settings.language === lang.id
-                          ? "border-accent bg-accent/10 text-accent"
-                          : "border-white/5 bg-black/20 text-slate-500 hover:text-white hover:border-white/20"
+                          ? "bg-white text-black border-white shadow-xl"
+                          : "bg-white/5 text-white/40 border-white/10 hover:border-white/30"
                       }`}
                     >
                       {lang.name}
@@ -243,11 +329,11 @@ export default function Settings({
                 </div>
               </div>
 
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block flex items-center gap-2">
-                  <Cpu size={12} /> Entropy Level
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block flex items-center gap-3">
+                  <Cpu size={14} /> Entropy Level
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-4">
                   {[
                     { id: "Low", name: "Low" },
                     { id: "Medium", name: "Mid" },
@@ -258,98 +344,87 @@ export default function Settings({
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setSettings({ ...settings, variationLevel: level.id as any })}
-                      className={`p-3 rounded-xl border text-xs font-bold transition-all ${
+                      className={`p-4 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${
                         settings.variationLevel === level.id
-                          ? "border-accent bg-accent/10 text-accent"
-                          : "border-white/5 bg-black/20 text-slate-500 hover:text-white hover:border-white/20"
+                          ? "bg-white text-black border-white shadow-xl"
+                          : "bg-white/5 text-white/40 border-white/10 hover:border-white/30"
                       }`}
                     >
                       {level.name}
                     </motion.button>
                   ))}
                 </div>
-                <div className="mt-4 p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2">
-                  <p className="text-[10px] text-slate-500 leading-relaxed font-light">
-                    <span className="text-accent/80 font-bold mr-1">Low:</span> Fokus, literal, dan dapat diprediksi.
-                  </p>
-                  <p className="text-[10px] text-slate-500 leading-relaxed font-light">
-                    <span className="text-accent/80 font-bold mr-1">Mid:</span> Keseimbangan antara akurasi dan kreativitas.
-                  </p>
-                  <p className="text-[10px] text-slate-500 leading-relaxed font-light">
-                    <span className="text-accent/80 font-bold mr-1">High:</span> Kreativitas maksimal dan eksplorasi ide unik.
-                  </p>
-                </div>
               </div>
             </div>
 
-            <div className="pt-8 border-t border-white/5 space-y-6">
+            <div className="pt-12 border-t border-white/5 space-y-8">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
-                    <Database size={18} className="text-slate-400" />
+                <div className="flex items-center gap-6">
+                  <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-xl">
+                    <Database size={20} className="text-white/40" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white tracking-tight">Neural Cache</h3>
-                    <p className="text-xs text-slate-500 font-light">Auto-save synthesis logs locally.</p>
+                    <h3 className="text-lg font-black text-white uppercase tracking-widest">Neural Cache</h3>
+                    <p className="text-[10px] text-white/20 font-black uppercase tracking-widest mt-1">Auto-save synthesis logs locally</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setSettings({ ...settings, autoSave: !settings.autoSave })}
-                  className={`w-14 h-7 rounded-full transition-all relative p-1 ${
-                    settings.autoSave ? "bg-accent" : "bg-slate-800"
+                  className={`w-16 h-8 rounded-full transition-all relative p-1.5 duration-500 ${
+                    settings.autoSave ? "bg-white" : "bg-white/5 border border-white/10"
                   }`}
                 >
                   <motion.div
-                    animate={{ x: settings.autoSave ? 28 : 0 }}
-                    className="w-5 h-5 rounded-full bg-white shadow-lg"
+                    animate={{ x: settings.autoSave ? 32 : 0 }}
+                    className={`w-5 h-5 rounded-full shadow-2xl transition-colors duration-500 ${settings.autoSave ? 'bg-black' : 'bg-white/20'}`}
                   />
                 </button>
               </div>
 
-              <div className="flex flex-col gap-4">
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
-                      <AlertCircle size={18} className="text-slate-400" />
+                  <div className="flex items-center gap-6">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-xl">
+                      <AlertCircle size={20} className="text-white/40" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white tracking-tight">Negative Vectors</h3>
-                      <p className="text-xs text-slate-500 font-light">Include exclusion parameters for SDXL.</p>
+                      <h3 className="text-lg font-black text-white uppercase tracking-widest">Negative Vectors</h3>
+                      <p className="text-[10px] text-white/20 font-black uppercase tracking-widest mt-1">Include exclusion parameters for SDXL</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setSettings({ ...settings, includeNegative: !settings.includeNegative })}
-                    className={`w-14 h-7 rounded-full transition-all relative p-1 ${
-                      settings.includeNegative ? "bg-accent" : "bg-slate-800"
+                    className={`w-16 h-8 rounded-full transition-all relative p-1.5 duration-500 ${
+                      settings.includeNegative ? "bg-white" : "bg-white/5 border border-white/10"
                     }`}
                   >
                     <motion.div
-                      animate={{ x: settings.includeNegative ? 28 : 0 }}
-                      className="w-5 h-5 rounded-full bg-white shadow-lg"
+                      animate={{ x: settings.includeNegative ? 32 : 0 }}
+                      className={`w-5 h-5 rounded-full shadow-2xl transition-colors duration-500 ${settings.includeNegative ? 'bg-black' : 'bg-white/20'}`}
                     />
                   </button>
                 </div>
                 
-                {settings.includeNegative && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="pl-14"
-                  >
-                    <label className="block text-xs font-medium text-slate-400 mb-2">
-                      Custom Negative Prompt (Adobe Stock Guidelines)
-                    </label>
-                    <textarea
-                      value={settings.customNegativePrompt || ''}
-                      onChange={(e) => setSettings({ ...settings, customNegativePrompt: e.target.value })}
-                      className="w-full h-24 bg-slate-900/50 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent resize-none transition-all"
-                      placeholder="--no text, watermark, deformed..."
-                    />
-                    <p className="text-[10px] text-slate-500 mt-2">
-                      Default includes comprehensive Adobe Stock guidelines (IP, Quality, Anatomy).
-                    </p>
-                  </motion.div>
-                )}
+                <AnimatePresence>
+                  {settings.includeNegative && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="pl-20 space-y-4"
+                    >
+                      <label className="block text-[10px] font-black text-white/20 uppercase tracking-widest">
+                        Custom Negative Prompt (Adobe Stock Guidelines)
+                      </label>
+                      <textarea
+                        value={settings.customNegativePrompt || ''}
+                        onChange={(e) => setSettings({ ...settings, customNegativePrompt: e.target.value })}
+                        className="w-full h-32 bg-white/[0.02] border border-white/10 rounded-[2rem] p-6 text-sm text-white placeholder-white/10 focus:outline-none focus:border-white/30 transition-all font-medium leading-relaxed resize-none"
+                        placeholder="--no text, watermark, deformed..."
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
@@ -360,16 +435,16 @@ export default function Settings({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="pt-6"
+          className="space-y-8"
         >
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onSavePreferences}
-            className={`w-full flex items-center justify-center gap-3 font-bold py-5 rounded-2xl transition-all duration-500 ${
+            className={`w-full flex items-center justify-center gap-4 font-black py-6 rounded-[2rem] transition-all duration-700 uppercase tracking-widest text-[10px] border shadow-2xl ${
               prefsSaved 
-                ? "bg-emerald-500 text-slate-900 shadow-[0_0_30px_rgba(16,185,129,0.3)]" 
-                : "bg-accent text-slate-900 futuristic-glow"
+                ? "bg-white text-black border-white shadow-white/5" 
+                : "bg-white text-black border-white shadow-white/10"
             }`}
           >
             {prefsSaved ? (
@@ -385,18 +460,22 @@ export default function Settings({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className={`mt-6 flex items-center gap-4 p-5 rounded-2xl text-sm border ${
+                className={`flex items-center gap-6 p-8 rounded-[2rem] text-sm border shadow-2xl transition-all duration-500 ${
                   prefsValidationMessage.type === 'success' 
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                    : 'bg-red-500/10 text-red-400 border-red-500/20'
+                    ? 'bg-white/[0.02] text-white border-white/10' 
+                    : 'bg-white/[0.02] text-white border-white/10'
                 }`}
               >
                 {prefsValidationMessage.type === 'success' ? (
-                  <Check className="w-5 h-5 shrink-0" />
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
+                    <Check className="w-6 h-6 text-white" />
+                  </div>
                 ) : (
-                  <AlertCircle className="w-5 h-5 shrink-0" />
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
+                    <AlertCircle className="w-6 h-6 text-white" />
+                  </div>
                 )}
-                <p className="font-medium">{prefsValidationMessage.text}</p>
+                <p className="font-black uppercase tracking-tight text-lg">{prefsValidationMessage.text}</p>
               </motion.div>
             )}
           </AnimatePresence>

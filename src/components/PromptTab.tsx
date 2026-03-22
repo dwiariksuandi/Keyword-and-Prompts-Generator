@@ -1,5 +1,6 @@
 import React from 'react';
-import { Download, Copy, ArrowLeft, Wand2, Sparkles, RefreshCw, Loader2, Globe, FileJson, FileSpreadsheet, Zap, Eye } from 'lucide-react';
+import { Download, Copy, ArrowLeft, Wand2, Sparkles, RefreshCw, Loader2, Globe, FileJson, FileSpreadsheet, Zap, Eye, Check } from 'lucide-react';
+import { ProgressBar } from './ProgressBar';
 import { CategoryResult } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -118,16 +119,16 @@ export default function PromptTab({
         animate={{ opacity: 1, y: 0 }}
         className="max-w-6xl mx-auto px-6 py-20 text-center"
       >
-        <div className="glass-panel p-12 max-w-lg mx-auto">
-          <h2 className="text-2xl font-bold text-white mb-4 font-display">No Categories Available</h2>
-          <p className="text-slate-400 mb-8">Initiate keyword analysis to unlock the Prompt Studio.</p>
+        <div className="bg-[#0A0A0A] p-12 max-w-lg mx-auto rounded-[2.5rem] border border-white/5 shadow-2xl">
+          <h2 className="text-2xl font-black text-white mb-4 uppercase tracking-tighter">No Categories Available</h2>
+          <p className="text-white/40 mb-8 font-medium">Initiate keyword analysis to unlock the Prompt Studio.</p>
           <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
             onClick={onBack}
-            className="bg-accent text-slate-900 px-8 py-3 rounded-xl font-bold transition-all futuristic-glow"
+            className="bg-white text-black px-8 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-white/5"
           >
-            Return to Top Tab
+            Return to Research
           </motion.button>
         </div>
       </motion.div>
@@ -142,40 +143,32 @@ export default function PromptTab({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-2xl"
           >
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="glass-panel p-12 flex flex-col items-center max-w-sm w-full mx-4 text-center futuristic-glow"
+              className="bg-[#0A0A0A] p-12 flex flex-col items-center max-w-sm w-full mx-4 text-center rounded-[3rem] border border-white/10 shadow-2xl"
             >
               <div className="relative w-24 h-24 mb-10">
-                <div className={`absolute inset-0 border-4 rounded-full animate-spin ${isGeneratingAny ? 'border-accent/20 border-t-accent' : 'border-orange-500/20 border-t-orange-500'}`}></div>
+                <div className="absolute inset-0 border-2 rounded-full animate-spin border-white/10 border-t-white"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  {isGeneratingAny ? <Sparkles className="text-accent animate-pulse" size={40} /> : <Wand2 className="text-orange-500 animate-pulse" size={40} />}
+                  {isGeneratingAny ? <Sparkles className="text-white animate-pulse" size={40} /> : <Wand2 className="text-white animate-pulse" size={40} />}
                 </div>
               </div>
-              <h3 className={`text-3xl font-bold mb-4 tracking-tight font-display ${isGeneratingAny ? 'text-accent' : 'text-orange-500'}`}>
+              <h3 className="text-3xl font-black mb-4 tracking-tighter uppercase text-white">
                 {isGeneratingAny ? 'Synthesizing' : 'Optimizing'}
               </h3>
               
               {progress && (
-                <div className="w-full mb-6">
-                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
-                    <span>{progress.message}</span>
-                    <span>{Math.round((progress.current / progress.total) * 100)}%</span>
-                  </div>
-                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(progress.current / progress.total) * 100}%` }}
-                      className={`h-full ${isGeneratingAny ? 'bg-accent' : 'bg-orange-500'}`}
-                    />
-                  </div>
-                </div>
+                <ProgressBar 
+                  current={progress.current} 
+                  total={progress.total} 
+                  message={progress.message} 
+                />
               )}
 
-              <p className="text-slate-400 text-sm leading-relaxed font-light">
+              <p className="text-white/40 text-sm leading-relaxed font-medium">
                 Our neural engine is {isGeneratingAny ? 'crafting high-fidelity prompts' : 'refining visual parameters'} for your niche.
               </p>
             </motion.div>
@@ -186,47 +179,47 @@ export default function PromptTab({
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-6 sm:gap-8 mb-10 sm:mb-12"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16"
       >
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-6">
           <motion.button 
-            whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.1)' }}
+            whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.05)' }}
             whileTap={{ scale: 0.9 }}
             onClick={onBack}
-            className="p-3 sm:p-4 glass-panel text-slate-300 transition-all border border-white/10"
+            className="p-4 bg-white/5 text-white rounded-2xl transition-all border border-white/5"
             title="Go Back"
           >
-            <ArrowLeft size={20} sm:size={24} />
+            <ArrowLeft size={24} />
           </motion.button>
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight font-display">
-              Prompt <span className="text-accent">Studio</span>
+            <h1 className="text-4xl font-black text-white tracking-tighter uppercase">
+              Prompt <span className="text-white/40">Studio</span>
             </h1>
-            <p className="text-sm sm:text-base text-slate-500">Neural synthesis of high-conversion visual descriptors.</p>
+            <p className="text-white/40 font-medium">Neural synthesis of high-conversion visual descriptors.</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <button 
               onClick={handleExportCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/20 transition-all text-[10px] font-bold uppercase tracking-widest"
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-xl border border-white/5 transition-all text-[10px] font-black uppercase tracking-widest"
             >
               <FileSpreadsheet size={14} />
-              Export CSV
+              CSV
             </button>
             <button 
               onClick={handleExportJSON}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/20 transition-all text-[10px] font-bold uppercase tracking-widest"
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-xl border border-white/5 transition-all text-[10px] font-black uppercase tracking-widest"
             >
               <FileJson size={14} />
-              Export JSON
+              JSON
             </button>
           </div>
 
-          <div className="flex items-center gap-4 sm:gap-6 glass-panel p-2 sm:p-3 pl-4 sm:pl-6">
-            <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Density</span>
-            <div className="flex items-center bg-slate-800/50 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border border-slate-700/50">
+          <div className="flex items-center gap-6 bg-white/5 p-2 pl-6 rounded-2xl border border-white/5">
+            <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Density</span>
+            <div className="flex items-center bg-black/40 rounded-xl px-4 py-2 border border-white/5">
               <input 
                 type="number" 
                 value={promptsCount || ''}
@@ -235,7 +228,7 @@ export default function PromptTab({
                   if (promptsCount < 1) setPromptsCount(1);
                   if (promptsCount > 1500) setPromptsCount(1500);
                 }}
-                className="bg-transparent text-white w-12 sm:w-14 outline-none text-xs sm:text-sm font-bold text-center font-mono"
+                className="bg-transparent text-white w-14 outline-none text-sm font-black text-center font-mono"
                 min="1"
                 max="1500"
               />
@@ -244,7 +237,7 @@ export default function PromptTab({
         </div>
       </motion.div>
 
-      <div className="space-y-12">
+      <div className="space-y-16">
         <AnimatePresence>
           {displayCategories.map((category, catIdx) => (
             <motion.div 
@@ -252,36 +245,36 @@ export default function PromptTab({
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: catIdx * 0.1 }}
-              className="glass-panel overflow-hidden group"
+              className="bg-[#0A0A0A] rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden group hover:border-white/10 transition-all"
             >
-              <div className="p-6 sm:p-10 border-b border-white/5 bg-white/[0.02]">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-8">
-                  <div className="space-y-4 sm:space-y-5">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-accent tracking-tight font-display">{category.categoryName}</h2>
-                    <div className="flex flex-wrap gap-2 sm:gap-3">
+              <div className="p-8 sm:p-12 border-b border-white/5 bg-white/[0.01]">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                  <div className="space-y-6">
+                    <h2 className="text-3xl font-black text-white tracking-tighter uppercase">{category.categoryName}</h2>
+                    <div className="flex flex-wrap gap-3">
                       {category.mainKeywords.map((kw, i) => (
-                        <span key={i} className="bg-slate-800/40 text-slate-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg border border-slate-700/30">
+                        <span key={`${category.id}-kw-${i}`} className="bg-white/5 text-white/40 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl border border-white/5">
                           {kw}
                         </span>
                       ))}
                     </div>
                     {(category.buyerPersona || category.visualTrends || category.creativeAdvice) && (
-                      <div className="flex flex-col gap-2 mt-4 p-4 bg-black/20 rounded-xl border border-white/5">
+                      <div className="flex flex-col gap-3 mt-6 p-6 bg-black/40 rounded-2xl border border-white/5">
                         {category.buyerPersona && (
-                          <div className="text-xs text-slate-400">
-                            <span className="font-bold text-accent uppercase tracking-widest text-[9px] mr-2">Buyer Persona:</span>
+                          <div className="text-xs text-white/40 font-medium">
+                            <span className="font-black text-white uppercase tracking-widest text-[9px] mr-3">Buyer Persona:</span>
                             {category.buyerPersona}
                           </div>
                         )}
                         {category.visualTrends && category.visualTrends.length > 0 && (
-                          <div className="text-xs text-slate-400">
-                            <span className="font-bold text-accent uppercase tracking-widest text-[9px] mr-2">Visual Trends:</span>
+                          <div className="text-xs text-white/40 font-medium">
+                            <span className="font-black text-white uppercase tracking-widest text-[9px] mr-3">Visual Trends:</span>
                             {category.visualTrends.join(', ')}
                           </div>
                         )}
                         {category.creativeAdvice && (
-                          <div className="text-xs text-slate-400">
-                            <span className="font-bold text-accent uppercase tracking-widest text-[9px] mr-2">Creative Advice:</span>
+                          <div className="text-xs text-white/40 font-medium">
+                            <span className="font-black text-white uppercase tracking-widest text-[9px] mr-3">Creative Advice:</span>
                             {category.creativeAdvice}
                           </div>
                         )}
@@ -289,81 +282,81 @@ export default function PromptTab({
                     )}
                   </div>
                   
-                  <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                  <div className="flex flex-wrap items-center gap-4">
                     {category.generatedPrompts.length === 0 ? (
                       <motion.button 
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => onGenerate(category.id)}
                         disabled={category.isGeneratingPrompts}
-                        className="w-full sm:w-auto flex items-center justify-center gap-3 bg-accent hover:bg-accent/90 text-slate-900 px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold transition-all disabled:opacity-50 futuristic-glow text-xs sm:text-sm"
+                        className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white text-black px-8 py-4 rounded-2xl font-black transition-all disabled:opacity-50 shadow-xl shadow-white/5 text-[10px] uppercase tracking-widest"
                       >
-                        <Sparkles size={18} sm:size={20} />
+                        <Sparkles size={18} />
                         <span>Initiate Synthesis</span>
                       </motion.button>
                     ) : (
                       <>
                         <motion.button 
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          whileTap={{ scale: 0.98 }}
                           onClick={() => onGenerate(category.id)}
                           disabled={category.isGeneratingPrompts}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 bg-slate-800/50 hover:bg-slate-800 text-slate-200 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold border border-slate-700/50 transition-all disabled:opacity-50 text-xs sm:text-sm"
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white px-6 py-4 rounded-2xl font-black border border-white/5 transition-all disabled:opacity-50 text-[10px] uppercase tracking-widest"
                         >
-                          <RefreshCw size={16} sm:size={18} className={category.isGeneratingPrompts ? "animate-spin" : ""} />
+                          <RefreshCw size={16} className={category.isGeneratingPrompts ? "animate-spin" : ""} />
                           <span>Regenerate</span>
                         </motion.button>
                         <motion.button 
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          whileTap={{ scale: 0.98 }}
                           onClick={() => onUpgrade(category.id)}
                           disabled={category.isUpgrading}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold border border-orange-500/30 transition-all disabled:opacity-50 text-xs sm:text-sm"
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white px-6 py-4 rounded-2xl font-black border border-white/10 transition-all disabled:opacity-50 text-[10px] uppercase tracking-widest"
                         >
-                          <Wand2 size={16} sm:size={18} />
+                          <Wand2 size={16} />
                           <span>DNA Upgrade</span>
                         </motion.button>
-                        <div className="w-px h-8 sm:h-10 bg-slate-800 hidden sm:block mx-1 sm:mx-2" />
+                        <div className="w-px h-10 bg-white/5 hidden sm:block mx-2" />
                         {(!category.metadata || category.metadata.length === 0) ? (
                           <motion.button 
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02, y: -2 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => onGenerateMetadata(category.id)}
                             disabled={category.isGeneratingMetadata}
-                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold border border-cyan-500/30 transition-all disabled:opacity-50 text-xs sm:text-sm"
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white px-6 py-4 rounded-2xl font-black border border-white/10 transition-all disabled:opacity-50 text-[10px] uppercase tracking-widest"
                           >
-                            <Sparkles size={16} sm:size={18} />
+                            <Sparkles size={16} />
                             <span>Metadata</span>
                           </motion.button>
                         ) : (
                           <motion.button 
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02, y: -2 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => onPolishMetadata(category.id)}
                             disabled={category.isGeneratingMetadata}
-                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold border border-emerald-500/30 transition-all disabled:opacity-50 text-xs sm:text-sm"
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 text-white px-6 py-4 rounded-2xl font-black border border-white/20 transition-all disabled:opacity-50 text-[10px] uppercase tracking-widest"
                           >
-                            <Zap size={16} sm:size={18} />
+                            <Zap size={16} />
                             <span>Polish SEO</span>
                           </motion.button>
                         )}
-                        <div className="w-px h-8 sm:h-10 bg-slate-800 hidden sm:block mx-1 sm:mx-2" />
+                        <div className="w-px h-10 bg-white/5 hidden sm:block mx-2" />
                         <motion.button 
-                          whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                          whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.05)' }}
                           whileTap={{ scale: 0.9 }}
                           onClick={() => handleDownload(category)}
-                          className="p-3 sm:p-4 bg-slate-800/50 hover:bg-slate-800 text-slate-300 rounded-xl sm:rounded-2xl border border-slate-700/50 transition-all"
+                          className="p-4 bg-white/5 text-white/40 hover:text-white rounded-2xl border border-white/5 transition-all"
                           title="Export TXT"
                         >
-                          <Download size={18} sm:size={20} />
+                          <Download size={20} />
                         </motion.button>
                         <motion.button 
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          whileTap={{ scale: 0.98 }}
                           onClick={() => handleCopyAll(category)}
-                          className="w-full sm:w-auto flex items-center justify-center gap-2 sm:gap-3 bg-accent hover:bg-accent/90 text-slate-900 px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold transition-all futuristic-glow text-xs sm:text-sm"
+                          className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white text-black px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-white/5 text-[10px] uppercase tracking-widest"
                         >
-                          <Copy size={18} sm:size={20} />
+                          <Copy size={18} />
                           <span>Copy All</span>
                         </motion.button>
                       </>
@@ -372,50 +365,50 @@ export default function PromptTab({
                 </div>
               </div>
               
-              <div className="p-6 sm:p-10">
+              <div className="p-8 sm:p-12">
                 {category.generatedPrompts.length === 0 ? (
-                  <div className="text-center py-16 sm:py-24 bg-black/20 rounded-2xl sm:rounded-3xl border border-dashed border-slate-800/50">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800/30 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-slate-700/30">
-                      <Sparkles className="text-slate-600" size={32} sm:size={40} />
+                  <div className="text-center py-24 bg-white/[0.01] rounded-[2.5rem] border border-dashed border-white/5">
+                    <div className="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/5">
+                      <Sparkles className="text-white/20" size={40} />
                     </div>
-                    <h3 className="text-lg sm:text-xl font-bold text-slate-300 mb-2 font-display">Awaiting Synthesis</h3>
-                    <p className="text-slate-500 text-xs sm:text-sm font-light px-4">Execute the command above to generate unique visual descriptors.</p>
+                    <h3 className="text-xl font-black text-white/60 mb-2 uppercase tracking-tighter">Awaiting Synthesis</h3>
+                    <p className="text-white/30 text-sm font-medium px-4">Execute the command above to generate unique visual descriptors.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-1 gap-6">
                     {category.generatedPrompts.map((prompt, index) => (
                       <motion.div 
-                        key={index}
+                        key={`${category.id}-prompt-${index}`}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className="bg-slate-900/40 border border-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 group/item hover:border-accent/30 hover:bg-white/[0.02] transition-all duration-300"
+                        className="bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 sm:p-8 flex flex-col gap-8 group/item hover:border-white/20 hover:bg-white/[0.04] transition-all duration-500"
                       >
-                        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                          <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-black/40 rounded-lg sm:rounded-xl flex items-center justify-center text-accent font-mono font-bold text-base sm:text-lg border border-white/5 group-hover/item:border-accent/20 transition-all">
+                        <div className="flex flex-col sm:flex-row gap-8">
+                          <div className="flex-shrink-0 w-12 h-12 bg-black/40 rounded-2xl flex items-center justify-center text-white font-black text-lg border border-white/5 group-hover/item:border-white/20 transition-all">
                             {index + 1}
                           </div>
-                          <div className="flex-grow pt-0 sm:pt-1">
-                            <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-light">{prompt}</p>
+                          <div className="flex-grow pt-1">
+                            <p className="text-white/80 text-base sm:text-lg leading-relaxed font-medium">{prompt}</p>
                           </div>
-                          <div className="flex-shrink-0 flex justify-end gap-2">
+                          <div className="flex-shrink-0 flex justify-end gap-3">
                             <motion.button 
-                              whileHover={{ scale: 1.1, backgroundColor: 'rgba(6, 182, 212, 0.2)', color: '#22d3ee' }}
+                              whileHover={{ scale: 1.1, backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa' }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => onVisualize(prompt)}
-                              className="p-2.5 sm:p-4 bg-black/40 rounded-xl sm:rounded-2xl text-cyan-400/60 transition-all border border-white/5 hover:border-cyan-500/30"
+                              className="p-4 bg-black/40 rounded-2xl text-white/20 transition-all border border-white/5 hover:border-blue-500/30"
                               title="Visualize with Gemini"
                             >
-                              <Eye size={16} sm:size={18} />
+                              <Eye size={20} />
                             </motion.button>
                             <motion.button 
-                              whileHover={{ scale: 1.1, backgroundColor: 'var(--color-accent)', color: '#000' }}
+                              whileHover={{ scale: 1.1, backgroundColor: 'rgba(255, 255, 255, 0.1)', color: '#fff' }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => handleCopy(prompt)}
-                              className="p-2.5 sm:p-4 bg-black/40 rounded-xl sm:rounded-2xl text-slate-400 transition-all border border-white/5 hover:border-accent/30"
+                              className="p-4 bg-black/40 rounded-2xl text-white/20 transition-all border border-white/5 hover:border-white/30"
                               title="Copy Prompt"
                             >
-                              <Copy size={16} sm:size={18} />
+                              <Copy size={20} />
                             </motion.button>
                           </div>
                         </div>
@@ -424,28 +417,24 @@ export default function PromptTab({
                           <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="mt-2 pt-6 border-t border-white/5"
+                            className="mt-4 pt-8 border-t border-white/5"
                           >
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-6">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8 mb-8">
                               <div className="flex items-center gap-4">
-                                <div className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${
-                                  category.promptScores[index].score >= 80 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.2)]' :
-                                  category.promptScores[index].score >= 60 ? 'bg-teal-500/10 text-teal-400 border-teal-500/20 shadow-[0_0_10px_rgba(45,212,191,0.2)]' :
-                                  'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
-                                }`}>
+                                <div className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border bg-white/10 text-white border-white/20">
                                   Quality Index: {category.promptScores[index].score}%
                                 </div>
                               </div>
-                              <div className="grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
+                              <div className="grid grid-cols-2 sm:flex sm:items-center gap-6 w-full sm:w-auto">
                                 {[
-                                  { label: 'Density', val: category.promptScores[index].density, color: 'bg-accent' },
-                                  { label: 'Clarity', val: category.promptScores[index].clarity, color: 'bg-cyan-500' },
-                                  { label: 'Specific', val: category.promptScores[index].specificity, color: 'bg-indigo-500' },
-                                  { label: 'Adobe', val: category.promptScores[index].adherence, color: 'bg-purple-500' }
+                                  { label: 'Density', val: category.promptScores[index].density, color: 'bg-white' },
+                                  { label: 'Clarity', val: category.promptScores[index].clarity, color: 'bg-white/60' },
+                                  { label: 'Specific', val: category.promptScores[index].specificity, color: 'bg-white/40' },
+                                  { label: 'Adobe', val: category.promptScores[index].adherence, color: 'bg-white/20' }
                                 ].map((m, i) => (
-                                  <div key={i} className="flex flex-col items-center sm:items-start">
-                                    <span className="text-[8px] text-slate-500 uppercase font-bold tracking-widest mb-2">{m.label}</span>
-                                    <div className="w-full sm:w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                                  <div key={`${category.id}-metric-${index}-${i}`} className="flex flex-col items-center sm:items-start">
+                                    <span className="text-[8px] text-white/30 uppercase font-black tracking-widest mb-2">{m.label}</span>
+                                    <div className="w-full sm:w-16 h-1 bg-white/5 rounded-full overflow-hidden">
                                       <motion.div 
                                         initial={{ width: 0 }}
                                         animate={{ width: `${m.val}%` }}
@@ -457,39 +446,39 @@ export default function PromptTab({
                                 ))}
                               </div>
                             </div>
-                            <div className="bg-black/20 rounded-2xl p-6 border border-white/5 space-y-4">
-                              <p className="text-sm text-slate-300 italic leading-relaxed font-light">
-                                <span className="text-accent font-bold not-italic mr-2 uppercase tracking-widest text-[10px]">Analysis:</span>
+                            <div className="bg-black/40 rounded-[2rem] p-8 border border-white/5 space-y-6">
+                              <p className="text-sm text-white/60 italic leading-relaxed font-medium">
+                                <span className="text-white font-black not-italic mr-3 uppercase tracking-widest text-[9px]">Analysis:</span>
                                 {category.promptScores[index].feedback}
                               </p>
                               
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-white/5">
                                 {[
                                   { label: 'Keyword Vectors', text: category.promptScores[index].keywordFeedback },
                                   { label: 'Visual Clarity', text: category.promptScores[index].clarityFeedback },
                                   { label: 'Technical Specs', text: category.promptScores[index].specificityFeedback },
                                   { label: 'Compliance', text: category.promptScores[index].adherenceFeedback }
                                 ].map((f, i) => f.text && (
-                                  <div key={i} className="space-y-2">
-                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">{f.label}</span>
-                                    <p className="text-xs text-slate-400 leading-relaxed font-light">{f.text}</p>
+                                  <div key={`${category.id}-feedback-${index}-${i}`} className="space-y-2">
+                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">{f.label}</span>
+                                    <p className="text-xs text-white/40 leading-relaxed font-medium">{f.text}</p>
                                   </div>
                                 ))}
                               </div>
 
                               {category.promptScores[index].groundingSources && category.promptScores[index].groundingSources!.length > 0 && (
-                                <div className="pt-4 border-t border-white/5 space-y-2">
-                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Market Validation Sources</span>
+                                <div className="pt-6 border-t border-white/5 space-y-3">
+                                  <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Market Validation Sources</span>
                                   <div className="flex flex-wrap gap-2">
                                     {category.promptScores[index].groundingSources!.map((source, i) => (
                                       <a 
-                                        key={i} 
+                                        key={`${category.id}-source-${index}-${i}`} 
                                         href={source.uri} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
-                                        className="text-[10px] text-accent hover:text-white hover:underline transition-colors bg-accent/10 px-2 py-1 rounded border border-accent/20 flex items-center gap-1"
+                                        className="text-[10px] text-white/60 hover:text-white transition-colors bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 flex items-center gap-2"
                                       >
-                                        <Globe size={10} />
+                                        <Globe size={12} />
                                         {source.title.length > 40 ? source.title.substring(0, 40) + '...' : source.title}
                                       </a>
                                     ))}

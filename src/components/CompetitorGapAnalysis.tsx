@@ -26,7 +26,7 @@ export default function CompetitorGapAnalysis({ niche, onSelect }: { niche: stri
       </h3>
       <div className="grid gap-4">
         {gaps.map((gap, i) => (
-          <div key={i} className="bg-rose-500/5 border border-rose-500/10 p-4 rounded-xl">
+          <div key={`gap-${gap.niche}-${gap.missingElement}-${i}`} className="bg-rose-500/5 border border-rose-500/10 p-4 rounded-xl">
             <div className="flex justify-between items-start mb-2">
               <div className="flex-1">
                 <h4 className="font-bold text-rose-400">{gap.missingElement}</h4>

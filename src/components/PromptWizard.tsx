@@ -85,96 +85,105 @@ export default function PromptWizard({
   const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-12">
-      <div className="mb-12">
-        <div className="flex justify-between items-center mb-4">
+    <div className="max-w-4xl mx-auto px-6 py-16 space-y-12">
+      <div className="space-y-12">
+        <div className="flex justify-between items-center max-w-2xl mx-auto">
           {steps.map((s) => (
             <div key={s.id} className={`flex items-center ${s.id < steps.length ? 'flex-1' : ''}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${step >= s.id ? 'bg-accent text-black' : 'bg-white/5 text-slate-500'}`}>
-                {step > s.id ? <CheckCircle2 size={20} /> : s.id}
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm transition-all duration-500 border ${step >= s.id ? 'bg-white text-black border-white shadow-xl' : 'bg-white/5 text-white/20 border-white/10'}`}>
+                {step > s.id ? <CheckCircle2 size={24} /> : s.id}
               </div>
               {s.id < steps.length && (
-                <div className={`flex-1 h-0.5 mx-4 ${step > s.id ? 'bg-accent' : 'bg-white/10'}`} />
+                <div className={`flex-1 h-px mx-6 transition-all duration-500 ${step > s.id ? 'bg-white' : 'bg-white/10'}`} />
               )}
             </div>
           ))}
         </div>
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-white font-display">{steps[step - 1].title}</h2>
-          <p className="text-slate-400 text-sm">{steps[step - 1].description}</p>
+        <div className="text-center space-y-4">
+          <h2 className="text-4xl font-black text-white uppercase tracking-tighter leading-none">{steps[step - 1].title}</h2>
+          <p className="text-white/40 font-bold uppercase tracking-widest text-[10px]">{steps[step - 1].description}</p>
         </div>
       </div>
 
       <motion.div 
         key={step}
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -20 }}
-        className="glass-panel p-8 rounded-3xl border border-white/10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-[#0A0A0A] p-12 rounded-[3rem] border border-white/5 shadow-2xl"
       >
         {step === 1 && (
-          <div className="space-y-6">
+          <div className="space-y-10">
             <div className="flex gap-4">
               <button
                 onClick={() => setMode('freeform')}
-                className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest ${mode === 'freeform' ? 'bg-accent text-black' : 'bg-white/5 text-slate-500'}`}
+                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${mode === 'freeform' ? 'bg-white text-black border-white' : 'bg-white/5 text-white/40 border-white/10'}`}
               >
                 Freeform
               </button>
               <button
                 onClick={() => setMode('formula')}
-                className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest ${mode === 'formula' ? 'bg-accent text-black' : 'bg-white/5 text-slate-500'}`}
+                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${mode === 'formula' ? 'bg-white text-black border-white' : 'bg-white/5 text-white/40 border-white/10'}`}
               >
                 Formula Builder
               </button>
             </div>
 
             {mode === 'freeform' ? (
-              <>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">What niche are you targeting?</label>
+              <div className="space-y-6">
+                <label className="block text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">What niche are you targeting?</label>
                 <textarea 
-                  className="w-full h-32 bg-black/40 border border-white/10 rounded-2xl p-6 text-white placeholder-slate-600 outline-none focus:border-accent/40"
+                  className="w-full h-48 bg-white/[0.02] border border-white/10 rounded-[2rem] p-8 text-white placeholder-white/10 outline-none focus:border-white/30 transition-all font-medium leading-relaxed"
                   placeholder="e.g., sustainable architecture, futuristic office..."
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                 />
                 <TrendForecast niche={keyword} settings={settings} onSelect={onSelectTrend || setKeyword} />
                 {suggestions.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="flex flex-wrap gap-3 mt-4">
                     {suggestions.map((s, i) => (
                       <button
-                        key={i}
+                        key={`suggestion-${s.keyword}-${i}`}
                         onClick={() => setKeyword(prev => prev ? `${prev}, ${s.keyword}` : s.keyword)}
-                        className="px-3 py-1 bg-white/5 hover:bg-accent/20 rounded-full text-xs text-slate-300 hover:text-accent transition-all border border-white/5 flex items-center gap-2"
+                        className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] text-white/40 hover:text-white transition-all border border-white/10 flex items-center gap-3 font-black uppercase tracking-tight"
                       >
                         {s.keyword}
-                        <span className="text-[9px] text-slate-500">({s.relevanceScore})</span>
+                        <span className="text-[9px] text-white/20">({s.relevanceScore})</span>
                       </button>
                     ))}
                   </div>
                 )}
-              </>
+              </div>
             ) : (
-              <div className="space-y-3">
-                <input className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm" placeholder="Cinematography (e.g., Wide shot, Dolly)" value={formulaData.cinematography} onChange={(e) => setFormulaData({...formulaData, cinematography: e.target.value})} />
-                <input className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm" placeholder="Subject" value={formulaData.subject} onChange={(e) => setFormulaData({...formulaData, subject: e.target.value})} />
-                <input className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm" placeholder="Action" value={formulaData.action} onChange={(e) => setFormulaData({...formulaData, action: e.target.value})} />
-                <input className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm" placeholder="Context (Location/Environment)" value={formulaData.context} onChange={(e) => setFormulaData({...formulaData, context: e.target.value})} />
-                <input className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm" placeholder="Style & Ambiance" value={formulaData.style} onChange={(e) => setFormulaData({...formulaData, style: e.target.value})} />
+              <div className="grid grid-cols-1 gap-4">
+                {[
+                  { id: 'cinematography', placeholder: 'Cinematography (e.g., Wide shot, Dolly)' },
+                  { id: 'subject', placeholder: 'Subject' },
+                  { id: 'action', placeholder: 'Action' },
+                  { id: 'context', placeholder: 'Context (Location/Environment)' },
+                  { id: 'style', placeholder: 'Style & Ambiance' }
+                ].map((field) => (
+                  <input 
+                    key={field.id}
+                    className="w-full bg-white/[0.02] border border-white/10 rounded-2xl p-5 text-white text-sm placeholder-white/10 outline-none focus:border-white/30 transition-all font-medium" 
+                    placeholder={field.placeholder} 
+                    value={(formulaData as any)[field.id]} 
+                    onChange={(e) => setFormulaData({...formulaData, [field.id]: e.target.value})} 
+                  />
+                ))}
               </div>
             )}
           </div>
         )}
 
         {step === 2 && (
-          <div className="space-y-4">
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">Select Content Type</label>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-8">
+            <label className="block text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Select Content Type</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {['Photo', 'Illustration', 'Vector', 'Video', '3D Render', 'AI Creative'].map(type => (
                 <button
                   key={type}
                   onClick={() => setContentType(type)}
-                  className={`p-4 rounded-2xl border transition-all ${contentType === type ? 'bg-accent/10 border-accent text-accent' : 'bg-white/5 border-white/10 text-slate-300 hover:border-white/30'}`}
+                  className={`p-6 rounded-[2rem] border transition-all duration-500 font-black uppercase tracking-widest text-[10px] ${contentType === type ? 'bg-white text-black border-white shadow-xl' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30'}`}
                 >
                   {type}
                 </button>
@@ -184,24 +193,30 @@ export default function PromptWizard({
         )}
 
         {step === 3 && (
-          <div className="space-y-6">
-            <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
-              <p className="text-sm text-slate-400 mb-1">Niche: <span className="text-white font-bold">{keyword || 'Not set'}</span></p>
-              <p className="text-sm text-slate-400">Platform: <span className="text-white font-bold">{contentType}</span></p>
+          <div className="space-y-10">
+            <div className="bg-white/[0.02] p-8 rounded-[2rem] border border-white/10 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Niche</span>
+                <span className="text-sm text-white font-black uppercase tracking-tight">{keyword || 'Not set'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Platform</span>
+                <span className="text-sm text-white font-black uppercase tracking-tight">{contentType}</span>
+              </div>
             </div>
             <VisualQA assetUrl="https://picsum.photos/seed/vibrant/1920/1080" />
             
             {progress && (
-              <div className="w-full mb-4">
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
+              <div className="w-full space-y-4">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/20">
                   <span>{progress.message}</span>
                   <span>{Math.round((progress.current / progress.total) * 100)}%</span>
                 </div>
-                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${(progress.current / progress.total) * 100}%` }}
-                    className="h-full bg-accent"
+                    className="h-full bg-white"
                   />
                 </div>
               </div>
@@ -210,21 +225,29 @@ export default function PromptWizard({
             <button
               onClick={mode === 'freeform' ? () => onGenerate(keyword) : handleFormulaGenerate}
               disabled={isGenerating}
-              className="w-full flex items-center justify-center gap-3 bg-accent hover:bg-accent/90 text-black font-bold py-4 rounded-2xl transition-all"
+              className="w-full flex items-center justify-center gap-4 bg-white text-black font-black py-6 rounded-[2rem] transition-all shadow-xl shadow-white/5 border border-white/10 uppercase tracking-widest text-[10px]"
             >
-              <Sparkles size={18} />
+              <Sparkles size={20} />
               {isGenerating ? 'Generating...' : 'Generate Prompts'}
             </button>
           </div>
         )}
       </motion.div>
 
-      <div className="flex justify-between mt-8">
-        <button onClick={prevStep} disabled={step === 1} className="px-6 py-3 text-slate-500 hover:text-white disabled:opacity-50">
-          <ChevronLeft size={20} />
+      <div className="flex justify-between max-w-2xl mx-auto">
+        <button 
+          onClick={prevStep} 
+          disabled={step === 1} 
+          className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-white/40 hover:text-white disabled:opacity-20 transition-all border border-white/10"
+        >
+          <ChevronLeft size={24} />
         </button>
-        <button onClick={nextStep} disabled={step === steps.length} className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl">
-          <ChevronRight size={20} />
+        <button 
+          onClick={nextStep} 
+          disabled={step === steps.length} 
+          className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-white/40 hover:text-white disabled:opacity-20 transition-all border border-white/10"
+        >
+          <ChevronRight size={24} />
         </button>
       </div>
     </div>

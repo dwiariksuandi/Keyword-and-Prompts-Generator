@@ -3,8 +3,9 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { KeywordAnalysisSchema, AestheticAnalysisSchema, PromptSchema, PromptDirectSchema, TrendForecastSchema, type Prompt, type PromptDirect } from '../schemas';
 import { AppSettings, PromptTemplate, ReferenceFile, PromptScore, AestheticAnalysis, CategoryResult, CompetitorAnalysis, SalesRecord, TrendForecast } from '../types';
 import { logger } from './logger';
+import { getContentTypeInstructions, getVariationInstructions, promptTemplates } from './promptUtils';
 
-function zodToJsonSchemaNoSchema(schema: any) {
+export function zodToJsonSchemaNoSchema(schema: any) {
   const jsonSchema = zodToJsonSchema(schema) as any;
   delete jsonSchema.$schema;
   return jsonSchema;
@@ -22,7 +23,8 @@ export async function generateContentWithFallback(
   delay = 1000
 ): Promise<any> {
   try {
-    return await ai.models.generateContent(params);
+    const response = await ai.models.generateContent(params);
+    return response;
   } catch (error: any) {
     const errorString = error instanceof Error ? error.message : String(error);
     if ((errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED')) && retries > 0) {
@@ -46,8 +48,8 @@ export async function generateContentWithFallback(
   }
 }
 
-async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings, categoryName: string): Promise<T> {
-  const ai = getAI();
+export async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings, categoryName: string): Promise<T> {
+  const ai = getAI(settings.geminiApiKey);
   const prompt = `Data: ${JSON.stringify(data)}`;
 
   const response = await generateContentWithFallback(ai, {
@@ -113,231 +115,27 @@ async function criticizeAnalysis<T>(data: T, schema: any, settings: AppSettings,
   }
 }
 
-export const promptTemplates: PromptTemplate[] = [
-  // --- PHOTO ---
-  {
-    id: "nanobanana-photo",
-    name: "Nano Banana Pro (Photo)",
-    template: "{subject}, {details}, {lighting}, {mood} atmosphere, {style}. Shot on medium format camera, 50mm lens, f/1.8. Cinematic composition, hyper-detailed textures, 8k resolution, no text.",
-    description: "Advanced multimodal prompt for Nano Banana Pro AI using [Subject] + [Action] + [Location] + [Composition] + [Style]",
-    contentTypes: ["Photo"]
-  },
-  {
-    id: "midjourney-photo",
-    name: "Midjourney v6 (Photo)",
-    template: "{style} {subject}, {details}, {lighting}, {mood} atmosphere, professional quality, high detail, no text, no watermark, commercial photography. --ar {aspect} --style raw --v 6.0",
-    description: "Optimized for Midjourney v6 with style raw",
-    contentTypes: ["Photo"]
-  },
-  {
-    id: "dalle-photo",
-    name: "DALL-E 3 (Photo)",
-    template: "A {style} image of {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. High resolution, photorealistic details, commercial stock photography style, no text, no logos.",
-    description: "Natural language prompts for DALL-E 3",
-    contentTypes: ["Photo"]
-  },
-  {
-    id: "stable-photo",
-    name: "Stable Diffusion XL (Photo)",
-    template: "{subject}, {style}, {details}, {lighting}, {mood}, masterpiece, best quality, highly detailed, 8k uhd, commercial stock photo, clean background",
-    description: "Tag-based prompts for SDXL",
-    contentTypes: ["Photo"]
-  },
-  {
-    id: "stock-photo",
-    name: "Stock Photography",
-    template: "Professional stock photo: {subject}. {details}. Shot with {lighting}, conveying {mood}. Commercial use, editorial quality, diverse representation, authentic lifestyle, 8k resolution.",
-    description: "Optimized for stock photography sites",
-    contentTypes: ["Photo"]
-  },
 
-  // --- BACKGROUND ---
-  {
-    id: "nanobanana-background",
-    name: "Nano Banana Pro (Background)",
-    template: "{subject}, {details}, {lighting}, {mood} color palette, {style}. 8k resolution, seamless composition, ample copy space, subtle depth of field, clean and modern aesthetic, out of focus elements.",
-    description: "Premium background generation for Nano Banana Pro using [Subject] + [Action] + [Location] + [Composition] + [Style]",
-    contentTypes: ["Background"]
-  },
-  {
-    id: "midjourney-background",
-    name: "Midjourney v6 (Background)",
-    template: "Abstract {style} background of {subject}, {details}, {lighting}, {mood} atmosphere, ample copy space, minimalist composition, commercial background asset, 8k, highly detailed. --ar {aspect} --style raw --v 6.0",
-    description: "Optimized for Midjourney v6 backgrounds",
-    contentTypes: ["Background"]
-  },
-  {
-    id: "dalle-background",
-    name: "DALL-E 3 (Background)",
-    template: "A clean, modern {style} background image featuring {subject}. {details}. {lighting}, {mood} atmosphere. Designed with ample negative space for text overlays, commercial stock background style, high resolution.",
-    description: "Natural language background prompts for DALL-E 3",
-    contentTypes: ["Background"]
-  },
 
-  // --- VECTOR ---
-  {
-    id: "nanobanana-vector",
-    name: "Nano Banana Pro (Vector)",
-    template: "{subject}, {details}, {lighting}, {mood} color palette, {style}. Flat design, clean SVG style, minimalist curves, no gradients, solid colors, isolated on white background.",
-    description: "Advanced vector prompt for Nano Banana Pro using [Subject] + [Action] + [Location] + [Composition] + [Style]",
-    contentTypes: ["Vector"]
-  },
-  {
-    id: "midjourney-vector",
-    name: "Midjourney v6 (Vector Style)",
-    template: "Flat {style} vector illustration of {subject}, {details}, {lighting}, {mood}, clean lines, solid colors, minimal shading, white background, commercial quality, no text. --ar {aspect} --v 6.0",
-    description: "Midjourney prompts designed to look like vectors",
-    contentTypes: ["Vector"]
-  },
-  {
-    id: "recraft-vector",
-    name: "Recraft (Vector)",
-    template: "Vector art of {subject}, {details}, {lighting}, {mood}, {style}, clean SVG style, flat colors, commercial design, no text.",
-    description: "Optimized for Recraft vector generation",
-    contentTypes: ["Vector"]
-  },
-  {
-    id: "leonardo-vector",
-    name: "Leonardo AI (Vector)",
-    template: "Vector illustration of {subject}, {details}, {lighting}, {mood}, {style}, flat design, vibrant colors, clean edges, commercial vector asset, white background.",
-    description: "Optimized for Leonardo AI vector style",
-    contentTypes: ["Vector"]
-  },
-
-  // --- ILLUSTRATION ---
-  {
-    id: "nanobanana-illustration",
-    name: "Nano Banana Pro (Illustration)",
-    template: "{subject}, {details}, {lighting}, {mood} atmosphere, {style}. Intricate details, vibrant colors, commercial editorial illustration, 8k resolution.",
-    description: "High-end illustration prompt for Nano Banana Pro using [Subject] + [Action] + [Location] + [Composition] + [Style]",
-    contentTypes: ["Illustration"]
-  },
-  {
-    id: "nanobanana-ai-art",
-    name: "Nano Banana Pro (AI Art)",
-    template: "{subject}, {details}, {lighting}, {mood} color palette, {style}. Intricate generative patterns, fluid forms, digital dreamscape, high-concept creativity, 8k resolution.",
-    description: "Conceptual and creative AI art prompt for Nano Banana Pro using [Subject] + [Action] + [Location] + [Composition] + [Style]",
-    contentTypes: ["AI Art & Creativity"]
-  },
-  {
-    id: "midjourney-ai-art",
-    name: "Midjourney v6 (AI Art)",
-    template: "Conceptual {style} AI art of {subject}, {details}, {lighting}, {mood}, surrealism, abstract expressionism, intricate details, professional quality, high-concept, no text. --ar {aspect} --v 6.0 --stylize 750",
-    description: "High-stylization prompts for Midjourney AI art",
-    contentTypes: ["AI Art & Creativity"]
-  },
-  {
-    id: "dalle-ai-art",
-    name: "DALL-E 3 (AI Art)",
-    template: "A highly creative and conceptual {style} AI art piece depicting {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. Surreal elements, digital art masterpiece, high resolution, no text.",
-    description: "Creative and conceptual prompts for DALL-E 3",
-    contentTypes: ["AI Art & Creativity"]
-  },
-  {
-    id: "stock-ai-art",
-    name: "Adobe Stock AI Art",
-    template: "Conceptual AI art: {subject}. {details}. {style} aesthetic, {lighting}, {mood}. High commercial utility for creative projects, clean composition, 8k resolution, masterpiece.",
-    description: "Optimized for Adobe Stock's AI art category",
-    contentTypes: ["AI Art & Creativity"]
-  },
-  {
-    id: "midjourney-niji",
-    name: "Midjourney Niji (Illustration)",
-    template: "{style} illustration of {subject}, {details}, {lighting}, {mood} atmosphere, professional quality, high detail, no text, no watermark, commercial illustration. --ar {aspect} --niji 6",
-    description: "Optimized for Midjourney Niji 6",
-    contentTypes: ["Illustration"]
-  },
-  {
-    id: "dalle-illustration",
-    name: "DALL-E 3 (Illustration)",
-    template: "A {style} illustration of {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. High resolution, commercial stock illustration style, no text, no logos.",
-    description: "Natural language illustration prompts for DALL-E 3",
-    contentTypes: ["Illustration"]
-  },
-  {
-    id: "firefly-illustration",
-    name: "Adobe Firefly (Illustration)",
-    template: "{subject}, {details}, {lighting}, {mood}, {style} illustration, highly detailed, commercial use, clean background, vibrant colors",
-    description: "Optimized for Adobe Firefly",
-    contentTypes: ["Illustration"]
-  },
-
-  // --- VIDEO ---
-  {
-    id: "veo-video",
-    name: "Veo 3.1 (Video)",
-    template: "{style} shot of {subject}, {details}, {lighting}, {mood} atmosphere. SFX: appropriate ambient sounds. 4k resolution, smooth motion.",
-    description: "Optimized for Google Veo 3.1 using [Cinematography] + [Subject] + [Action] + [Context] + [Style & Ambiance]",
-    contentTypes: ["Video"]
-  },
-  {
-    id: "sora-video",
-    name: "Sora (Video)",
-    template: "A highly detailed, photorealistic {style} video of {subject}. {details}. The camera moves smoothly, capturing the {lighting} and {mood} atmosphere. 8k resolution, commercial stock footage style.",
-    description: "Natural language prompts for OpenAI Sora",
-    contentTypes: ["Video"]
-  },
-  {
-    id: "wan-video",
-    name: "WAN (Video)",
-    template: "High quality {style} video of {subject}, {details}, {lighting}, {mood}, cinematic lighting, photorealistic, 4k resolution, smooth camera movement, commercial stock footage.",
-    description: "Optimized for WAN Video AI",
-    contentTypes: ["Video"]
-  },
-  {
-    id: "kling-video",
-    name: "Kling (Video)",
-    template: "{subject}, {details}, {lighting}, {mood}, {style}, cinematic motion, 4k, ultra realistic, professional stock video, clean composition.",
-    description: "Optimized for Kling AI",
-    contentTypes: ["Video"]
-  },
-  {
-    id: "runway-video",
-    name: "Runway Gen-2 (Video)",
-    template: "{subject}, {details}, {lighting}, {mood}, {style}, cinematic, highly detailed, 4k, photorealistic, slow motion, commercial stock footage.",
-    description: "Tag-based prompts for Runway Gen-2",
-    contentTypes: ["Video"]
-  },
-
-  // --- 3D RENDER ---
-  {
-    id: "nanobanana-3d",
-    name: "Nano Banana Pro (3D Render)",
-    template: "{subject}, {details}, {lighting}, {mood} atmosphere, {style}. Created in Unreal Engine 5, path tracing, global illumination, hyper-realistic textures, 8k resolution, clean background.",
-    description: "Premium 3D render prompt for Nano Banana Pro using [Subject] + [Action] + [Location] + [Composition] + [Style]",
-    contentTypes: ["3D Render"]
-  },
-  {
-    id: "midjourney-3d",
-    name: "Midjourney v6 (3D Render)",
-    template: "{style} 3D render of {subject}, {details}, {lighting}, {mood}, Octane Render, Unreal Engine 5, ray tracing, highly detailed, commercial quality, clean background. --ar {aspect} --v 6.0",
-    description: "Optimized for 3D style in Midjourney",
-    contentTypes: ["3D Render"]
-  },
-  {
-    id: "dalle-3d",
-    name: "DALL-E 3 (3D Render)",
-    template: "A high-quality {style} 3D render of {subject}. {details}. The scene features {lighting} with a {mood} atmosphere. Created in Blender, Octane Render style, commercial stock 3D asset, no text.",
-    description: "Natural language 3D prompts for DALL-E 3",
-    contentTypes: ["3D Render"]
-  },
-  {
-    id: "leonardo-3d",
-    name: "Leonardo AI (3D Render)",
-    template: "3D illustration of {subject}, {details}, {lighting}, {mood}, {style}, isometric view, clay render style, soft lighting, pastel colors, commercial 3D asset, clean background.",
-    description: "Optimized for Leonardo AI 3D style",
-    contentTypes: ["3D Render"]
-  }
-];
-
-export const getAI = () => {
-  const envApiKey = typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : (import.meta as any).env?.VITE_GEMINI_API_KEY;
+export const getAI = (manualApiKey?: string) => {
+  // Priority: 
+  // 1. manualApiKey (From user settings input)
+  // 2. localStorage.getItem('gemini_api_key')
+  // 3. process.env.API_KEY (Selected via platform dialog)
+  // 4. process.env.GEMINI_API_KEY (Default environment variable)
+  // 5. import.meta.env.VITE_GEMINI_API_KEY (Vite fallback)
   
-  if (!envApiKey) {
-    throw new Error("GEMINI_API_KEY environment variable is missing.");
+  const storedApiKey = typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') : null;
+  const customApiKey = typeof process !== 'undefined' && process.env ? process.env.API_KEY : null;
+  const defaultApiKey = typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : (import.meta as any).env?.VITE_GEMINI_API_KEY;
+  
+  const apiKey = manualApiKey || storedApiKey || customApiKey || defaultApiKey;
+  
+  if (!apiKey) {
+    throw new Error("API Key is missing. Please enter your API key in Settings or check your environment configuration.");
   }
   
-  return new GoogleGenAI({ apiKey: envApiKey });
+  return new GoogleGenAI({ apiKey });
 };
 
 export function handleGeminiError(error: any): string {
@@ -402,12 +200,18 @@ export function handleGeminiError(error: any): string {
     if (errorString.includes('API key not valid') || errorString.includes('invalid API key')) {
       return "❌ API Key Tidak Valid (Error 400)\n\n" +
              "Penyebab:\n" +
-             "• API Key salah ketik atau ada spasi tambahan.\n\n" +
+             "• API Key salah atau tidak memiliki izin.\n\n" +
              "Solusi:\n" +
              "• Periksa kembali API Key Anda.";
     }
-    // Generic 400
-    return `⚠️ Permintaan Tidak Valid (Error 400)\n\nDetail: ${errorString.substring(0, 300)}`;
+    if (errorString.includes('SAFETY') || errorString.includes('blocked') || errorString.includes('finishReason: SAFETY')) {
+      return "⚠️ Konten Diblokir (Safety Filter)\n\n" +
+             "Penyebab: AI mendeteksi konten yang mungkin melanggar kebijakan keamanan (misal: eksplisit, kekerasan, atau hak cipta).\n\n" +
+             "Solusi: Ubah kata kunci atau deskripsi Anda agar lebih umum dan aman.";
+    }
+    return "❌ Permintaan Tidak Valid (Error 400)\n\n" +
+           "Penyebab: Format permintaan salah atau parameter tidak didukung.\n\n" +
+           "Solusi: Periksa kembali input Anda.";
   }
 
   // 403 - Permission Denied
@@ -499,7 +303,7 @@ export function extractJSON(text: string) {
 }
 
 export async function fetchTrendingKeywords(keyword: string, settings: AppSettings, contentType: string): Promise<{ keyword: string; relevanceScore: number }[]> {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   
   const promptText = `Analyze the keyword '${keyword}' for the content type '${contentType}' and provide 5-10 highly relevant, trending, and commercially valuable microstock keyword suggestions for the GLOBAL market on Adobe Stock.
 
@@ -567,7 +371,7 @@ export function generateNanoBananaPrompt(
 }
 
 export async function refinePrompts(prompts: string[], contentType: string, settings: AppSettings): Promise<string[]> {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   
   const promptText = `Review the following ${prompts.length} image generation prompts for Adobe Stock commercial viability:
   ${prompts.map((p, i) => `${i + 1}. ${p}`).join('\n')}
@@ -608,82 +412,10 @@ export async function refinePrompt(prompt: string, contentType: string, settings
   return refined[0];
 }
 
-function getContentTypeInstructions(contentType: string): string {
-  switch (contentType) {
-    case 'Photo':
-      return `NANO BANANA PROMPTING FRAMEWORK:
-      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Be specific: Provide concrete details on subject, lighting, and composition.
-      - Use positive framing: Describe what you want, not what you don't want.
-      - Control the camera: Use photographic terms like "low angle" and "aerial view".
-      - Design your lighting: Specify Studio setups (e.g., "three-point softbox setup") or Dramatic effects (e.g., "Chiaroscuro lighting with harsh, high contrast", "Golden hour backlighting creating long shadows").
-      - Choose camera, lens, and focus: Dictate hardware (e.g., "GoPro", "Fujifilm", "disposable camera") and Lens (e.g., "low-angle shot with a shallow depth of field (f/1.8)", "wide-angle lens", "macro lens").
-      - Define color grading and film stock: e.g., "1980s color film, slightly grainy", "Cinematic color grading with muted teal tones".
-      - Emphasize materiality and texture: Define physical makeup (e.g., "minimalist ceramic coffee mug").
-      - Text rendering: If text is needed, use quotes (e.g., "Happy Birthday") and choose a font (e.g., "bold, white, sans-serif font").`;
-    case 'Illustration':
-      return `NANO BANANA PROMPTING FRAMEWORK:
-      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Focus on sophisticated illustrative techniques: complex brushwork, layered textures, intricate line art, and advanced color theory.
-      - Define color grading and film stock: Set the emotional tone through color palettes.
-      - Emphasize materiality and texture: Define the physical makeup of the illustration (e.g., "cel animation style", "plushie style", "claymation style").
-      - Text rendering: If text is needed, use quotes (e.g., "URBAN EXPLORER") and choose a font.
-      - Be specific and use positive framing.`;
-    case 'Vector':
-      return `NANO BANANA PROMPTING FRAMEWORK:
-      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Focus on high-end vector aesthetics: perfect geometric precision, complex gradients (mesh gradients), isometric perspectives, and clean SVG-compliant paths.
-      - Emphasize scalability, minimalist elegance, and elite UI/UX design standards.
-      - Text rendering: If text is needed, use quotes and choose a font (e.g., "Century Gothic 12px font").`;
-    case 'Background':
-      return `NANO BANANA PROMPTING FRAMEWORK:
-      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Focus on atmospheric and textural depth: multi-layered bokeh, complex procedural textures, subtle light leaks, and expansive copy space.
-      - Design your lighting: Specify Dramatic effects (e.g., "Chiaroscuro lighting", "Golden hour backlighting").
-      - Choose camera, lens, and focus: Use "wide-angle lens" for vast scale or "macro lens" for intricate details.
-      - Define color grading and film stock: e.g., "Cinematic color grading with muted teal tones".`;
-    case 'Video':
-      return `VEO 3.1 PROMPTING FRAMEWORK:
-      Formula: [Cinematography] + [Subject] + [Action] + [Context] + [Style & Ambiance]
-      - Cinematography: Define camera movement (Dolly shot, tracking shot, crane shot, aerial view, slow pan, POV shot), Composition (Wide shot, close-up, extreme close-up, low angle, two-shot), and Lens & focus (Shallow depth of field, wide-angle lens, soft focus, macro lens, deep focus).
-      - Directing the soundstage: Veo 3.1 generates audio. Include Dialogue (e.g., A woman says, "We have to leave now."), Sound effects (e.g., SFX: thunder cracks in the distance), and Ambient noise (e.g., Ambient noise: the quiet hum of a starship bridge).
-      - Be specific and use positive framing (e.g., "desolate landscape with no buildings or roads" instead of "no man-made structures").
-      - Focus on cinematic mastery and professional storytelling.`;
-    case '3D Render':
-      return `NANO BANANA PROMPTING FRAMEWORK:
-      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Focus on state-of-the-art rendering: Unreal Engine 5.4 Path Tracing, OctaneRender, physically based rendering (PBR) materials, subsurface scattering (SSS), and global illumination.
-      - Design your lighting: Specify Studio setups (e.g., "three-point softbox setup") to evenly light a product.
-      - Emphasize materiality and texture: Define physical makeup (e.g., "anisotropic metal", "refractive glass", "high-fidelity 3D armchair render").
-      - Choose camera, lens, and focus: Dictate the exact camera type and lens perspective.`;
-    case 'AI Art & Creativity':
-      return `NANO BANANA PROMPTING FRAMEWORK:
-      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Focus on boundary-pushing conceptualism: generative patterns, fluid organic forms, surrealist dreamscapes, and innovative digital alchemy.
-      - Design your lighting: Specify Dramatic effects (e.g., "Chiaroscuro lighting with harsh, high contrast").
-      - Define color grading and film stock: Set the emotional tone with unique color palettes.
-      - Emphasize materiality and texture: Define the physical makeup of the abstract elements.`;
-    default:
-      return `NANO BANANA PROMPTING FRAMEWORK:
-      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Focus on high-fidelity, commercially elite visual descriptors appropriate for this specific asset class.
-      - Design your lighting, choose your camera/lens, define color grading, and emphasize materiality.`;
-  }
-}
 
-function getVariationInstructions(level: 'Low' | 'Medium' | 'High'): string {
-  switch (level) {
-    case 'Low':
-      return "VARIATION LEVEL: LOW. Focus on a highly cohesive set of prompts that explore a specific, narrow theme with subtle variations in lighting or angle. The resulting images should look like they belong to the same specific photoshoot or series. Ideal for creating consistent character sets or product variations.";
-    case 'High':
-      return "VARIATION LEVEL: HIGH. MAXIMUM CREATIVE DIVERSITY REQUIRED. Each prompt must explore a radically different concept, environment, lighting setup, and composition within the niche. Force the AI to use diverse subjects, unexpected angles, and contrasting moods. This is CRITICAL for large batches to avoid 'similar content' rejection by Adobe Stock. No two prompts should share more than 20% of their descriptive DNA.";
-    default:
-      return "VARIATION LEVEL: MEDIUM. Standard professional variation. Ensure a balanced mix of different subjects, camera angles, and lighting styles while maintaining relevance to the core theme. Provides enough variety for a standard stock submission.";
-  }
-}
 
 export async function analyzeAestheticReference(referenceFile: ReferenceFile, settings: AppSettings, contentType: string): Promise<AestheticAnalysis> {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   
   const promptText = `Analyze the provided image reference and extract its "Aesthetic DNA" optimized for the '${contentType}' category. 
   Focus on identifying the core visual elements that define its unique style and suggest how to incorporate them into high-quality image generation prompts for Adobe Stock.
@@ -790,7 +522,7 @@ export async function analyzeAestheticReference(referenceFile: ReferenceFile, se
 }
 
 export async function analyzeUrlAesthetic(url: string, settings: AppSettings, contentType: string): Promise<AestheticAnalysis> {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   
   const promptText = `Analyze the content and visual style of this specific URL: ${url}
   You MUST use the Google Search tool to fetch and deeply analyze the content of this URL.
@@ -823,6 +555,7 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
       model: settings.model || 'gemini-3.1-pro-preview',
       contents: [{ text: promptText }],
       config: {
+        systemInstruction: "Be concise. Strictly adhere to the response schema.",
         tools: [{ googleSearch: {} }, { urlContext: {} }],
         responseMimeType: "application/json",
         responseSchema: {
@@ -892,7 +625,7 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
 }
 
 export async function analyzeKeyword(keyword: string, contentType: string, categoryName: string, settings: AppSettings, referenceFile?: ReferenceFile, referenceUrl?: string) {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   
   const promptText = `Perform an exhaustive, data-driven microstock market analysis targeting the asset type: '${contentType}'.
 
@@ -1014,7 +747,7 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     model: settings.model || 'gemini-3.1-pro-preview',
     contents: { parts },
     config: {
-      systemInstruction: "You are an elite Microstock Market Data Analyst (Adobe Stock, Shutterstock). Your job is to provide highly accurate, data-backed estimates for search volume and competition based on REAL, current market trends using Google Search. YOU MUST USE GOOGLE SEARCH TO FIND THE EXACT NUMBER OF SEARCH RESULTS FOR THESE KEYWORDS ON ADOBE STOCK OR SHUTTERSTOCK. Use these real numbers for volumeNumber and competitionScore. NEVER provide generic keywords. ALWAYS find underserved, high-converting long-tail niches. When a reference URL is provided, you MUST deeply analyze its content to extract its visual and conceptual DNA. Respond ONLY with valid JSON.",
+      systemInstruction: "Be concise. Strictly adhere to the response schema.",
       tools: tools,
       responseMimeType: "application/json",
       responseSchema: zodToJsonSchemaNoSchema(KeywordAnalysisSchema as any) as any,
@@ -1030,8 +763,21 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
     const parsed = extractJSON(text);
     
     // Validate with Zod and Critic Agent
-    const validatedData = await criticizeAnalysis(KeywordAnalysisSchema.parse(parsed), KeywordAnalysisSchema, settings, categoryName);
+    const validatedData = await criticizeAnalysis(KeywordAnalysisSchema.parse(parsed), KeywordAnalysisSchema, settings, categoryName) as CategoryResult[];
     
+    // Detect Blue Ocean Opportunities & Enrich Data
+    const enrichedData = validatedData.map(c => {
+      const isBlueOcean = (c.competitionScore || 100) < 40 && (c.demandScore || 0) > 60;
+      const opportunityScore = Math.round(((c.demandScore || 0) * 0.7) + ((100 - (c.competitionScore || 100)) * 0.3));
+      
+      return {
+        ...c,
+        isBlueOcean,
+        opportunityScore: c.opportunityScore || opportunityScore, // Prefer AI's score if provided
+        nicheScore: c.nicheScore || Math.round((opportunityScore + (c.keiScore || 0)) / 2)
+      };
+    });
+
     // Extract grounding sources
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     if (chunks) {
@@ -1041,11 +787,9 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
       
       if (sources.length > 0) {
         // Attach grounding sources to each category result
-        if (Array.isArray(validatedData)) {
-          validatedData.forEach(item => {
-            item.groundingSources = sources;
-          });
-        }
+        enrichedData.forEach(item => {
+          item.groundingSources = sources;
+        });
       }
     }
     
@@ -1053,12 +797,12 @@ Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
       timestamp: new Date().toISOString(),
       functionName: 'analyzeKeyword',
       input: { keyword, contentType, categoryName },
-      output: validatedData,
+      output: enrichedData,
       status: 'success',
       latencyMs: Date.now() - startTime
     });
     
-    return validatedData;
+    return enrichedData;
   } catch (e) {
     logger.log({
       timestamp: new Date().toISOString(),
@@ -1083,7 +827,7 @@ export async function scorePrompts(
   visualTrends?: string[],
   creativeAdvice?: string
 ): Promise<PromptScore[]> {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   
   // Chunking to avoid token limits (max 15 per request for scoring)
   const chunkSize = 15;
@@ -1134,7 +878,7 @@ export async function scorePrompts(
       model: settings.model || 'gemini-3-flash-preview',
       contents: promptText,
       config: {
-        systemInstruction: "You are an expert Adobe Stock Quality Reviewer and AI Prompt Auditor. Your job is to provide harsh but fair evaluations of image prompts to ensure they meet the highest commercial and technical standards of Adobe Stock. Provide detailed, actionable feedback for each evaluation criterion.",
+        systemInstruction: "Be concise. Strictly adhere to the response schema.",
         tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
@@ -1157,7 +901,7 @@ export async function scorePrompts(
             required: ["prompt", "score", "density", "clarity", "specificity", "adherence", "feedback", "keywordFeedback", "clarityFeedback", "specificityFeedback", "adherenceFeedback"]
           }
         },
-        thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
       }
     });
 
@@ -1210,7 +954,7 @@ export async function generatePrompts(
   assetTypeSuitability?: string[],
   progressCallback?: (progress: { current: number, total: number, message: string }) => void
 ) {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
     : (settings.templateId?.[contentType] || 'midjourney-photo');
@@ -1301,12 +1045,7 @@ export async function generatePrompts(
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: `You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. 
-        CORE ENGINE: You are operating on the ${settings.model || 'gemini-3-flash-preview'} model.
-        SYNTHESIS BLUEPRINT: You are generating components for the ${template.name} platform using its specific structural logic.
-        ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}
-        ADOBE STOCK ALGORITHM: Prioritize high-demand commercial themes, authentic representation, and technical excellence.
-        Respond ONLY with valid JSON.`,
+        systemInstruction: "Be concise. Strictly adhere to the response schema.",
         tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseSchema: zodToJsonSchemaNoSchema(PromptSchema) as any,
@@ -1457,19 +1196,7 @@ ${settings.includeNegative ? 'Append a strong negative prompt at the end of each
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts: partsSmall },
       config: {
-        systemInstruction: `You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts that strictly adhere to Adobe Stock's Generative AI and Similar Content guidelines. 
-        
-        CORE ENGINE: ${settings.model || 'gemini-3-flash-preview'}.
-        SYNTHESIS BLUEPRINT: ${template.name}.
-        ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
-        ADOBE STOCK ALGORITHM: Focus on high-demand commercial utility and technical perfection.
-        
-        SELF-CORRECTION PROTOCOL: Before finalizing each prompt, evaluate it against these criteria:
-        1. Does it strictly avoid trademarked/copyrighted elements?
-        2. Is it free of any literal text, watermarks, or signatures?
-        3. Does it include high-value commercial synonyms and LSI keywords?
-        4. Is the composition and lighting technically precise and commercially viable?
-        5. If it fails any check, refine the prompt immediately before finalizing the JSON output.`,
+        systemInstruction: "Be concise. Strictly adhere to the response schema.",
         tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
@@ -1509,7 +1236,7 @@ export async function generatePromptsDirectly(
   referenceUrl?: string,
   progressCallback?: (progress: { current: number, total: number, message: string }) => void
 ) {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   const startTime = Date.now();
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
@@ -1601,8 +1328,7 @@ export async function generatePromptsDirectly(
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: `You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation components.
-        Respond ONLY with valid JSON.`,
+        systemInstruction: "Be concise. Strictly adhere to the response schema.",
         tools: tools,
         responseMimeType: "application/json",
         responseSchema: zodToJsonSchemaNoSchema(PromptSchema) as any,
@@ -1735,12 +1461,7 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
       model: settings.model || 'gemini-3-flash-preview',
       contents: { parts },
       config: {
-        systemInstruction: `You are an elite AI Image Prompt Engineer and Top-Selling Adobe Stock Contributor. Your expertise lies in crafting highly detailed, commercially successful image generation prompts based on visual or textual references and real-world market data. 
-        CORE ENGINE: ${settings.model || 'gemini-3-flash-preview'}.
-        SYNTHESIS BLUEPRINT: ${template.name}.
-        ENTROPY LEVEL: ${getVariationInstructions(settings.variationLevel)}.
-        ADOBE STOCK ALGORITHM: Extract aesthetic essence and apply it to commercially viable concepts.
-        Respond ONLY with valid JSON.`,
+        systemInstruction: "Be concise. Strictly adhere to the response schema.",
         tools: tools,
         responseMimeType: "application/json",
         responseSchema: zodToJsonSchemaNoSchema(PromptDirectSchema) as any,
@@ -1821,7 +1542,7 @@ export async function optimizePrompts(
   creativeAdvice?: string,
   competitorIntel?: CompetitorAnalysis
 ) {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
     : (settings.templateId?.[contentType] || 'midjourney-photo');
@@ -2011,7 +1732,7 @@ export async function analyzeCompetitorIntel(
   contentType: string, 
   settings: AppSettings
 ): Promise<CompetitorAnalysis> {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   
   const promptText = `Perform a deep "Competitor Intelligence & Market Takeover" analysis for the niche '${niche}' on Adobe Stock (${contentType}).
   
@@ -2141,7 +1862,7 @@ export async function generateAllPromptsBatch(
   referenceUrl?: string,
   progressCallback?: (progress: { current: number, total: number, message: string }) => void
 ): Promise<{ promptsMap: Map<string, string[]>, groundingSources?: { uri: string, title: string }[] }> {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   const currentTemplateId = typeof settings.templateId === 'string' 
     ? settings.templateId 
     : (settings.templateId?.[contentType] || 'nanobanana-photo');
@@ -2289,7 +2010,7 @@ export async function polishMetadata(
   settings: AppSettings,
   contentType: string
 ) {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   
   try {
     const prompt = `You are an Adobe Stock SEO & CTR Optimization Expert. Your task is to "Polish" the following metadata sets for maximum search visibility and click-through rate.
@@ -2339,8 +2060,8 @@ export async function polishMetadata(
   }
 }
 
-export async function generateImagePreview(prompt: string) {
-  const ai = getAI();
+export async function generateImagePreview(prompt: string, settings: AppSettings) {
+  const ai = getAI(settings.geminiApiKey);
   
   try {
     const response = await ai.models.generateContent({
@@ -2372,7 +2093,7 @@ export async function generateAdobeStockMetadata(
   settings: AppSettings,
   contentType: string
 ): Promise<{ title: string, keywords: string[] }[]> {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   
   // Chunk prompts to avoid token limits (max 10 per request)
   const chunkSize = 10;
@@ -2405,9 +2126,7 @@ ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
         model: settings.model || 'gemini-3-flash-preview',
         contents: promptText,
         config: {
-          systemInstruction: `You are an elite Microstock SEO Expert and Top-Selling Adobe Stock Contributor. 
-          CORE ENGINE: ${settings.model || 'gemini-3-flash-preview'}.
-          ADOBE STOCK ALGORITHM: You know exactly how to write titles and 50 keywords that rank #1 on Adobe Stock search. You use real-world search data to inform your keywords.`,
+          systemInstruction: "Be concise. Strictly adhere to the response schema.",
           tools: [{ googleSearch: {} }],
           responseMimeType: 'application/json',
           responseSchema: {
@@ -2443,7 +2162,7 @@ ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
 }
 
 export async function forecastSeasonalTrends(settings: AppSettings, historicalSales: SalesRecord[]): Promise<TrendForecast[]> {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   const currentDate = new Date().toISOString();
   
   const promptText = `As an Elite Market Analyst for Adobe Stock, perform an ADVANCED TREND FORECASTING for the next 3-6 months.
@@ -2489,7 +2208,7 @@ export async function forecastSeasonalTrends(settings: AppSettings, historicalSa
 }
 
 export async function predictSalesPotential(prompt: string, category: string, settings: AppSettings, historicalSales?: SalesRecord[]): Promise<{ estimatedMonthlySales: number, confidenceScore: number, topSellingFactors: string[] }> {
-  const ai = getAI();
+  const ai = getAI(settings.geminiApiKey);
   
   const salesContext = historicalSales && historicalSales.length > 0 
     ? `\n\nHistorical Sales Context (Use this to refine prediction):\n${historicalSales.slice(0, 5).map(s => `- Asset: ${s.title}, Downloads: ${s.downloads}, Earnings: $${s.earnings}`).join('\n')}`
@@ -2504,7 +2223,7 @@ export async function predictSalesPotential(prompt: string, category: string, se
       model: 'gemini-3-flash-preview',
       contents: "Predict sales potential.",
       config: {
-        systemInstruction: systemPrompt,
+        systemInstruction: "Be concise. Strictly adhere to the response schema.",
         tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
@@ -2515,7 +2234,8 @@ export async function predictSalesPotential(prompt: string, category: string, se
             topSellingFactors: { type: "ARRAY", items: { type: "STRING" } }
           },
           required: ["estimatedMonthlySales", "confidenceScore", "topSellingFactors"]
-        }
+        },
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
       }
     });
     return JSON.parse(response.text || '{}');

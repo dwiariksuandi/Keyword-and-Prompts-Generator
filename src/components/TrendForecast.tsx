@@ -39,32 +39,35 @@ export default function TrendForecast({ niche, settings, onSelect }: { niche?: s
   };
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center p-12 space-y-4 bg-white/5 rounded-3xl border border-white/10">
+    <div className="flex flex-col items-center justify-center p-12 space-y-6 bg-white/[0.02] rounded-[2.5rem] border border-white/5">
       <div className="relative">
-        <div className="w-12 h-12 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
+        <div className="w-16 h-16 border-2 border-white/5 border-t-white rounded-full animate-spin" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <TrendingUp size={16} className="text-accent animate-pulse" />
+          <TrendingUp size={20} className="text-white animate-pulse" />
         </div>
       </div>
-      <div className="text-slate-400 text-sm font-medium animate-pulse">Menganalisis tren pasar 2026...</div>
+      <div className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">Analyzing 2026 Market Dynamics...</div>
     </div>
   );
 
   return (
-    <div className="space-y-6 mt-12">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-white flex items-center gap-3">
-          <div className="p-2 bg-accent/10 rounded-xl">
-            <TrendingUp className="text-accent" size={24} />
-          </div>
-          Market Trend Intelligence 2026
-        </h3>
-        <div className="text-xs text-slate-500 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
-          <Globe size={12} /> Live Market Data
+    <div className="space-y-12 mt-16">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 px-2">
+        <div className="space-y-2">
+          <h3 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
+            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
+              <TrendingUp className="text-white" size={24} />
+            </div>
+            Market <span className="text-white/40">Intelligence</span> 2026
+          </h3>
+          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-16">Neural Trend Forecasting Engine</p>
+        </div>
+        <div className="text-[10px] font-black text-white/40 bg-white/5 px-4 py-2 rounded-xl border border-white/5 flex items-center gap-3 uppercase tracking-widest">
+          <Globe size={14} className="text-white/20" /> Live Market Data Stream
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <AnimatePresence mode="popLayout">
           {trends.map((trend, index) => (
             <motion.div 
@@ -72,67 +75,67 @@ export default function TrendForecast({ niche, settings, onSelect }: { niche?: s
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="glass-panel p-6 group hover:border-accent/40 transition-all duration-500 relative overflow-hidden"
+              className="bg-[#0A0A0A] p-8 rounded-[2.5rem] border border-white/5 group hover:border-white/20 transition-all duration-500 relative overflow-hidden shadow-2xl"
             >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 blur-3xl rounded-full -mr-12 -mt-12 group-hover:bg-accent/10 transition-all duration-500" />
-              
-              <div className="relative z-10">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <h4 className="font-bold text-white text-lg group-hover:text-accent transition-colors">{trend.niche}</h4>
+              <div className="relative z-10 space-y-8">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-4">
+                    <h4 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">{trend.niche}</h4>
                     {onSelect && (
-                      <button 
+                      <motion.button 
+                        whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => onSelect(trend.niche)}
-                        className="mt-2 text-[10px] font-bold uppercase tracking-widest text-accent hover:text-white bg-accent/10 hover:bg-accent px-3 py-1 rounded-full transition-all border border-accent/20"
+                        className="text-[9px] font-black uppercase tracking-widest text-white/40 hover:text-white bg-white/5 px-4 py-2 rounded-xl transition-all border border-white/5"
                       >
-                        Gunakan Tren Ini
-                      </button>
+                        Deploy This Trend
+                      </motion.button>
                     )}
                   </div>
                   <div className="flex flex-col items-end">
-                    <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Forecast Score</span>
-                    <span className="text-xl font-black text-accent">{trend.forecastScore}%</span>
+                    <span className="text-[9px] uppercase tracking-[0.2em] text-white/20 font-black mb-2">Forecast Score</span>
+                    <span className="text-3xl font-black text-white tracking-tighter">{trend.forecastScore}%</span>
                   </div>
                 </div>
 
-                <p className="text-sm text-slate-400 leading-relaxed mb-6 line-clamp-3 group-hover:line-clamp-none transition-all duration-500">
+                <p className="text-sm text-white/60 leading-relaxed font-medium line-clamp-3 group-hover:line-clamp-none transition-all duration-500">
                   {trend.description}
                 </p>
 
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                    <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold block mb-1">Seasonality</span>
-                    <div className="flex items-center gap-2 text-white text-sm">
-                      <Calendar size={14} className="text-accent" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/[0.02] p-5 rounded-2xl border border-white/5">
+                    <span className="text-[8px] uppercase tracking-[0.2em] text-white/20 font-black block mb-3">Seasonality</span>
+                    <div className="flex items-center gap-3 text-white/80 text-xs font-bold">
+                      <Calendar size={14} className="text-white/20" />
                       {trend.seasonality}
                     </div>
                   </div>
-                  <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                    <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold block mb-1">Recommended Action</span>
-                    <div className="flex items-center gap-2 text-white text-sm">
-                      <Zap size={14} className="text-accent" />
+                  <div className="bg-white/[0.02] p-5 rounded-2xl border border-white/5">
+                    <span className="text-[8px] uppercase tracking-[0.2em] text-white/20 font-black block mb-3">Recommended Action</span>
+                    <div className="flex items-center gap-3 text-white/80 text-xs font-bold">
+                      <Zap size={14} className="text-white/20" />
                       {trend.recommendedAction}
                     </div>
                   </div>
                 </div>
                 
-                <div className="space-y-3">
-                  <div className="flex gap-2">
+                <div className="space-y-4 pt-4 border-t border-white/5">
+                  <div className="flex gap-3">
                     <input 
                       type="text" 
                       value={feedback[trend.id] || ''} 
                       onChange={(e) => setFeedback(prev => ({ ...prev, [trend.id]: e.target.value }))} 
-                      placeholder="Berikan feedback untuk refine..."
-                      className="flex-1 bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-accent/50 transition-colors"
+                      placeholder="Add specific constraints..."
+                      className="flex-1 bg-black/40 border border-white/5 rounded-xl p-4 text-xs text-white placeholder:text-white/10 focus:outline-none focus:border-white/20 transition-all font-medium"
                     />
                     <RefineButton 
                       onClick={() => handleRefine(trend)}
                       isRefining={refining[trend.id]}
                     />
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] text-slate-500 italic px-1">
-                    <AlertCircle size={10} />
-                    Refining will use Google Search to re-verify this specific trend.
+                  <div className="flex items-center gap-3 text-[9px] text-white/20 font-bold uppercase tracking-widest px-1">
+                    <AlertCircle size={12} className="text-white/10" />
+                    Neural refinement via real-time search verification
                   </div>
                 </div>
               </div>

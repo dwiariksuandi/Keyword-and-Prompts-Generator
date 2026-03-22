@@ -89,7 +89,7 @@ export default function TopTab({
 }: TopTabProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<{ keyword: string; relevanceScore: number }[]>([]);
   const [realtimeSuggestions, setRealtimeSuggestions] = useState<{ keyword: string; relevanceScore: number }[]>([]);
   const [isAestheticExpanded, setIsAestheticExpanded] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -157,17 +157,16 @@ export default function TopTab({
             if (!aStarts && bStarts) return 1;
             return a.keyword.localeCompare(b.keyword);
           })
-          .slice(0, 10)
-          .map(s => s.keyword);
+          .slice(0, 10);
           
         setFilteredSuggestions(filtered);
         setShowSuggestions(isFocused && filtered.length > 0);
       } else {
-        setFilteredSuggestions(trendingKeywords);
+        setFilteredSuggestions(trendingKeywords.map(k => ({ keyword: k, relevanceScore: 10 })));
         setShowSuggestions(isFocused);
       }
     } else {
-      setFilteredSuggestions(trendingKeywords);
+      setFilteredSuggestions(trendingKeywords.map(k => ({ keyword: k, relevanceScore: 10 })));
       setShowSuggestions(isFocused);
     }
   }, [keyword, isFocused, realtimeSuggestions]);
@@ -279,7 +278,7 @@ export default function TopTab({
                     )}
                     {filteredSuggestions.map((suggestion, i) => (
                       <button
-                        key={i}
+                        key={`suggestion-${suggestion.keyword}-${i}`}
                         className="w-full text-left px-8 py-5 text-sm text-slate-300 hover:bg-white/5 hover:text-accent transition-all border-b border-white/5 last:border-0 flex items-center justify-between group"
                         onClick={() => {
                           const parts = keyword.split(',');
@@ -322,7 +321,7 @@ export default function TopTab({
                   .slice(0, 6)
                   .map((suggestion, idx) => (
                     <button
-                      key={idx}
+                      key={`chip-${suggestion}-${idx}`}
                       onClick={() => {
                         const parts = keyword.split(',');
                         parts.pop(); // Remove the partial last part
@@ -608,7 +607,7 @@ export default function TopTab({
                           </div>
                           <div className="flex flex-wrap gap-2 bg-white/5 p-4 rounded-2xl border border-white/5">
                             {aestheticAnalysis.colorPalette.map((color, i) => (
-                              <span key={i} className="px-3 py-1.5 bg-black/40 rounded-xl text-[10px] text-slate-300 border border-white/10 font-mono uppercase tracking-wider">
+                              <span key={`color-${color}-${i}`} className="px-3 py-1.5 bg-black/40 rounded-xl text-[10px] text-slate-300 border border-white/10 font-mono uppercase tracking-wider">
                                 {color}
                               </span>
                             ))}
@@ -624,7 +623,7 @@ export default function TopTab({
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {aestheticAnalysis.suggestions.map((suggestion, i) => (
                               <motion.button 
-                                key={i} 
+                                key={`aesthetic-suggestion-${i}`} 
                                 whileHover={{ scale: 1.02, backgroundColor: 'rgba(0,255,255,0.08)' }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => setKeyword(prev => prev ? `${prev}, ${suggestion}` : suggestion)}
@@ -647,7 +646,7 @@ export default function TopTab({
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                               {aestheticAnalysis.marketGaps.map((gap, i) => (
                                 <div 
-                                  key={i} 
+                                  key={`market-gap-${i}`} 
                                   className="text-left p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 flex items-start gap-3 group"
                                 >
                                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
@@ -668,7 +667,7 @@ export default function TopTab({
                             <div className="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10">
                               <ul className="space-y-2">
                                 {aestheticAnalysis.groundingSources.map((source, idx) => (
-                                  <li key={idx} className="text-xs text-slate-300 font-light truncate">
+                                  <li key={`source-${source.uri}-${idx}`} className="text-xs text-slate-300 font-light truncate">
                                     <a href={source.uri} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors underline decoration-emerald-500/30 underline-offset-4">
                                       {source.title || source.uri}
                                     </a>

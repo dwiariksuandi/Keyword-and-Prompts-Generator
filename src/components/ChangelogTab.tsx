@@ -9,7 +9,7 @@ export default function ChangelogTab() {
       version: "v1.3.0",
       date: "March 2026",
       title: "Aesthetic Analysis & Granular Feedback",
-      icon: <Zap className="w-5 h-5 text-accent" />,
+      icon: <Zap className="w-5 h-5 text-white" />,
       changes: [
         "Introduced 'Aesthetic DNA Analysis' for AI Art & Creativity, extracting style, mood, and color palette from references.",
         "Enhanced prompt scoring with granular feedback on Keyword Usage, Clarity, Specificity, and Adobe Stock Compliance.",
@@ -22,7 +22,7 @@ export default function ChangelogTab() {
       version: "v1.2.2",
       date: "March 2026",
       title: "Deep Keyword Research & Real Data Simulation",
-      icon: <Star className="w-5 h-5 text-orange-400" />,
+      icon: <Star className="w-5 h-5 text-white/60" />,
       changes: [
         "Overhauled the Keyword Research engine to simulate real-world Adobe Stock/Shutterstock search data.",
         "Volume and Competition metrics are now highly realistic, focusing on actual market demand and existing asset counts.",
@@ -34,7 +34,7 @@ export default function ChangelogTab() {
       version: "v1.2.1",
       date: "March 2026",
       title: "Adobe Stock Optimization",
-      icon: <Star className="w-5 h-5 text-orange-400" />,
+      icon: <Star className="w-5 h-5 text-white/60" />,
       changes: [
         "Strictly enforced Prompt Templates to ensure AI follows the selected structure.",
         "Optimized all built-in templates specifically for Adobe Stock (added 'no text', 'commercial photography', etc.).",
@@ -45,7 +45,7 @@ export default function ChangelogTab() {
       version: "v1.2.0",
       date: "March 2026",
       title: "Optimization & Auto-Save",
-      icon: <Zap className="w-5 h-5 text-accent" />,
+      icon: <Zap className="w-5 h-5 text-white/60" />,
       changes: [
         "Added Auto-save History & Results feature to persist data across sessions.",
         "Synchronized Default Prompt Count settings with the Prompt generation tab.",
@@ -57,7 +57,7 @@ export default function ChangelogTab() {
       version: "v1.1.0",
       date: "March 2026",
       title: "UI/UX Enhancements",
-      icon: <Star className="w-5 h-5 text-orange-400" />,
+      icon: <Star className="w-5 h-5 text-white/60" />,
       changes: [
         "Added Indonesian language support for prompts.",
         "Redesigned the initial login screen with glassmorphism and gradient effects.",
@@ -68,7 +68,7 @@ export default function ChangelogTab() {
       version: "v1.0.0",
       date: "Initial Release",
       title: "Core Features Launch",
-      icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />,
+      icon: <ShieldCheck className="w-5 h-5 text-white/60" />,
       changes: [
         "Keyword analysis for microstock platforms (Adobe Stock, Freepik, etc.).",
         "AI-powered prompt generation tailored for specific content types (Photo, Vector, 3D).",
@@ -88,27 +88,27 @@ export default function ChangelogTab() {
       <div className="flex items-center gap-6 mb-16">
         <motion.div 
           whileHover={{ scale: 1.1, rotate: 5 }}
-          className="p-4 glass-panel bg-accent/10 border border-accent/20 futuristic-glow"
+          className="p-4 bg-white/5 border border-white/10 rounded-2xl"
         >
-          <Milestone className="w-8 h-8 text-accent" />
+          <Milestone className="w-8 h-8 text-white" />
         </motion.div>
         <div>
-          <h1 className="text-4xl font-bold text-white tracking-tight font-display">System <span className="text-accent">Evolution</span></h1>
-          <p className="text-slate-400 font-light">Tracking the neural development and feature deployments.</p>
+          <h1 className="text-4xl font-black text-white tracking-tighter uppercase">System <span className="text-white/40">Evolution</span></h1>
+          <p className="text-white/40 font-medium">Tracking the neural development and feature deployments.</p>
         </div>
       </div>
 
-      <div className="space-y-12 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-px before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent">
+      <div className="space-y-16 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-px before:bg-gradient-to-b before:from-transparent before:via-white/5 before:to-transparent">
         {/* Current Version */}
         <VersionCard v={versions[0]} index={0} />
 
         {/* Previous Versions Toggle */}
         <div className="relative flex justify-center z-20">
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-3 px-8 py-3 glass-panel bg-white/5 border border-white/10 rounded-2xl text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] hover:text-accent hover:border-accent/30 transition-all"
+            className="flex items-center gap-3 px-8 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black text-white/40 uppercase tracking-[0.2em] hover:text-white hover:border-white/20 transition-all"
           >
             {isExpanded ? (
               <>
@@ -131,7 +131,7 @@ export default function ChangelogTab() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="space-y-12 overflow-hidden"
+              className="space-y-16 overflow-hidden"
             >
               {versions.slice(1).map((v, index) => (
                 <VersionCard key={v.version} v={v} index={index + 1} />
@@ -159,30 +159,30 @@ function VersionCard({ v, index }: VersionCardProps) {
       transition={{ delay: 0.1 }}
       className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group"
     >
-      <div className="flex items-center justify-center w-12 h-12 rounded-2xl border border-white/10 bg-slate-900 text-slate-500 shadow-2xl shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 futuristic-glow">
+      <div className="flex items-center justify-center w-12 h-12 rounded-2xl border border-white/10 bg-[#0A0A0A] text-white shadow-2xl shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
         {v.icon}
       </div>
       
-      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-8 glass-panel group-hover:border-accent/30 transition-all duration-500">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-8 bg-[#0A0A0A] border border-white/5 rounded-[2.5rem] group-hover:border-white/20 transition-all duration-500 shadow-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <span className="text-2xl font-bold text-white font-mono">{v.version}</span>
-              <span className="text-[10px] font-bold text-accent uppercase tracking-widest bg-accent/10 px-3 py-1 rounded-lg border border-accent/20">
+              <span className="text-2xl font-black text-white font-mono">{v.version}</span>
+              <span className="text-[10px] font-black text-white uppercase tracking-widest bg-white/5 px-3 py-1 rounded-lg border border-white/10">
                 Stable
               </span>
             </div>
-            <h3 className="text-sm font-medium text-slate-400">{v.title}</h3>
+            <h3 className="text-sm font-black text-white/40 uppercase tracking-tight">{v.title}</h3>
           </div>
-          <time className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-lg border border-white/5 h-fit">
+          <time className="text-[10px] font-black text-white/20 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-lg border border-white/10 h-fit">
             {v.date}
           </time>
         </div>
-        <ul className="space-y-4">
+        <ul className="space-y-5">
           {v.changes.map((change: string, i: number) => (
-            <li key={i} className="text-slate-300 text-sm flex items-start gap-4 group/item">
-              <div className="w-1.5 h-1.5 rounded-full bg-accent/40 mt-1.5 group-hover/item:bg-accent transition-colors" />
-              <span className="leading-relaxed font-light">{change}</span>
+            <li key={`change-${v.version}-${i}`} className="text-white/40 text-sm flex items-start gap-4 group/item">
+              <div className="w-1.5 h-1.5 rounded-full bg-white/10 mt-1.5 group-hover/item:bg-white transition-all duration-500" />
+              <span className="leading-relaxed font-medium group-hover/item:text-white/60 transition-colors">{change}</span>
             </li>
           ))}
         </ul>
