@@ -4,9 +4,8 @@ import { useSession } from './useSession';
 import { useAnalysis } from './useAnalysis';
 import { usePromptGeneration } from './usePromptGeneration';
 import { useHistory } from './useHistory';
+import { useMarketIntelligence } from './useMarketIntelligence';
 import { HistoryItem, AgentTask, CategoryResult } from '../types';
-import { analyzeCompetitorIntel, predictSalesPotential } from '../services/marketService';
-import { getTrendForecast } from '../services/trendService';
 
 export const useAppLogic = () => {
   const {
@@ -36,59 +35,10 @@ export const useAppLogic = () => {
   const analysis = useAnalysis();
   const promptGen = usePromptGeneration();
   const historyLogic = useHistory();
+  const marketIntel = useMarketIntelligence();
 
   // Additional Logic
-  const handleAnalyzeCompetitor = async (category: CategoryResult) => {
-    setIsAnalyzingCompetitor(true);
-    try {
-      const analysisData = await analyzeCompetitorIntel(category.categoryName, category.contentType, settings);
-      setResults(prev => prev.map(r => 
-        r.id === category.id ? { ...r, competitorIntel: analysisData } : r
-      ));
-      setToast({ show: true, message: 'Competitor analysis complete!' });
-    } catch (error) {
-      setErrorModal({ show: true, title: 'Analysis Failed', message: 'Could not analyze competitor.' });
-    } finally {
-      setIsAnalyzingCompetitor(false);
-    }
-  };
-
-  const handlePredictSales = async (category: CategoryResult) => {
-    try {
-      const prediction = await predictSalesPotential(category.categoryName, category.contentType, settings, salesRecords);
-      setResults(prev => prev.map(r => 
-        r.id === category.id ? { ...r, salesPotential: prediction } : r
-      ));
-      setToast({ show: true, message: 'Sales potential predicted!' });
-    } catch (error) {
-      setErrorModal({ show: true, title: 'Prediction Failed', message: 'Could not predict sales potential.' });
-    }
-  };
-
   const handleToggleMonitor = () => setIsMonitoring(!isMonitoring);
-
-  const handleRefreshForecasts = async () => {
-    setIsRefreshingForecasts(true);
-    try {
-      const newForecasts = await getTrendForecast(analysis.keyword, settings);
-      setForecasts(newForecasts);
-      setToast({ show: true, message: 'Trend forecasts updated!' });
-    } catch (error) {
-      setErrorModal({ show: true, title: 'Refresh Failed', message: 'Could not update trend forecasts.' });
-    } finally {
-      setIsRefreshingForecasts(false);
-    }
-  };
-
-  const handleParseSalesCSV = async (file: File) => {
-    setIsParsingSalesCSV(true);
-    try {
-      // Logic for parsing CSV
-      setToast({ show: true, message: 'Data penjualan diimpor!' });
-    } finally {
-      setIsParsingSalesCSV(false);
-    }
-  };
 
   const handleRunPipeline = async (steps: string[]) => {
     setIsPipelineRunning(true);
@@ -216,6 +166,7 @@ export const useAppLogic = () => {
     ...analysis,
     ...promptGen,
     ...historyLogic,
+    ...marketIntel,
     activeTab,
     setActiveTab,
     selectedPromptCategoryId,
@@ -235,20 +186,9 @@ export const useAppLogic = () => {
     handleSavePreferences,
     handleLoadHistory,
     handleViewPrompts,
-    handleAnalyzeCompetitor,
-    handlePredictSales,
-    handleToggleMonitor,
-    handleRefreshForecasts,
-    handleParseSalesCSV,
     handleRunPipeline,
     isPipelineRunning,
     pipelineTasks,
-    progress,
-    isAnalyzingCompetitor,
-    isMonitoring,
-    forecasts,
-    isRefreshingForecasts,
-    salesRecords,
-    isParsingSalesCSV
+    progress
   };
 };

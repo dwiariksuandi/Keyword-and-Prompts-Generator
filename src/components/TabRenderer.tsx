@@ -24,7 +24,7 @@ export function TabRenderer({ activeTab, logic }: { activeTab: string, logic: an
     handleAnalyze, handleQuickGenerate,
     handleAnalyzeAesthetic, isAnalyzing,
     isAnalyzingAesthetic, aestheticAnalysis,
-    setAestheticAnalysis, results,
+    setAestheticAnalysis, results, setResults,
     sortBy, setSortBy,
     filterCompetition, setFilterCompetition,
     referenceFile, setReferenceFile,
@@ -54,6 +54,7 @@ export function TabRenderer({ activeTab, logic }: { activeTab: string, logic: an
           settings={settings} 
           setSettings={setSettings} 
           results={results}
+          setResults={setResults}
           onEndSession={handleEndSession}
           onSavePreferences={handleSavePreferences}
           prefsSaved={prefsSaved}

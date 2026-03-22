@@ -1,7 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { PROMPT_TEMPLATES } from "../constants/promptTemplates";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const envApiKey = typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : (import.meta as any).env?.VITE_GEMINI_API_KEY;
+const ai = new GoogleGenAI({ apiKey: envApiKey || "" });
 
 /**
  * Mengekstrak variabel dari input pengguna menggunakan Gemini.

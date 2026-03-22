@@ -5,6 +5,8 @@ import { CategoryResult, PromptOptimizationRequest } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 
+import { PromptCard } from './PromptCard';
+
 interface PromptTabProps {
   results: CategoryResult[];
   selectedCategoryId: string | null;
@@ -386,151 +388,16 @@ export default function PromptTab({
                 ) : (
                   <div className="grid grid-cols-1 gap-6">
                     {category.generatedPrompts.map((prompt, index) => (
-                      <motion.div 
+                      <PromptCard
                         key={`${category.id}-prompt-${index}`}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 sm:p-8 flex flex-col gap-8 group/item hover:border-white/20 hover:bg-white/[0.04] transition-all duration-500"
-                      >
-                        <div className="flex flex-col sm:flex-row gap-8">
-                          <div className="flex-shrink-0 w-12 h-12 bg-black/40 rounded-2xl flex items-center justify-center text-white font-black text-lg border border-white/5 group-hover/item:border-white/20 transition-all">
-                            {index + 1}
-                          </div>
-                          <div className="flex-grow pt-1">
-                            <p className="text-white/80 text-base sm:text-lg leading-relaxed font-medium">{prompt}</p>
-                            
-                            {category.promptScores?.[index]?.optimizedPrompt && (
-                              <div className="mt-4 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-                                <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest block mb-2">Optimized Version</span>
-                                <p className="text-blue-100/80 text-sm leading-relaxed">{category.promptScores[index].optimizedPrompt}</p>
-                              </div>
-                            )}
-
-                            <div className="mt-6 flex items-center gap-4">
-                              <div className="flex items-center gap-1">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                  <button
-                                    key={star}
-                                    onClick={() => onRatePrompt(category.id, index, star)}
-                                    className={`p-1 transition-all ${
-                                      (category.promptScores?.[index]?.rating || 0) >= star 
-                                        ? 'text-yellow-400' 
-                                        : 'text-white/10 hover:text-white/30'
-                                    }`}
-                                  >
-                                    <Star size={14} fill={(category.promptScores?.[index]?.rating || 0) >= star ? 'currentColor' : 'none'} />
-                                  </button>
-                                ))}
-                              </div>
-                              <div className="w-px h-4 bg-white/5" />
-                              <button
-                                onClick={() => setOptimizingPrompt({ catId: category.id, index, prompt })}
-                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-all"
-                              >
-                                <Wand2 size={12} />
-                                Optimize
-                              </button>
-                            </div>
-                          </div>
-                          <div className="flex-shrink-0 flex justify-end gap-3">
-                            <motion.button 
-                              whileHover={{ scale: 1.1, backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa' }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => onVisualize(prompt)}
-                              className="p-4 bg-black/40 rounded-2xl text-white/20 transition-all border border-white/5 hover:border-blue-500/30"
-                              title="Visualize with Gemini"
-                            >
-                              <Eye size={20} />
-                            </motion.button>
-                            <motion.button 
-                              whileHover={{ scale: 1.1, backgroundColor: 'rgba(255, 255, 255, 0.1)', color: '#fff' }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => handleCopy(prompt)}
-                              className="p-4 bg-black/40 rounded-2xl text-white/20 transition-all border border-white/5 hover:border-white/30"
-                              title="Copy Prompt"
-                            >
-                              <Copy size={20} />
-                            </motion.button>
-                          </div>
-                        </div>
-
-                        {category.promptScores && category.promptScores[index] && (
-                          <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="mt-4 pt-8 border-t border-white/5"
-                          >
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8 mb-8">
-                              <div className="flex items-center gap-4">
-                                <div className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border bg-white/10 text-white border-white/20">
-                                  Quality Index: {category.promptScores[index].score}%
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-2 sm:flex sm:items-center gap-6 w-full sm:w-auto">
-                                {[
-                                  { label: 'Density', val: category.promptScores[index].density, color: 'bg-white' },
-                                  { label: 'Clarity', val: category.promptScores[index].clarity, color: 'bg-white/60' },
-                                  { label: 'Specific', val: category.promptScores[index].specificity, color: 'bg-white/40' },
-                                  { label: 'Adobe', val: category.promptScores[index].adherence, color: 'bg-white/20' }
-                                ].map((m, i) => (
-                                  <div key={`${category.id}-metric-${index}-${i}`} className="flex flex-col items-center sm:items-start">
-                                    <span className="text-[8px] text-white/30 uppercase font-black tracking-widest mb-2">{m.label}</span>
-                                    <div className="w-full sm:w-16 h-1 bg-white/5 rounded-full overflow-hidden">
-                                      <motion.div 
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${m.val}%` }}
-                                        transition={{ duration: 1, delay: 0.5 + (i * 0.1) }}
-                                        className={`h-full ${m.color}`} 
-                                      />
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="bg-black/40 rounded-[2rem] p-8 border border-white/5 space-y-6">
-                              <p className="text-sm text-white/60 italic leading-relaxed font-medium">
-                                <span className="text-white font-black not-italic mr-3 uppercase tracking-widest text-[9px]">Analysis:</span>
-                                {category.promptScores[index].feedback}
-                              </p>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-white/5">
-                                {[
-                                  { label: 'Keyword Vectors', text: category.promptScores[index].keywordFeedback },
-                                  { label: 'Visual Clarity', text: category.promptScores[index].clarityFeedback },
-                                  { label: 'Technical Specs', text: category.promptScores[index].specificityFeedback },
-                                  { label: 'Compliance', text: category.promptScores[index].adherenceFeedback }
-                                ].map((f, i) => f.text && (
-                                  <div key={`${category.id}-feedback-${index}-${i}`} className="space-y-2">
-                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">{f.label}</span>
-                                    <p className="text-xs text-white/40 leading-relaxed font-medium">{f.text}</p>
-                                  </div>
-                                ))}
-                              </div>
-
-                              {category.promptScores[index].groundingSources && category.promptScores[index].groundingSources!.length > 0 && (
-                                <div className="pt-6 border-t border-white/5 space-y-3">
-                                  <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Market Validation Sources</span>
-                                  <div className="flex flex-wrap gap-2">
-                                    {category.promptScores[index].groundingSources!.map((source, i) => (
-                                      <a 
-                                        key={`${category.id}-source-${index}-${i}`} 
-                                        href={source.uri} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-[10px] text-white/60 hover:text-white transition-colors bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 flex items-center gap-2"
-                                      >
-                                        <Globe size={12} />
-                                        {source.title ? (source.title.length > 40 ? source.title.substring(0, 40) + '...' : source.title) : source.uri}
-                                      </a>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </motion.div>
+                        category={category}
+                        prompt={prompt}
+                        index={index}
+                        onCopy={handleCopy}
+                        onVisualize={onVisualize}
+                        onRatePrompt={onRatePrompt}
+                        onOptimizeClick={(catId, idx, p) => setOptimizingPrompt({ catId, index: idx, prompt: p })}
+                      />
                     ))}
                   </div>
                 )}

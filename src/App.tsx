@@ -42,6 +42,7 @@ export default function App() {
     aestheticAnalysis,
     setAestheticAnalysis,
     results,
+    setResults,
     history,
     settings,
     setSettings,
@@ -212,6 +213,7 @@ export default function App() {
               settings={settings} 
               setSettings={setSettings} 
               results={results}
+              setResults={setResults}
               onEndSession={handleEndSession}
               onSavePreferences={handleSavePreferences}
               prefsSaved={prefsSaved}

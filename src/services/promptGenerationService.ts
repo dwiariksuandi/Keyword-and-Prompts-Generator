@@ -118,15 +118,20 @@ async function generatePromptsBatch(
 ): Promise<string[]> {
   const ai = getAI(settings.apiKey);
   
-  const promptText = `Generate a combinatorial set of prompt components for the category: '${categoryName}'.
+  const promptText = `Generate a highly diverse, combinatorial set of prompt components for the category: '${categoryName}'.
   Target Content Type: ${contentType}
   Total Prompts Needed: ${count}
   
+  CRITICAL DIVERSITY INSTRUCTIONS:
+  - Do NOT repeat concepts. Every subject and action must be distinctly different.
+  - Explore different sub-niches, lighting setups, and emotional tones within the category.
+  - Ensure the components can be mixed and matched to create coherent, commercially viable stock assets.
+  
   Provide:
-  1. Subjects: 10-15 unique subjects.
-  2. Actions/Contexts: 10-15 unique scenarios.
-  3. Technical Modifiers: 10-15 specific modifiers for ${contentType}.
-  4. Aesthetic/Mood Modifiers: 10-15 modifiers based on ${settings.creatorProfile?.aestheticDNA || 'professional stock'}.
+  1. Subjects: 15-20 highly unique and specific subjects (e.g., "A cyberpunk botanist", not just "A person").
+  2. Actions/Contexts: 15-20 unique, dynamic scenarios or environments.
+  3. Technical Modifiers: 15-20 specific camera angles, lighting setups, or rendering techniques for ${contentType}.
+  4. Aesthetic/Mood Modifiers: 15-20 distinct moods or color palettes based on ${settings.creatorProfile?.aestheticDNA || 'professional stock'}.
   
   Respond strictly with a JSON object:
   {
@@ -140,7 +145,8 @@ async function generatePromptsBatch(
     model: settings.model || 'gemini-3-flash-preview',
     contents: [{ text: promptText }],
     config: {
-      systemInstruction: "You are a Prompt Component Architect. You provide high-quality, diverse building blocks for combinatorial prompt generation. Respond ONLY with valid JSON.",
+      systemInstruction: "You are a Prompt Component Architect. You provide high-quality, extremely diverse building blocks for combinatorial prompt generation. Respond ONLY with valid JSON.",
+      temperature: 0.9, // Higher temperature for more diversity in batch generation
       thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
     },
   });
@@ -150,18 +156,35 @@ async function generatePromptsBatch(
   
   try {
     const components = extractJSON(text);
-    const prompts: string[] = [];
+    const prompts: Set<string> = new Set(); // Use Set to prevent exact duplicates
     
-    for (let i = 0; i < count; i++) {
-      const s = components.subjects[i % components.subjects.length];
+    let attempts = 0;
+    const maxAttempts = count * 3;
+
+    while (prompts.size < count && attempts < maxAttempts) {
+      const s = components.subjects[Math.floor(Math.random() * components.subjects.length)];
       const a = components.actions[Math.floor(Math.random() * components.actions.length)];
       const t = components.technical[Math.floor(Math.random() * components.technical.length)];
       const aes = components.aesthetic[Math.floor(Math.random() * components.aesthetic.length)];
       
-      prompts.push(`${s} ${a}, ${t}, ${aes}, high quality, professional stock style`);
+      let prompt = '';
+      if (contentType === 'Photo') {
+        prompt = `A professional photograph of ${s} ${a}, ${aes}, ${t}, 8k resolution, highly detailed, commercial stock photography`;
+      } else if (contentType === 'Illustration' || contentType === 'Vector') {
+        prompt = `High quality ${contentType.toLowerCase()} of ${s} ${a}, ${aes}, ${t}, clean lines, vibrant colors, commercial vector art`;
+      } else if (contentType === 'Video') {
+        prompt = `Cinematic video shot of ${s} ${a}, ${aes}, ${t}, 4k resolution, smooth motion, professional color grading`;
+      } else if (contentType === '3D Render') {
+        prompt = `High-end 3D render of ${s} ${a}, ${aes}, ${t}, octane render, unreal engine 5, ray tracing, highly detailed`;
+      } else {
+        prompt = `${s} ${a}, ${t}, ${aes}, high quality, professional stock style`;
+      }
+
+      prompts.add(prompt);
+      attempts++;
     }
     
-    return prompts;
+    return Array.from(prompts);
   } catch (e) {
     throw new Error("Failed to generate batch prompts.");
   }
@@ -213,13 +236,46 @@ export async function generateAllPromptsBatch(
   const promptsMap: Record<string, string[]> = {};
   const groundingSources: any[] = [];
   
-  for (let i = 0; i < categories.length; i++) {
-    const cat = categories[i];
-    const prompts = await generatePrompts(cat.categoryName, contentType, settings, Math.ceil(count / categories.length), undefined, referenceUrl);
-    promptsMap[cat.categoryName] = prompts;
+  // Define chunk size to avoid hitting API rate limits
+  const CHUNK_SIZE = 3; 
+  let completedCount = 0;
+
+  for (let i = 0; i < categories.length; i += CHUNK_SIZE) {
+    const chunk = categories.slice(i, i + CHUNK_SIZE);
     
+    // Process chunk in parallel
+    const chunkPromises = chunk.map(async (cat) => {
+      try {
+        const prompts = await generatePrompts(
+          cat.categoryName, 
+          contentType, 
+          settings, 
+          Math.ceil(count / categories.length), 
+          undefined, 
+          referenceUrl
+        );
+        return { categoryName: cat.categoryName, prompts };
+      } catch (error) {
+        console.error(`Error generating prompts for ${cat.categoryName}:`, error);
+        return { categoryName: cat.categoryName, prompts: [] }; // Fallback
+      }
+    });
+
+    const chunkResults = await Promise.all(chunkPromises);
+    
+    // Assign results to map
+    chunkResults.forEach(result => {
+      promptsMap[result.categoryName] = result.prompts;
+    });
+
+    completedCount += chunk.length;
     if (onProgress) {
-      onProgress(Math.round(((i + 1) / categories.length) * 100));
+      onProgress(Math.round((completedCount / categories.length) * 100));
+    }
+    
+    // Optional: Add a small delay between chunks if rate limits are strict
+    if (i + CHUNK_SIZE < categories.length) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
   

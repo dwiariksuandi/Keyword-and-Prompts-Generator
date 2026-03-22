@@ -1,8 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-
-export async function validatePromptAI(prompt: string): Promise<{ isValid: boolean; score: number; reason: string }> {
+export async function validatePromptAI(prompt: string, apiKey: string): Promise<{ isValid: boolean; score: number; reason: string }> {
+  const envApiKey = typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : (import.meta as any).env?.VITE_GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey: apiKey || envApiKey || "" });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
