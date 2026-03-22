@@ -582,6 +582,31 @@ export async function analyzeUrlAesthetic(url: string, settings: AppSettings, co
   }
 }
 
+export async function analyzePortfolioAesthetic(url: string, settings: AppSettings): Promise<string> {
+  const ai = getAI(settings.apiKey);
+  
+  const promptText = `Analyze the creator portfolio at this URL: ${url}.
+  Extract their 'Aesthetic DNA'. Identify their primary visual styles, recurring themes, color palettes, and technical strengths (e.g., minimalist vector illustrations, moody cinematic photography, etc.).
+  Provide a concise, 2-3 paragraph summary of their unique creative identity. Focus on what makes their work distinct and what kind of commercial assets they are best suited to produce.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: settings.model || 'gemini-3.1-pro-preview',
+      contents: [{ text: promptText }],
+      config: {
+        tools: [{ googleSearch: {} }],
+        systemInstruction: "You are an expert Creative Director and Art Critic. Analyze the provided portfolio URL and extract the creator's Aesthetic DNA.",
+        thinkingConfig: (settings.model || 'gemini-3.1-pro-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      }
+    });
+
+    return response.text || 'Unable to extract Aesthetic DNA from the provided URL.';
+  } catch (error) {
+    console.error("Portfolio analysis failed:", error);
+    throw new Error(handleGeminiError(error));
+  }
+}
+
 export async function analyzeKeyword(keyword: string, contentType: string, settings: AppSettings, referenceFile?: ReferenceFile, referenceUrl?: string) {
   const cacheKey = `${keyword}-${contentType}-${settings.language}`;
   const cachedData = cacheService.get(cacheKey);
@@ -600,6 +625,12 @@ export async function analyzeKeyword(keyword: string, contentType: string, setti
   - Time Commitment: ${settings.intent.timeCommitment} (Ensure the difficulty and production effort match this availability).
   ` : '';
 
+  const portfolioContext = settings.creatorProfile?.aestheticDNA ? `
+  CREATOR AESTHETIC DNA:
+  ${settings.creatorProfile.aestheticDNA}
+  (CRITICAL: The Creative Director Agent MUST prioritize niches and visual trends that align with or complement this creator's existing Aesthetic DNA. Do not suggest styles that are completely disconnected from their proven strengths. The recommendations MUST be "tepat sasaran" based on their portfolio.)
+  ` : '';
+
   const promptText = `Perform an elite, multi-agent market analysis targeting asset type: '${contentType}'.
   
   MARKET CONTEXT (Real-Time Data):
@@ -608,6 +639,7 @@ export async function analyzeKeyword(keyword: string, contentType: string, setti
   - Market Gaps: ${marketData.marketGaps.join(', ')}
 
   ${intentContext}
+  ${portfolioContext}
   ${getContentTypeInstructions(contentType)}
   
   AGENT ROLES:
@@ -686,6 +718,12 @@ export async function scorePrompts(
 
   let allScores: PromptScore[] = [];
 
+  const portfolioContext = settings.creatorProfile?.aestheticDNA ? `
+  CREATOR AESTHETIC DNA:
+  ${settings.creatorProfile.aestheticDNA}
+  (CRITICAL EVALUATION CRITERIA: Evaluate how well the prompt aligns with this creator's specific Aesthetic DNA. Does it feel like something they would produce?)
+  ` : '';
+
   for (const chunk of chunks) {
     const promptText = `Analyze the selected prompts and provide specific suggestions for improving their quality, focusing on technical details like lighting, composition, and resolution. Evaluate the quality of the following ${chunk.length} image generation prompts for Adobe Stock. 
     Target Asset Type: '${contentType}'
@@ -694,6 +732,7 @@ export async function scorePrompts(
     ${visualTrends && visualTrends.length > 0 ? `Visual Trends: '${visualTrends.join(', ')}'` : ''}
     ${creativeAdvice ? `Creative Advice: '${creativeAdvice}'` : ''}
 
+    ${portfolioContext}
     ${getContentTypeInstructions(contentType)}
 
     CRITICAL EVALUATION CRITERIA (Score 0-100 for each):
@@ -702,6 +741,7 @@ export async function scorePrompts(
     3. Specificity: Does it provide enough detail (lighting, composition, textures, resolution) to generate a high-quality, unique image?
     4. Adobe Stock Adherence: Does it follow commercial utility rules (copy space, diversity, authentic lifestyle) and AI compliance (no brands, no text)?
     5. Market Alignment: Does the prompt align with the Buyer Persona, Visual Trends, and Creative Advice provided for this niche?
+    ${settings.creatorProfile?.aestheticDNA ? '6. Aesthetic DNA Alignment: Does the prompt strongly reflect the creator\'s established style, color grading, and visual identity?' : ''}
 
     Prompts to evaluate:
     ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}
@@ -784,6 +824,12 @@ export async function generatePrompts(
     : (settings.templateId?.[contentType] || 'midjourney-photo');
   const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
   
+  const portfolioContext = settings.creatorProfile?.aestheticDNA ? `
+  CREATOR AESTHETIC DNA:
+  ${settings.creatorProfile.aestheticDNA}
+  (CRITICAL: You MUST infuse these prompts with the creator's specific Aesthetic DNA. The lighting, composition, color palette, and overall vibe MUST strongly reflect their established style to ensure the generated assets fit seamlessly into their portfolio.)
+  ` : '';
+
   // For large counts, use a combinatorial approach to avoid LLM output token limits and guarantee uniqueness
   if (count > 30) {
     const promptText = `Generate a rich set of prompt components for the niche '${categoryName}' based on the core keyword '${keyword}'. The target asset type is '${contentType}' and the target platform is '${template.name}'.
@@ -792,6 +838,7 @@ export async function generatePrompts(
 
       CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated components reflect REAL market demand and current design trends.
 
+      ${portfolioContext}
       ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\n      Tailor the subjects, environments, and overall vibe to appeal directly to this specific audience and their commercial needs.` : ''}
       ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\n      Integrate these specific aesthetic trends into the lighting, color grading, and styling of the prompts.` : ''}
       ${creativeAdvice ? `STRATEGIC DIRECTIVE: ${creativeAdvice}\n      Ensure the prompts execute on this specific creative advice.` : ''}
@@ -825,6 +872,7 @@ export async function generatePrompts(
       - NO SIMILAR CONTENT: The components must be vastly different from each other to avoid generating repetitive images. Adobe Stock rejects batches of similar images. 
         - VARIATION STRATEGY: Rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
       - NO TEXT/TYPOGRAPHY: Absolutely no text, words, letters, signatures, or watermarks should be mentioned or implied in the components. The output must be purely visual.
+      - AESTHETIC DNA ALIGNMENT: You MUST ensure the generated components (especially lighting, mood, and style) align with the provided CREATOR AESTHETIC DNA. The components MUST be "tepat sasaran" based on their portfolio.
       - GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms (e.g., "generic modern luxury car" instead of "Tesla").
       - QUALITY: Ensure descriptions naturally lead to high-quality outputs without deformed limbs or bad anatomy.
       ${contentType === 'Video' ? `- SPECIAL VIDEO INSTRUCTION: For this category, you MUST incorporate specific cinematic camera movements and techniques in the 'details/actions' section. Use terms like 'slow-motion tracking shot', 'dynamic drone footage', 'handheld camera effect', 'stabilized gimbal shot', 'crane shot', 'dolly zoom', and 'rack focus'.` : ''}
@@ -919,6 +967,7 @@ ${getContentTypeInstructions(contentType)}
 
 CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this niche. Ensure your generated prompts reflect REAL market demand and current design trends.
 
+${portfolioContext}
 ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\nTailor the subjects, environments, and overall vibe to appeal directly to this specific audience and their commercial needs.` : ''}
 ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\nIntegrate these specific aesthetic trends into the lighting, color grading, and styling of the prompts.` : ''}
 ${creativeAdvice ? `STRATEGIC DIRECTIVE: ${creativeAdvice}\nEnsure the prompts execute on this specific creative advice.` : ''}
@@ -950,11 +999,12 @@ CRITICAL REQUIREMENTS FOR ADOBE STOCK:
 5. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only.
 6. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
 7. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks. The image must be clean and free of any literal text.
-8. ${getVariationInstructions(settings.variationLevel)}
-9. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
+8. AESTHETIC DNA ALIGNMENT: You MUST ensure the generated prompts (especially lighting, composition, and color palette) align with the provided CREATOR AESTHETIC DNA. The prompts MUST be "tepat sasaran" based on their portfolio.
+9. ${getVariationInstructions(settings.variationLevel)}
+10. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
 "${template.template}"
 Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
-10. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
+11. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
 
 Respond strictly with a JSON array of strings, where each string is a complete, ready-to-use image generation prompt tailored for a ${contentType}.
 Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
@@ -1017,12 +1067,19 @@ export async function generatePromptsDirectly(count: number, settings: AppSettin
     : (settings.templateId?.[contentType] || 'midjourney-photo');
   const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
   
+  const portfolioContext = settings.creatorProfile?.aestheticDNA ? `
+  CREATOR AESTHETIC DNA:
+  ${settings.creatorProfile.aestheticDNA}
+  (CRITICAL: You MUST infuse these prompts with the creator's specific Aesthetic DNA. The lighting, composition, color palette, and overall vibe MUST strongly reflect their established style to ensure the generated assets fit seamlessly into their portfolio.)
+  ` : '';
+
   const promptText = `Generate exactly ${count} highly detailed, commercial-grade image generation prompts. The target asset type is '${contentType}' and the target platform is '${template.name}'.
   
   ${getContentTypeInstructions(contentType)}
 
   CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for this asset type. Ensure your generated prompts reflect REAL market demand and current design trends.
 
+  ${portfolioContext}
   ${keyword ? `The core theme/keyword is: '${keyword}'.` : ''}
   ${referenceUrl ? `CRITICAL REFERENCE URL INSTRUCTION: ${referenceUrl}
   You MUST use the Google Search tool to analyze this URL. 
@@ -1047,14 +1104,15 @@ ${contentType === 'Video' ? `SPECIAL VIDEO INSTRUCTION: For this category, you M
   3. Technical Precision: Specify lighting, camera angles, and aesthetic quality appropriate for the ${template.name} platform.
   4. NO SIMILAR CONTENT: Adobe Stock rejects batches of similar images. Each prompt MUST have a distinct composition, camera angle, subject, or core action. Avoid repetitive concepts.
      - VARIATION STRATEGY: Rotate through diverse camera angles (e.g., low angle, high angle, bird's eye view, dutch angle, macro, wide shot, extreme close-up, eye level) and compositions (e.g., rule of thirds, leading lines, symmetry, minimalist, dynamic action, flat lay, top-down).
-  4. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only (e.g., "generic modern smartphone").
-  5. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
-  6. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks.
-  7. ${getVariationInstructions(settings.variationLevel)}
-  8. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
+  5. AESTHETIC DNA ALIGNMENT: You MUST ensure the generated prompts (especially lighting, composition, and color palette) align with the provided CREATOR AESTHETIC DNA. The prompts MUST be "tepat sasaran" based on their portfolio.
+  6. GENERATIVE AI COMPLIANCE: Absolutely NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands, NO recognizable characters, and NO real known restricted places/buildings. Use generic terms only (e.g., "generic modern smartphone").
+  7. QUALITY: Ensure descriptions naturally lead to high-quality outputs.
+  8. NO TEXT: Strictly avoid any mention of text, typography, words, letters, signatures, or watermarks.
+  9. ${getVariationInstructions(settings.variationLevel)}
+  10. STRICT Template Alignment: You MUST strictly format each prompt using this exact template structure for ${template.name}:
   "${template.template}"
   Replace the bracketed placeholders (e.g., {subject}, {details}, {lighting}) with your generated content. Do not add conversational text.
-  9. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
+  11. FORMATTING: Each prompt MUST be a single, continuous line of text. Do not use line breaks, newlines, or paragraphs within a single prompt.
 
   Respond strictly with a JSON array of strings, where each string is a complete, ready-to-use image generation prompt tailored for a ${contentType}.
   Language: ${settings.language === 'id' ? 'Indonesian' : 'English'}.
@@ -1123,6 +1181,12 @@ export async function optimizePrompts(
     : (settings.templateId?.[contentType] || 'midjourney-photo');
   const template = promptTemplates.find(t => t.id === currentTemplateId) || promptTemplates[0];
   
+  const portfolioContext = settings.creatorProfile?.aestheticDNA ? `
+  CREATOR AESTHETIC DNA:
+  ${settings.creatorProfile.aestheticDNA}
+  (CRITICAL: During optimization, you MUST align the technical and aesthetic modifiers with the creator's specific Aesthetic DNA. Ensure the upgraded prompts reflect their established style, color grading, and visual identity.)
+  ` : '';
+
   // If the array is very large, we use a programmatic approach but with stricter preservation of original content
   if (prompts.length > 30) {
     const sample = prompts.slice(0, 10);
@@ -1136,6 +1200,7 @@ export async function optimizePrompts(
 
       CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
 
+      ${portfolioContext}
       ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
       ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\n      Ensure the technical enhancements appeal directly to this specific audience.` : ''}
       ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\n      Integrate these specific aesthetic trends into the technical upgrade.` : ''}
@@ -1163,6 +1228,7 @@ export async function optimizePrompts(
       
       CRITICAL RULES:
       - REFERENCE FIDELITY: If a reference is provided, it takes precedence as the "Main Idea". The modifiers must elevate the prompts to match the reference's elite standards and topic essence.
+      - AESTHETIC DNA ALIGNMENT: You MUST ensure the generated modifiers (especially lighting and quality signatures) align with the provided CREATOR AESTHETIC DNA. The modifiers MUST be "tepat sasaran" based on their portfolio.
       - NO TEXT/TYPOGRAPHY: Ensure all modifiers avoid text, watermarks, or logos.
       - ADOBE STOCK COMPLIANCE: Use generic high-end terms instead of specific restricted brands.
       
@@ -1254,6 +1320,7 @@ export async function optimizePrompts(
 
   CRITICAL: Use Google Search to research current technical standards, popular aesthetic modifiers, and high-demand commercial styles on Adobe Stock. Ensure your enhancements reflect REAL market demand and current professional photography/illustration trends.
 
+  ${portfolioContext}
   ${keyword || categoryName ? `The niche context is: '${categoryName || keyword}'.` : ''}
   ${buyerPersona ? `TARGET BUYER PERSONA: ${buyerPersona}\n  Ensure the technical enhancements appeal directly to this specific audience.` : ''}
   ${visualTrends && visualTrends.length > 0 ? `CURRENT VISUAL TRENDS: ${visualTrends.join(', ')}\n  Integrate these specific aesthetic trends into the technical upgrade.` : ''}
@@ -1280,6 +1347,7 @@ export async function optimizePrompts(
   2. Enhancing Descriptive Power & Keyword Weaving: Use sophisticated vocabulary to describe textures, materials, and atmospheric effects derived from the reference. You MUST weave 5-8 high-value commercial synonyms and LSI keywords naturally into the upgraded prompt to maximize search visibility without keyword stuffing.
   3. Optimizing for Adobe Stock Algorithms: Ensure the prompt structure maximizes commercial appeal and technical rating.
   4. Targeted Alignment: Ensure the resulting prompts are "tepat sasaran" (perfectly targeted) according to the reference's style, topic, and keywords.
+  5. Aesthetic DNA Alignment: You MUST ensure the generated modifiers (especially lighting and quality signatures) align with the provided CREATOR AESTHETIC DNA. The modifiers MUST be "tepat sasaran" based on their portfolio.
 
 Original Prompts:
 ${JSON.stringify(prompts)}
@@ -1363,6 +1431,12 @@ export async function generateAllPromptsBatch(
   const countPerCategory = Math.max(1, Math.floor(totalCount / categories.length));
   const itemsNeeded = Math.max(5, Math.ceil(Math.sqrt(countPerCategory) * 1.5));
 
+  const portfolioContext = settings.creatorProfile?.aestheticDNA ? `
+  CREATOR AESTHETIC DNA:
+  ${settings.creatorProfile.aestheticDNA}
+  (CRITICAL: You MUST infuse these batch prompts with the creator's specific Aesthetic DNA. Ensure the generated assets fit seamlessly into their portfolio. The prompts MUST be "tepat sasaran" based on their portfolio.)
+  ` : '';
+
   const categoryNames = categories.map(c => c.categoryName).join("', '");
   const categoryDetails = categories.map(c => 
     `- Niche: ${c.categoryName}
@@ -1383,6 +1457,7 @@ export async function generateAllPromptsBatch(
       
       CRITICAL: Use Google Search to research current visual trends, popular aesthetics, and high-demand concepts on Adobe Stock for these niches. Ensure your generated components reflect REAL market demand and current design trends, specifically tailoring the subjects, environments, and overall vibe to appeal directly to the Buyer Persona and Creative Advice provided for each niche.
 
+      ${portfolioContext}
       For EACH niche, provide:
       1. ${itemsNeeded} highly distinct subjects.
       2. ${itemsNeeded} specific and varied details/actions/camera angles. ${contentType === 'Video' ? 'Include Cinematography (Camera movement, Composition, Lens & focus) and Action.' : 'Include Action, Location/context, and Composition.'}
@@ -1397,6 +1472,7 @@ export async function generateAllPromptsBatch(
         - Do NOT repeat the exact same words. Use varied adjectives and nouns (e.g., instead of repeating "business", use "corporate, executive, professional, commercial, enterprise").
         - The combined final prompt should read as a natural, highly descriptive sentence that inherently contains a dense cluster of unique, searchable stock keywords.
       - NO SIMILAR CONTENT: Components must be vastly different to avoid rejection for similarity.
+      - AESTHETIC DNA ALIGNMENT: You MUST ensure the generated components (especially lighting, mood, and style) align with the provided CREATOR AESTHETIC DNA. The components MUST be "tepat sasaran" based on their portfolio.
       - ${getVariationInstructions(settings.variationLevel)}
       - GENERATIVE AI COMPLIANCE: NO real people's names, NO trademarked/copyrighted elements, NO logos, NO specific brands.
 
@@ -1491,6 +1567,12 @@ export async function generateAdobeStockMetadata(
 
   let allMetadata: { title: string, keywords: string[] }[] = [];
 
+  const portfolioContext = settings.creatorProfile?.aestheticDNA ? `
+  CREATOR AESTHETIC DNA:
+  ${settings.creatorProfile.aestheticDNA}
+  (CRITICAL: When generating keywords, include relevant stylistic and thematic terms derived from the creator's Aesthetic DNA to ensure the metadata accurately reflects their unique style. The metadata MUST be "tepat sasaran" based on their portfolio.)
+  ` : '';
+
   for (const chunk of chunks) {
     const promptText = `Generate highly optimized metadata for Adobe Stock for the following ${chunk.length} image generation prompts in the niche '${categoryName}'. The target asset type is '${contentType}'.
     
@@ -1502,6 +1584,8 @@ CRITICAL ADOBE STOCK SEO ALGORITHM RULES:
 3. KEYWORD ORDER IS CRITICAL: The Adobe Stock search algorithm heavily weighs the FIRST 10 KEYWORDS. Place the most accurate, descriptive, and important keywords at the very beginning of the array.
 4. KEYWORD TYPES: Include who, what, where, action, mood, and technical concepts (e.g., 'copy space', 'background', 'authentic').
 5. COMPLIANCE: NO trademarks, NO brand names, NO camera brands (like Nikon, Sony). No spammy words.
+
+${portfolioContext}
 
 Prompts:
 ${chunk.map((p, i) => `[${i + 1}] ${p}`).join('\n')}

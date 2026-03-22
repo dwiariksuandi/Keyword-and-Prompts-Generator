@@ -76,7 +76,8 @@ export const useAppLogic = () => {
       promptCount: settings.promptCount,
       language: settings.language,
       includeNegative: settings.includeNegative,
-      autoSave: settings.autoSave
+      autoSave: settings.autoSave,
+      creatorProfile: settings.creatorProfile
     };
     
     localStorage.setItem('app_preferences', JSON.stringify(prefsToSave));

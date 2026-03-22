@@ -80,6 +80,12 @@ export interface AnalysisIntent {
   timeCommitment: string;
 }
 
+export interface CreatorProfile {
+  portfolioUrl: string;
+  aestheticDNA: string;
+  lastAnalyzed?: string;
+}
+
 export interface AppSettings {
   apiKey: string;
   model: string;
@@ -91,4 +97,5 @@ export interface AppSettings {
   autoSave: boolean;
   variationLevel: 'Low' | 'Medium' | 'High';
   intent?: AnalysisIntent;
+  creatorProfile?: CreatorProfile;
 }

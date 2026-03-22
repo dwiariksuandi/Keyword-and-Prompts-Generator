@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap, Upload, Image as ImageIcon, Film, X, Link as LinkIcon, Loader2, Cpu, Globe, Activity, Database, Terminal, Palette, Layers, Box, ChevronDown, ChevronUp, Type } from 'lucide-react';
+import { Search, Sparkles, Filter, ArrowUpDown, TrendingUp, BarChart2, Target, Zap, Upload, Image as ImageIcon, Film, X, Link as LinkIcon, Loader2, Cpu, Globe, Activity, Database, Terminal, Palette, Layers, Box, ChevronDown, ChevronUp, Type, UserCircle } from 'lucide-react';
 import { CategoryResult, AppSettings, ReferenceFile, AestheticAnalysis } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import FormField from './FormField';
@@ -214,7 +214,7 @@ export default function TopTab({
               <Target size={14} className="text-accent" />
               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em]">Precision Targeting</span>
             </div>
-            <div className="flex flex-wrap gap-4 flex-1">
+            <div className="flex flex-wrap gap-4 flex-1 items-center">
               <select 
                 value={settings.intent?.targetPlatform || 'Adobe Stock'}
                 onChange={(e) => setSettings(s => ({ ...s, intent: { ...s.intent, targetPlatform: e.target.value, primaryGoal: s.intent?.primaryGoal || 'Portfolio Building', timeCommitment: s.intent?.timeCommitment || 'Part-time' } }))}
@@ -246,6 +246,13 @@ export default function TopTab({
                 <option value="Part-time">Part-time (5-20 hrs/week)</option>
                 <option value="Full-time">Full-time (20+ hrs/week)</option>
               </select>
+
+              {settings.creatorProfile?.aestheticDNA && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs font-medium ml-auto" title="Aesthetic DNA Active">
+                  <UserCircle size={14} />
+                  <span className="hidden sm:inline">DNA Active</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
