@@ -9,7 +9,9 @@ import {
   LayoutGrid,
   List as ListIcon,
   RefreshCw,
-  Star
+  Star,
+  ShieldCheck,
+  BarChart3
 } from 'lucide-react';
 import { CategoryResult } from '../types';
 import { motion } from 'motion/react';
@@ -26,8 +28,9 @@ interface AnalysisTabProps {
   onGenerateAllPrompts: () => void;
   isAnalyzing: boolean;
   onToggleStar: (id: string) => void;
-  onPredictSales: (id: string) => void;
+  onPredictSales: (category: CategoryResult) => void;
   onAnalyzeCompetitor: (category: CategoryResult) => void;
+  onGenerateMetadata: (id: string) => void;
 }
 
 export default function AnalysisTab({ 
@@ -42,7 +45,8 @@ export default function AnalysisTab({
   isAnalyzing,
   onToggleStar,
   onPredictSales,
-  onAnalyzeCompetitor
+  onAnalyzeCompetitor,
+  onGenerateMetadata
 }: AnalysisTabProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
 
@@ -184,6 +188,7 @@ export default function AnalysisTab({
             onToggleStar={onToggleStar}
             onPredictSales={onPredictSales}
             onAnalyzeCompetitor={onAnalyzeCompetitor}
+            onGenerateMetadata={onGenerateMetadata}
             isAnalyzing={isAnalyzing}
           />
         ) : (
@@ -197,6 +202,7 @@ export default function AnalysisTab({
                 onToggleStar={onToggleStar}
                 onAnalyzeCompetitor={onAnalyzeCompetitor}
                 onPredictSales={onPredictSales}
+                onGenerateMetadata={onGenerateMetadata}
                 isAnalyzing={isAnalyzing}
               />
             ))}
@@ -214,6 +220,7 @@ interface ResultCardProps {
   onToggleStar: (id: string) => void;
   onAnalyzeCompetitor: (category: CategoryResult) => void;
   onPredictSales: (id: string) => void;
+  onGenerateMetadata: (id: string) => void;
   isAnalyzing: boolean;
 }
 
@@ -224,6 +231,7 @@ const ResultCard: React.FC<ResultCardProps> = ({
   onToggleStar, 
   onAnalyzeCompetitor,
   onPredictSales,
+  onGenerateMetadata,
   isAnalyzing 
 }) => {
   return (
@@ -267,6 +275,25 @@ const ResultCard: React.FC<ResultCardProps> = ({
           <div className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1.5">Competition</div>
           <div className="text-[10px] font-black text-white/60 uppercase tracking-widest">{result.competition}</div>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-3 mb-10">
+        <button
+          onClick={() => onAnalyzeCompetitor(result)}
+          disabled={isAnalyzing}
+          className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 text-white/40 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-white/10 transition-colors border border-white/5"
+        >
+          <ShieldCheck className="w-3.5 h-3.5" />
+          Intel
+        </button>
+        <button
+          onClick={() => onPredictSales(result)}
+          disabled={isAnalyzing}
+          className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 text-white/40 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-white/10 transition-colors border border-white/5"
+        >
+          <BarChart3 className="w-3.5 h-3.5" />
+          Sales
+        </button>
       </div>
 
       <div className="flex items-center justify-between gap-6 mt-auto">

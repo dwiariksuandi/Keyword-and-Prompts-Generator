@@ -41,9 +41,10 @@ function fillTemplate(template: string, vars: any) {
     .replace("[Style]", vars.Style || "cinematic");
 }
 
-export async function generateImage(userPrompt: string, templateKey: keyof typeof PROMPT_TEMPLATES = 'cinematic') {
+export async function generateImage(userPrompt: string, templateId: string = 'nanobanana-photo') {
   const vars = await extractPromptVariables(userPrompt);
-  const enrichedPrompt = fillTemplate(PROMPT_TEMPLATES[templateKey], vars);
+  const templateObj = PROMPT_TEMPLATES.find(t => t.id === templateId) || PROMPT_TEMPLATES[0];
+  const enrichedPrompt = fillTemplate(templateObj.template, vars);
   
   const response = await ai.models.generateContent({
     model: 'gemini-3.1-flash-image-preview',

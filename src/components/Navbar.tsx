@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
-import { Tab } from '../store/useAppStore';
+import { Tab } from '../types';
 
 interface NavbarProps {
   activeTab: Tab;
@@ -19,9 +19,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, setSele
           {[
             { id: 'top', label: 'DASHBOARD' },
             { id: 'analysis', label: 'ANALYSIS' },
+            { id: 'intelligence', label: 'INTEL' },
+            { id: 'visual', label: 'TRENDS' },
+            { id: 'pipeline', label: 'PIPELINE' },
             { id: 'results', label: 'HISTORY' },
             { id: 'prompt', label: 'PROMPTS' },
-            { id: 'settings', label: 'CONFIG' },
+            { id: 'settings', label: 'SALES' },
             { id: 'guide', label: 'GUIDE' }
           ].map((tab) => (
             <button 

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis, Tab } from '../types';
+import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis, Tab, TrendForecast, SalesRecord, AgentTask } from '../types';
 
 interface AppState {
   isSessionActive: boolean;
@@ -25,7 +25,15 @@ interface AppState {
   errorModal: { show: boolean; title: string; message: string };
   toast: { show: boolean; message: string };
   isPipelineRunning: boolean;
+  pipelineTasks: AgentTask[];
+  progress: { current: number; total: number; message: string } | null;
   promptsCount: number;
+  isAnalyzingCompetitor: boolean;
+  isMonitoring: boolean;
+  forecasts: TrendForecast[];
+  isRefreshingForecasts: boolean;
+  salesRecords: SalesRecord[];
+  isParsingSalesCSV: boolean;
 
   // Actions
   setIsSessionActive: (active: boolean) => void;
@@ -51,7 +59,15 @@ interface AppState {
   setErrorModal: (modal: { show: boolean; title: string; message: string }) => void;
   setToast: (toast: { show: boolean; message: string }) => void;
   setIsPipelineRunning: (running: boolean) => void;
+  setPipelineTasks: (tasks: AgentTask[] | ((prev: AgentTask[]) => AgentTask[])) => void;
+  setProgress: (progress: { current: number; total: number; message: string } | null) => void;
   setPromptsCount: (count: number) => void;
+  setIsAnalyzingCompetitor: (analyzing: boolean) => void;
+  setIsMonitoring: (monitoring: boolean) => void;
+  setForecasts: (forecasts: TrendForecast[] | ((prev: TrendForecast[]) => TrendForecast[])) => void;
+  setIsRefreshingForecasts: (refreshing: boolean) => void;
+  setSalesRecords: (records: SalesRecord[] | ((prev: SalesRecord[]) => SalesRecord[])) => void;
+  setIsParsingSalesCSV: (parsing: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -96,7 +112,15 @@ export const useAppStore = create<AppState>((set) => ({
   errorModal: { show: false, title: '', message: '' },
   toast: { show: false, message: '' },
   isPipelineRunning: false,
+  pipelineTasks: [],
+  progress: null,
   promptsCount: 100,
+  isAnalyzingCompetitor: false,
+  isMonitoring: false,
+  forecasts: [],
+  isRefreshingForecasts: false,
+  salesRecords: [],
+  isParsingSalesCSV: false,
 
   setIsSessionActive: (active) => set({ isSessionActive: active }),
   setTempApiKey: (key) => set({ tempApiKey: key }),
@@ -121,5 +145,13 @@ export const useAppStore = create<AppState>((set) => ({
   setErrorModal: (modal) => set({ errorModal: modal }),
   setToast: (toast) => set({ toast }),
   setIsPipelineRunning: (running) => set({ isPipelineRunning: running }),
+  setPipelineTasks: (tasks) => set((state) => ({ pipelineTasks: typeof tasks === 'function' ? tasks(state.pipelineTasks) : tasks })),
+  setProgress: (progress) => set({ progress }),
   setPromptsCount: (count) => set({ promptsCount: count }),
+  setIsAnalyzingCompetitor: (analyzing) => set({ isAnalyzingCompetitor: analyzing }),
+  setIsMonitoring: (monitoring) => set({ isMonitoring: monitoring }),
+  setForecasts: (forecasts) => set((state) => ({ forecasts: typeof forecasts === 'function' ? forecasts(state.forecasts) : forecasts })),
+  setIsRefreshingForecasts: (refreshing) => set({ isRefreshingForecasts: refreshing }),
+  setSalesRecords: (records) => set((state) => ({ salesRecords: typeof records === 'function' ? records(state.salesRecords) : records })),
+  setIsParsingSalesCSV: (parsing) => set({ isParsingSalesCSV: parsing }),
 }));

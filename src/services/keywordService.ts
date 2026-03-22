@@ -6,8 +6,7 @@ import { z } from 'zod';
 type KeywordAnalysis = z.infer<typeof KeywordAnalysisSchema>;
 import { AppSettings, ReferenceFile } from '../types';
 import { logger } from './logger';
-import { getAI, handleGeminiError, extractJSON, zodToJsonSchemaNoSchema, generateContentWithFallback } from './gemini';
-import { getContentTypeInstructions } from './promptUtils';
+import { getAI, handleGeminiError, extractJSON, zodToJsonSchemaNoSchema, generateContentWithFallback, getContentTypeInstructions } from './geminiUtils';
 
 export async function analyzeKeyword(
   keyword: string, 
@@ -17,7 +16,7 @@ export async function analyzeKeyword(
   referenceFile?: ReferenceFile, 
   referenceUrl?: string
 ): Promise<KeywordAnalysis[]> {
-  const ai = getAI(settings.geminiApiKey);
+  const ai = getAI(settings.apiKey);
   
   const promptText = `Perform an exhaustive, data-driven microstock market analysis targeting the asset type: '${contentType}'.
 

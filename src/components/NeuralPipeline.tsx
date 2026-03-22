@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { CheckCircle2, Circle, Loader2, AlertCircle } from 'lucide-react';
-import { AgentTask } from '../services/gemini';
+import { AgentTask } from '../types';
 
 interface NeuralPipelineProps {
   tasks: AgentTask[];

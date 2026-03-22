@@ -40,23 +40,25 @@ export default function PromptWizard({
     style: ''
   });
 
-  const handleFormulaGenerate = () => {
+  const handleFormulaGenerate = async () => {
     let finalPrompt = '';
     if (contentType === 'Video') {
-      finalPrompt = generateVeoPrompt(
+      finalPrompt = await generateVeoPrompt(
         formulaData.cinematography,
         formulaData.subject,
         formulaData.action,
         formulaData.context,
-        formulaData.style
+        formulaData.style,
+        settings
       );
     } else {
-      finalPrompt = generateNanoBananaPrompt(
+      finalPrompt = await generateNanoBananaPrompt(
         formulaData.subject,
         formulaData.action,
         formulaData.context,
         formulaData.cinematography, // Using cinematography as composition for image
-        formulaData.style
+        formulaData.style,
+        settings
       );
     }
     onGenerate(finalPrompt);

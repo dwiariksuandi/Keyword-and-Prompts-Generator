@@ -521,7 +521,7 @@ export default function PromptTab({
                                         className="text-[10px] text-white/60 hover:text-white transition-colors bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 flex items-center gap-2"
                                       >
                                         <Globe size={12} />
-                                        {source.title.length > 40 ? source.title.substring(0, 40) + '...' : source.title}
+                                        {source.title ? (source.title.length > 40 ? source.title.substring(0, 40) + '...' : source.title) : source.uri}
                                       </a>
                                     ))}
                                   </div>

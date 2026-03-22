@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { getAI } from './geminiUtils';
 import { AppSettings } from '../types';
 
 export interface MarketData {
@@ -12,7 +12,7 @@ export async function fetchRealTimeMarketData(
   contentType: string, 
   settings: AppSettings
 ): Promise<MarketData> {
-  const ai = new GoogleGenAI({ apiKey: settings.apiKey });
+  const ai = getAI(settings.apiKey);
   
   const prompt = `Perform a real-time market data search for Adobe Stock and the microstock industry regarding the keyword: '${keyword}' and content type: '${contentType}'.
   

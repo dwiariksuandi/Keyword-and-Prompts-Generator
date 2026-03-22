@@ -23,11 +23,11 @@ export const usePromptGeneration = () => {
     try {
       const actualCountToGenerate = Math.min(settings.promptCount, 1500);
       const prompts = await generatePromptsDirectly(
-        actualCountToGenerate, 
-        settings, 
-        contentType, 
-        keyword || undefined, 
-        referenceFile || undefined, 
+        keyword || (referenceFile ? referenceFile.name : 'Quick Generation'),
+        contentType,
+        settings,
+        actualCountToGenerate,
+        referenceFile || undefined,
         referenceUrl || undefined
       );
 
@@ -62,12 +62,7 @@ export const usePromptGeneration = () => {
       try {
         const scores = await scorePrompts(
           prompts, 
-          settings, 
-          contentType, 
-          quickResult.categoryName,
-          quickResult.buyerPersona,
-          quickResult.visualTrends,
-          quickResult.creativeAdvice
+          settings
         );
         setResults(prev => prev.map(r => r.id === quickResult.id ? { ...r, promptScores: scores, isGeneratingPrompts: false } : r));
       } catch (scoreError) {
@@ -105,26 +100,17 @@ export const usePromptGeneration = () => {
     try {
       const actualCountToGenerate = Math.min(settings.promptCount, 1500); 
       const prompts = await generatePrompts(
-        keyword, 
-        result.categoryName, 
-        actualCountToGenerate, 
-        settings, 
+        result.categoryName,
         result.contentType,
+        settings,
+        actualCountToGenerate,
         referenceFile || undefined,
-        referenceUrl || undefined,
-        result.buyerPersona,
-        result.visualTrends,
-        result.creativeAdvice
+        referenceUrl || undefined
       );
 
       const scores = await scorePrompts(
         prompts, 
-        settings, 
-        result.contentType, 
-        result.categoryName,
-        result.buyerPersona,
-        result.visualTrends,
-        result.creativeAdvice
+        settings
       );
 
       setResults(prev => prev.map(r => r.id === id ? { 
@@ -153,25 +139,12 @@ export const usePromptGeneration = () => {
     try {
       const optimizedPrompts = await optimizePrompts(
         category.generatedPrompts, 
-        settings, 
-        category.contentType,
-        keyword || undefined,
-        category.categoryName,
-        referenceFile || undefined,
-        referenceUrl || undefined,
-        category.buyerPersona,
-        category.visualTrends,
-        category.creativeAdvice
+        settings
       );
       
       const scores = await scorePrompts(
         optimizedPrompts, 
-        settings, 
-        category.contentType, 
-        category.categoryName,
-        category.buyerPersona,
-        category.visualTrends,
-        category.creativeAdvice
+        settings
       );
 
       setResults(prev => prev.map(c => {
@@ -198,11 +171,10 @@ export const usePromptGeneration = () => {
     setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isGeneratingMetadata: true } : c));
     
     try {
-      const metadata = await generateAdobeStockMetadata(
-        category.generatedPrompts, 
-        category.categoryName,
-        settings,
-        contentType
+      const metadata = await Promise.all(
+        category.generatedPrompts.map(prompt => 
+          generateAdobeStockMetadata(prompt, contentType, settings)
+        )
       );
       
       setResults(prev => prev.map(c => {
@@ -229,7 +201,7 @@ export const usePromptGeneration = () => {
     setIsAnalyzing(true);
     try {
       const actualTotalCount = Math.min(settings.promptCount * results.length, 5000);
-      const promptMap = await generateAllPromptsBatch(
+      const { promptsMap } = await generateAllPromptsBatch(
         keyword,
         results,
         actualTotalCount,
@@ -240,7 +212,7 @@ export const usePromptGeneration = () => {
       const updatedResults = [...results];
       
       for (const result of updatedResults) {
-        const prompts = promptMap.get(result.categoryName) || [];
+        const prompts = promptsMap[result.categoryName] || [];
         if (prompts.length > 0) {
           result.generatedPrompts = prompts;
           result.isGeneratingPrompts = true;
@@ -256,12 +228,7 @@ export const usePromptGeneration = () => {
           try {
             const scores = await scorePrompts(
               result.generatedPrompts, 
-              settings, 
-              result.contentType, 
-              result.categoryName,
-              result.buyerPersona,
-              result.visualTrends,
-              result.creativeAdvice
+              settings
             );
             setResults(prev => prev.map(r => r.id === result.id ? { ...r, promptScores: scores, isGeneratingPrompts: false } : r));
           } catch (scoreError) {
@@ -288,7 +255,41 @@ export const usePromptGeneration = () => {
     handleQuickGenerate,
     handleGeneratePrompts,
     handleUpgradePrompts,
-    handleGenerateMetadata,
-    handleGenerateAllPrompts
+  handleGenerateMetadata,
+    handleGenerateAllPrompts,
+    handlePolishMetadata: async (categoryId: string) => {
+      const category = results.find(c => c.id === categoryId);
+      if (!category || !category.metadata) return;
+      setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isGeneratingMetadata: true } : c));
+      try {
+        // Mock polish logic for now, in real app would call AI
+        const polished = category.metadata.map(m => ({
+          title: m.title.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+          keywords: m.keywords.sort()
+        }));
+        setResults(prev => prev.map(c => c.id === categoryId ? { ...c, metadata: polished, isGeneratingMetadata: false } : c));
+        setToast({ show: true, message: 'Metadata dipoles!' });
+      } catch (error) {
+        setResults(prev => prev.map(c => c.id === categoryId ? { ...c, isGeneratingMetadata: false } : c));
+      }
+    },
+    handleVisualizePrompt: async (prompt: string) => {
+      setToast({ show: true, message: `Visualizing: ${prompt.substring(0, 30)}...` });
+      // Logic for visualization would go here
+    },
+    handleRatePrompt: async (categoryId: string, promptIndex: number, rating: number) => {
+      setResults(prev => prev.map(c => {
+        if (c.id === categoryId && c.promptScores) {
+          const newScores = [...c.promptScores];
+          newScores[promptIndex] = { ...newScores[promptIndex], rating };
+          return { ...c, promptScores: newScores };
+        }
+        return c;
+      }));
+    },
+    handleOptimizePrompt: async (prompt: string) => {
+      setToast({ show: true, message: 'Optimizing prompt...' });
+      // Logic for single prompt optimization
+    }
   };
 };

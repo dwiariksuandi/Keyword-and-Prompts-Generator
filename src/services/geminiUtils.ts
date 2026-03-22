@@ -1,6 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-
-import { GoogleGenAI } from '@google/genai';
+import { AgentTask } from '../types';
 
 export const getAI = (apiKey?: string) => {
   const envApiKey = typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : (import.meta as any).env?.VITE_GEMINI_API_KEY;
@@ -16,7 +15,6 @@ export const getAI = (apiKey?: string) => {
 export function handleGeminiError(error: any): string {
   let errorString = '';
   let errorCode = 0;
-  let errorMessage = '';
 
   if (error instanceof Error) {
     errorString = error.message;
@@ -29,8 +27,7 @@ export function handleGeminiError(error: any): string {
       const parsed = typeof error === 'string' ? JSON.parse(error) : error;
       if (parsed?.error) {
         errorCode = parsed.error.code || errorCode;
-        errorMessage = parsed.error.message || '';
-        errorString = errorMessage || errorString;
+        errorString = parsed.error.message || errorString;
       }
     } catch {
       errorString = String(error);
@@ -66,13 +63,6 @@ export function handleGeminiError(error: any): string {
   }
 
   if (errorCode === 400 || errorString.includes('400')) {
-    if (errorString.includes('API key not valid') || errorString.includes('invalid API key')) {
-      return "❌ API Key Tidak Valid (Error 400)\n\n" +
-             "Penyebab:\n" +
-             "• API Key salah ketik atau ada spasi tambahan.\n\n" +
-             "Solusi:\n" +
-             "• Periksa kembali API Key Anda.";
-    }
     return `⚠️ Permintaan Tidak Valid (Error 400)\n\nDetail: ${errorString.substring(0, 300)}`;
   }
 
@@ -97,25 +87,54 @@ export function handleGeminiError(error: any): string {
   if (errorString.includes('SAFETY') || errorString.includes('blocked')) {
     return "🛡️ Konten Diblokir (Safety Filter)\n\n" +
            "Penyebab:\n" +
-           "• AI mendeteksi konten yang melanggar kebijakan keamanan (misal: konten dewasa, kekerasan, atau hak cipta).\n\n" +
+           "• AI mendeteksi konten yang melanggar kebijakan keamanan.\n\n" +
            "Solusi:\n" +
-           "• Ubah kata kunci atau deskripsi Anda agar lebih umum dan tidak melanggar kebijakan.";
+           "• Ubah kata kunci atau deskripsi Anda agar lebih umum.";
   }
 
-  if (errorString.includes('500') || errorString.includes('503') || errorString.includes('INTERNAL') || errorString.includes('SERVICE_UNAVAILABLE')) {
-    return "☁️ Masalah Server Google (Error 500/503)\n\n" +
-           "Penyebab:\n" +
-           "• Server Google sedang sibuk atau mengalami gangguan teknis.\n\n" +
-           "Solusi:\n" +
-           "• Tunggu beberapa saat dan coba lagi. Ini biasanya bersifat sementara.";
-  }
+  return `⚠️ Terjadi Kesalahan Tak Terduga\n\nDetail: ${errorString.substring(0, 200)}`;
+}
 
-  return `⚠️ Terjadi Kesalahan Tak Terduga\n\nDetail: ${errorString.substring(0, 200)}${errorString.length > 200 ? '...' : ''}\n\nSaran: Coba muat ulang halaman atau periksa koneksi internet Anda.`;
+export async function validateApiKey(apiKey: string): Promise<{ isValid: boolean; error?: string }> {
+  try {
+    const ai = getAI(apiKey);
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ text: 'Say "ok"' }]
+    });
+    return { isValid: !!response.text };
+  } catch (e) {
+    console.error("API Key validation failed:", e);
+    return { 
+      isValid: false, 
+      error: handleGeminiError(e)
+    };
+  }
+}
+
+export async function generateContentWithFallback(ai: any, params: any) {
+  try {
+    return await ai.models.generateContent(params);
+  } catch (e) {
+    console.warn("Primary model failed, falling back to flash:", e);
+    return await ai.models.generateContent({
+      ...params,
+      model: 'gemini-3-flash-preview'
+    });
+  }
+}
+
+export function zodToJsonSchemaNoSchema(schema: any) {
+  // Simple wrapper for zod-to-json-schema if needed, 
+  // but for Gemini responseSchema we often just need the raw object
+  return schema; 
 }
 
 export function extractJSON(text: string) {
   try {
-    return JSON.parse(text);
+    // Clean up markdown if present
+    const cleaned = text.replace(/^```json\n?/g, '').replace(/\n?```$/g, '').trim();
+    return JSON.parse(cleaned);
   } catch (e) {
     const startArr = text.indexOf('[');
     const endArr = text.lastIndexOf(']');
@@ -139,68 +158,45 @@ export function getContentTypeInstructions(contentType: string): string {
       - Be specific: Provide concrete details on subject, lighting, and composition.
       - Use positive framing: Describe what you want, not what you don't want.
       - Control the camera: Use photographic terms like "low angle" and "aerial view".
-      - Design your lighting: Specify Studio setups (e.g., "three-point softbox setup") or Dramatic effects (e.g., "Chiaroscuro lighting with harsh, high contrast", "Golden hour backlighting creating long shadows").
-      - Choose camera, lens, and focus: Dictate hardware (e.g., "GoPro", "Fujifilm", "disposable camera") and Lens (e.g., "low-angle shot with a shallow depth of field (f/1.8)", "wide-angle lens", "macro lens").
-      - Define color grading and film stock: e.g., "1980s color film, slightly grainy", "Cinematic color grading with muted teal tones".
-      - Emphasize materiality and texture: Define physical makeup (e.g., "minimalist ceramic coffee mug").
-      - Text rendering: If text is needed, use quotes (e.g., "Happy Birthday") and choose a font (e.g., "bold, white, sans-serif font").`;
+      - Design your lighting: Specify Studio setups (e.g., "three-point softbox setup") or Dramatic effects.
+      - Choose camera, lens, and focus: Dictate hardware (e.g., "50mm lens, f/1.8").`;
     case 'Illustration':
       return `NANO BANANA PROMPTING FRAMEWORK:
       Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Focus on sophisticated illustrative techniques: complex brushwork, layered textures, intricate line art, and advanced color theory.
-      - Define color grading and film stock: Set the emotional tone through color palettes.
-      - Emphasize materiality and texture: Define the physical makeup of the illustration (e.g., "cel animation style", "plushie style", "claymation style").
-      - Text rendering: If text is needed, use quotes (e.g., "URBAN EXPLORER") and choose a font.
-      - Be specific and use positive framing.`;
+      - Focus on sophisticated illustrative techniques: complex brushwork, layered textures, intricate line art.`;
     case 'Vector':
       return `NANO BANANA PROMPTING FRAMEWORK:
       Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Focus on high-end vector aesthetics: perfect geometric precision, complex gradients (mesh gradients), isometric perspectives, and clean SVG-compliant paths.
-      - Emphasize scalability, minimalist elegance, and elite UI/UX design standards.
-      - Text rendering: If text is needed, use quotes and choose a font (e.g., "Century Gothic 12px font").`;
+      - Focus on high-end vector aesthetics: perfect geometric precision, clean SVG-compliant paths.`;
     case 'Background':
       return `NANO BANANA PROMPTING FRAMEWORK:
       Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Focus on atmospheric and textural depth: multi-layered bokeh, complex procedural textures, subtle light leaks, and expansive copy space.
-      - Design your lighting: Specify Dramatic effects (e.g., "Chiaroscuro lighting", "Golden hour backlighting").
-      - Choose camera, lens, and focus: Use "wide-angle lens" for vast scale or "macro lens" for intricate details.
-      - Define color grading and film stock: e.g., "Cinematic color grading with muted teal tones".`;
+      - Focus on atmospheric and textural depth: multi-layered bokeh, expansive copy space.`;
     case 'Video':
       return `VEO 3.1 PROMPTING FRAMEWORK:
       Formula: [Cinematography] + [Subject] + [Action] + [Context] + [Style & Ambiance]
-      - Cinematography: Define camera movement (Dolly shot, tracking shot, crane shot, aerial view, slow pan, POV shot), Composition (Wide shot, close-up, extreme close-up, low angle, two-shot), and Lens & focus (Shallow depth of field, wide-angle lens, soft focus, macro lens, deep focus).
-      - Directing the soundstage: Veo 3.1 generates audio. Include Dialogue (e.g., A woman says, "We have to leave now."), Sound effects (e.g., SFX: thunder cracks in the distance), and Ambient noise (e.g., Ambient noise: the quiet hum of a starship bridge).
-      - Be specific and use positive framing (e.g., "desolate landscape with no buildings or roads" instead of "no man-made structures").
-      - Focus on cinematic mastery and professional storytelling.`;
+      - Cinematography: Define camera movement (Dolly shot, tracking shot, crane shot, aerial view).`;
     case '3D Render':
       return `NANO BANANA PROMPTING FRAMEWORK:
       Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Focus on state-of-the-art rendering: Unreal Engine 5.4 Path Tracing, OctaneRender, physically based rendering (PBR) materials, subsurface scattering (SSS), and global illumination.
-      - Design your lighting: Specify Studio setups (e.g., "three-point softbox setup") to evenly light a product.
-      - Emphasize materiality and texture: Define physical makeup (e.g., "anisotropic metal", "refractive glass", "high-fidelity 3D armchair render").
-      - Choose camera, lens, and focus: Dictate the exact camera type and lens perspective.`;
+      - Focus on state-of-the-art rendering: Unreal Engine 5.4 Path Tracing, OctaneRender.`;
     case 'AI Art & Creativity':
       return `NANO BANANA PROMPTING FRAMEWORK:
       Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Focus on boundary-pushing conceptualism: generative patterns, fluid organic forms, surrealist dreamscapes, and innovative digital alchemy.
-      - Design your lighting: Specify Dramatic effects (e.g., "Chiaroscuro lighting with harsh, high contrast").
-      - Define color grading and film stock: Set the emotional tone with unique color palettes.
-      - Emphasize materiality and texture: Define the physical makeup of the abstract elements.`;
+      - Focus on boundary-pushing conceptualism: generative patterns, fluid organic forms.`;
     default:
       return `NANO BANANA PROMPTING FRAMEWORK:
-      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]
-      - Focus on high-fidelity, commercially elite visual descriptors appropriate for this specific asset class.
-      - Design your lighting, choose your camera/lens, define color grading, and emphasize materiality.`;
+      Formula: [Subject] + [Action] + [Location/context] + [Composition] + [Style]`;
   }
 }
 
 export function getVariationInstructions(level: 'Low' | 'Medium' | 'High'): string {
   switch (level) {
     case 'Low':
-      return "VARIATION LEVEL: LOW. Focus on a highly cohesive set of prompts that explore a specific, narrow theme with subtle variations in lighting or angle. The resulting images should look like they belong to the same specific photoshoot or series. Ideal for creating consistent character sets or product variations.";
+      return "VARIATION LEVEL: LOW. Focus on a highly cohesive set of prompts that explore a specific, narrow theme.";
     case 'High':
-      return "VARIATION LEVEL: HIGH. MAXIMUM CREATIVE DIVERSITY REQUIRED. Each prompt must explore a radically different concept, environment, lighting setup, and composition within the niche. Force the AI to use diverse subjects, unexpected angles, and contrasting moods. This is CRITICAL for large batches to avoid 'similar content' rejection by Adobe Stock. No two prompts should share more than 20% of their descriptive DNA.";
+      return "VARIATION LEVEL: HIGH. MAXIMUM CREATIVE DIVERSITY REQUIRED. Each prompt must explore a radically different concept.";
     default:
-      return "VARIATION LEVEL: MEDIUM. Standard professional variation. Ensure a balanced mix of different subjects, camera angles, and lighting styles while maintaining relevance to the core theme. Provides enough variety for a standard stock submission.";
+      return "VARIATION LEVEL: MEDIUM. Standard professional variation.";
   }
 }

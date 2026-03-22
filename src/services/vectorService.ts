@@ -1,10 +1,10 @@
-import { GoogleGenAI } from '@google/genai';
+import { getAI } from './geminiUtils';
 
 export async function getEmbedding(text: string, apiKey: string): Promise<number[]> {
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = getAI(apiKey);
   const result = await ai.models.embedContent({
     model: 'gemini-embedding-2-preview',
-    contents: text,
+    contents: [text],
   });
   return result.embeddings[0].values;
 }

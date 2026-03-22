@@ -41,7 +41,7 @@ export default function IntelligenceTab({
   };
 
   const onRefreshAll = () => {
-    const staleResults = results.filter(r => r.competitorIntel && isStale(r.competitorIntel.timestamp));
+    const staleResults = results.filter(r => r.competitorIntel && r.competitorIntel.timestamp && isStale(r.competitorIntel.timestamp));
     if (staleResults.length === 0) {
       return;
     }
@@ -128,11 +128,11 @@ export default function IntelligenceTab({
                   <div className="text-right">
                     <div className="flex items-center gap-2 justify-end mb-1">
                       <div className="text-[9px] text-white/30 uppercase tracking-widest font-black">Last Sync</div>
-                      {isStale(category.competitorIntel.timestamp) && (
+                      {category.competitorIntel.timestamp && isStale(category.competitorIntel.timestamp) && (
                         <span className="px-2 py-0.5 bg-rose-500/10 text-rose-500 text-[8px] font-black rounded-full border border-rose-500/20 animate-pulse">STALE</span>
                       )}
                     </div>
-                    <div className="text-xs text-white font-mono font-bold">{new Date(category.competitorIntel.timestamp).toLocaleDateString()}</div>
+                    <div className="text-xs text-white font-mono font-bold">{category.competitorIntel.timestamp ? new Date(category.competitorIntel.timestamp).toLocaleDateString() : 'N/A'}</div>
                   </div>
                   <button 
                     onClick={() => onAnalyzeCompetitor(category)}
@@ -162,27 +162,31 @@ export default function IntelligenceTab({
                       <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Visual DNA</h4>
                     </div>
                     <div className="bg-white/[0.02] rounded-3xl p-6 border border-white/5 space-y-6">
-                      <div>
-                        <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-2">Lighting Protocol</div>
-                        <p className="text-sm text-white/80 leading-relaxed font-medium">{category.competitorIntel.aestheticDNA.lighting}</p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-2">Compositional Logic</div>
-                        <p className="text-sm text-white/80 leading-relaxed font-medium">{category.competitorIntel.aestheticDNA.composition}</p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-3">Chromatic Profile</div>
-                        <div className="flex flex-wrap gap-2">
-                          {category.competitorIntel.aestheticDNA.colorPalette.map((color, i) => (
-                            <div 
-                              key={`${category.id}-color-${i}`} 
-                              className="w-10 h-10 rounded-xl border border-white/10 shadow-2xl"
-                              style={{ backgroundColor: color }}
-                              title={color}
-                            />
-                          ))}
-                        </div>
-                      </div>
+                      {category.competitorIntel.aestheticDNA && (
+                        <>
+                          <div>
+                            <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-2">Lighting Protocol</div>
+                            <p className="text-sm text-white/80 leading-relaxed font-medium">{category.competitorIntel.aestheticDNA.lighting}</p>
+                          </div>
+                          <div>
+                            <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-2">Compositional Logic</div>
+                            <p className="text-sm text-white/80 leading-relaxed font-medium">{category.competitorIntel.aestheticDNA.composition}</p>
+                          </div>
+                          <div>
+                            <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-3">Chromatic Profile</div>
+                            <div className="flex flex-wrap gap-2">
+                              {category.competitorIntel.aestheticDNA.colorPalette?.map((color, i) => (
+                                <div 
+                                  key={`${category.id}-color-${i}`} 
+                                  className="w-10 h-10 rounded-xl border border-white/10 shadow-2xl"
+                                  style={{ backgroundColor: color }}
+                                  title={color}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </section>
 
@@ -194,15 +198,19 @@ export default function IntelligenceTab({
                       <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Counter Protocol</h4>
                     </div>
                     <div className="bg-white/[0.02] rounded-3xl p-6 border border-white/5">
-                      <div className="mb-6">
-                        <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-2">Dominant Aesthetic</div>
-                        <p className="text-sm text-white font-bold">{category.competitorIntel.counterStrategy.dominantStyle}</p>
-                      </div>
-                      <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
-                        <div className="text-[9px] text-white uppercase tracking-widest font-black mb-2">Strategic Pivot</div>
-                        <p className="text-sm text-white font-black mb-2">{category.competitorIntel.counterStrategy.recommendedPivot}</p>
-                        <p className="text-[11px] text-white/40 leading-relaxed font-medium">{category.competitorIntel.counterStrategy.pivotReason}</p>
-                      </div>
+                      {category.competitorIntel.counterStrategy && (
+                        <>
+                          <div className="mb-6">
+                            <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-2">Dominant Aesthetic</div>
+                            <p className="text-sm text-white font-bold">{category.competitorIntel.counterStrategy.dominantStyle}</p>
+                          </div>
+                          <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
+                            <div className="text-[9px] text-white uppercase tracking-widest font-black mb-2">Strategic Pivot</div>
+                            <p className="text-sm text-white font-black mb-2">{category.competitorIntel.counterStrategy.recommendedPivot}</p>
+                            <p className="text-[11px] text-white/40 leading-relaxed font-medium">{category.competitorIntel.counterStrategy.pivotReason}</p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </section>
                 </div>
@@ -217,26 +225,30 @@ export default function IntelligenceTab({
                       <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Keyword Hijack</h4>
                     </div>
                     <div className="bg-white/[0.02] rounded-3xl p-6 border border-white/5 space-y-8">
-                      <div>
-                        <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-4">Winning Patterns</div>
-                        <div className="flex flex-wrap gap-2">
-                          {category.competitorIntel.keywordHijack.winningKeywords.map((kw, i) => (
-                            <span key={`${category.id}-win-${i}`} className="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-[10px] font-black border border-white/10 uppercase tracking-wider">
-                              {kw}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-4">Market Gaps (Exploitable)</div>
-                        <div className="flex flex-wrap gap-2">
-                          {category.competitorIntel.keywordHijack.missedGaps.map((kw, i) => (
-                            <span key={`${category.id}-gap-${i}`} className="px-3 py-1.5 bg-white/10 text-white rounded-lg text-[10px] font-black border border-white/20 uppercase tracking-wider">
-                              {kw}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+                      {category.competitorIntel.keywordHijack && (
+                        <>
+                          <div>
+                            <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-4">Winning Patterns</div>
+                            <div className="flex flex-wrap gap-2">
+                              {category.competitorIntel.keywordHijack.winningKeywords?.map((kw, i) => (
+                                <span key={`${category.id}-win-${i}`} className="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-[10px] font-black border border-white/10 uppercase tracking-wider">
+                                  {kw}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[9px] text-white/30 uppercase tracking-widest font-black mb-4">Market Gaps (Exploitable)</div>
+                            <div className="flex flex-wrap gap-2">
+                              {category.competitorIntel.keywordHijack.missedGaps?.map((kw, i) => (
+                                <span key={`${category.id}-gap-${i}`} className="px-3 py-1.5 bg-white/10 text-white rounded-lg text-[10px] font-black border border-white/20 uppercase tracking-wider">
+                                  {kw}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </section>
 
@@ -248,23 +260,27 @@ export default function IntelligenceTab({
                       <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Market Velocity</h4>
                     </div>
                     <div className="bg-white/[0.02] rounded-3xl p-6 border border-white/5">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="text-[9px] text-white/30 uppercase tracking-widest font-black">Competitor Status</div>
-                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                          category.competitorIntel.marketVelocity.status === 'Aggressive' ? 'bg-white text-black' :
-                          category.competitorIntel.marketVelocity.status === 'Steady' ? 'bg-white/10 text-white/60' :
-                          'bg-white/5 text-white/20'
-                        }`}>
-                          {category.competitorIntel.marketVelocity.status}
-                        </span>
-                      </div>
-                      <div className="flex gap-4 p-5 bg-white/5 rounded-2xl border border-white/10">
-                        <AlertCircle className="w-5 h-5 text-white/60 shrink-0 mt-0.5" />
-                        <div>
-                          <div className="text-[9px] text-white/40 uppercase tracking-widest font-black mb-1.5">Trend Alert</div>
-                          <p className="text-xs text-white/80 leading-relaxed font-medium">{category.competitorIntel.marketVelocity.trendAlert}</p>
-                        </div>
-                      </div>
+                      {category.competitorIntel.marketVelocity && (
+                        <>
+                          <div className="flex items-center justify-between mb-6">
+                            <div className="text-[9px] text-white/30 uppercase tracking-widest font-black">Competitor Status</div>
+                            <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                              category.competitorIntel.marketVelocity.status === 'Aggressive' ? 'bg-white text-black' :
+                              category.competitorIntel.marketVelocity.status === 'Steady' ? 'bg-white/10 text-white/60' :
+                              'bg-white/5 text-white/20'
+                            }`}>
+                              {category.competitorIntel.marketVelocity.status}
+                            </span>
+                          </div>
+                          <div className="flex gap-4 p-5 bg-white/5 rounded-2xl border border-white/10">
+                            <AlertCircle className="w-5 h-5 text-white/60 shrink-0 mt-0.5" />
+                            <div>
+                              <div className="text-[9px] text-white/40 uppercase tracking-widest font-black mb-1.5">Trend Alert</div>
+                              <p className="text-xs text-white/80 leading-relaxed font-medium">{category.competitorIntel.marketVelocity.trendAlert}</p>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </section>
                 </div>
@@ -278,29 +294,33 @@ export default function IntelligenceTab({
                     <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Metadata Benchmark</h4>
                   </div>
                   <div className="bg-white/[0.02] rounded-[2.5rem] p-8 border border-white/5 h-full flex flex-col">
-                    <div className="grid grid-cols-2 gap-5 mb-10">
-                      <div className="text-center p-6 bg-white/[0.02] rounded-3xl border border-white/5">
-                        <div className="text-3xl font-black text-white mb-2 tracking-tighter">{category.competitorIntel.metadataBenchmark.titleScore}</div>
-                        <div className="text-[9px] text-white/30 uppercase tracking-widest font-black">Title Score</div>
-                      </div>
-                      <div className="text-center p-6 bg-white/[0.02] rounded-3xl border border-white/5">
-                        <div className="text-3xl font-black text-white mb-2 tracking-tighter">{category.competitorIntel.metadataBenchmark.descriptionScore}</div>
-                        <div className="text-[9px] text-white/30 uppercase tracking-widest font-black">Desc Score</div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-5 flex-1">
-                      <div className="flex items-center gap-2 text-white/60 mb-4">
-                        <Info size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Neural Recommendations</span>
-                      </div>
-                      {category.competitorIntel.metadataBenchmark.recommendations.map((rec, i) => (
-                        <div key={`${category.id}-rec-${i}`} className="flex gap-4">
-                          <div className="w-1.5 h-1.5 bg-white/40 rounded-full mt-2 shrink-0 shadow-lg shadow-white/50" />
-                          <p className="text-xs text-white/40 leading-relaxed font-medium">{rec}</p>
+                    {category.competitorIntel.metadataBenchmark && (
+                      <>
+                        <div className="grid grid-cols-2 gap-5 mb-10">
+                          <div className="text-center p-6 bg-white/[0.02] rounded-3xl border border-white/5">
+                            <div className="text-3xl font-black text-white mb-2 tracking-tighter">{category.competitorIntel.metadataBenchmark.titleScore}</div>
+                            <div className="text-[9px] text-white/30 uppercase tracking-widest font-black">Title Score</div>
+                          </div>
+                          <div className="text-center p-6 bg-white/[0.02] rounded-3xl border border-white/5">
+                            <div className="text-3xl font-black text-white mb-2 tracking-tighter">{category.competitorIntel.metadataBenchmark.descriptionScore}</div>
+                            <div className="text-[9px] text-white/30 uppercase tracking-widest font-black">Desc Score</div>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+
+                        <div className="space-y-5 flex-1">
+                          <div className="flex items-center gap-2 text-white/60 mb-4">
+                            <Info size={14} />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Neural Recommendations</span>
+                          </div>
+                          {category.competitorIntel.metadataBenchmark.recommendations?.map((rec, i) => (
+                            <div key={`${category.id}-rec-${i}`} className="flex gap-4">
+                              <div className="w-1.5 h-1.5 bg-white/40 rounded-full mt-2 shrink-0 shadow-lg shadow-white/50" />
+                              <p className="text-xs text-white/40 leading-relaxed font-medium">{rec}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
 
                     <div className="mt-10 pt-10 border-t border-white/5">
                       <motion.button 

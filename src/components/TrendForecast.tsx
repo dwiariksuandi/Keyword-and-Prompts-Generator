@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Trend, getTrendForecast, refineTrendForecast } from '../services/trendService';
-import { TrendingUp, Calendar, Zap, MessageSquare, AlertCircle, Globe } from 'lucide-react';
-import { AppSettings } from '../types';
+import { getTrendForecast, refineTrendForecast } from '../services/trendService';
+import { TrendingUp, Calendar, Zap, MessageSquare, AlertCircle, Globe, Info } from 'lucide-react';
+import { AppSettings, TrendForecast } from '../types';
 import RefineButton from './RefineButton';
 import { motion, AnimatePresence } from 'motion/react';
 
-export default function TrendForecast({ niche, settings, onSelect }: { niche?: string, settings: AppSettings, onSelect?: (niche: string) => void }) {
-  const [trends, setTrends] = useState<Trend[]>([]);
+export default function TrendForecastComponent({ niche, settings, onSelect }: { niche?: string, settings: AppSettings, onSelect?: (niche: string) => void }) {
+  const [trends, setTrends] = useState<TrendForecast[]>([]);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Record<string, string>>({});
   const [refining, setRefining] = useState<Record<string, boolean>>({});
@@ -18,7 +18,7 @@ export default function TrendForecast({ niche, settings, onSelect }: { niche?: s
     setLoading(false);
   };
 
-  const handleRefine = async (trend: Trend) => {
+  const handleRefine = async (trend: TrendForecast) => {
     const trendFeedback = feedback[trend.id] || '';
     if (!trendFeedback.trim()) return;
     setRefining(prev => ({ ...prev, [trend.id]: true }));
@@ -101,29 +101,43 @@ export default function TrendForecast({ niche, settings, onSelect }: { niche?: s
                     )}
                   </div>
                   <div className="flex flex-col items-end">
-                    <span className="text-[9px] uppercase tracking-[0.2em] text-white/20 font-black mb-2">Forecast Score</span>
-                    <span className="text-3xl font-black text-white tracking-tighter">{trend.forecastScore}%</span>
+                    <span className="text-[9px] uppercase tracking-[0.2em] text-white/20 font-black mb-2">Confidence</span>
+                    <span className="text-3xl font-black text-white tracking-tighter">{trend.confidence}%</span>
                   </div>
                 </div>
 
+                <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
+                  <div className="text-[9px] text-white uppercase tracking-widest font-black mb-2">Trend Analysis</div>
+                  <p className="text-sm text-white font-black mb-2">{trend.trend}</p>
+                  <p className="text-[11px] text-white/40 leading-relaxed font-medium">{trend.forecast}</p>
+                </div>
+
                 <p className="text-sm text-white/60 leading-relaxed font-medium line-clamp-3 group-hover:line-clamp-none transition-all duration-500">
-                  {trend.description}
+                  {trend.reasoning}
                 </p>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white/[0.02] p-5 rounded-2xl border border-white/5">
-                    <span className="text-[8px] uppercase tracking-[0.2em] text-white/20 font-black block mb-3">Seasonality</span>
+                    <span className="text-[8px] uppercase tracking-[0.2em] text-white/20 font-black block mb-3">Growth Potential</span>
                     <div className="flex items-center gap-3 text-white/80 text-xs font-bold">
-                      <Calendar size={14} className="text-white/20" />
-                      {trend.seasonality}
+                      <TrendingUp size={14} className="text-white/20" />
+                      +{trend.growthPotential}%
                     </div>
                   </div>
                   <div className="bg-white/[0.02] p-5 rounded-2xl border border-white/5">
-                    <span className="text-[8px] uppercase tracking-[0.2em] text-white/20 font-black block mb-3">Recommended Action</span>
+                    <span className="text-[8px] uppercase tracking-[0.2em] text-white/20 font-black block mb-3">Visual Style</span>
                     <div className="flex items-center gap-3 text-white/80 text-xs font-bold">
                       <Zap size={14} className="text-white/20" />
-                      {trend.recommendedAction}
+                      {trend.visualStyle}
                     </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/[0.02] p-5 rounded-2xl border border-white/5">
+                  <span className="text-[8px] uppercase tracking-[0.2em] text-white/20 font-black block mb-3">Market Gap</span>
+                  <div className="flex items-center gap-3 text-white/80 text-xs font-medium italic">
+                    <Info size={14} className="text-white/20 not-italic" />
+                    {trend.marketGap}
                   </div>
                 </div>
                 

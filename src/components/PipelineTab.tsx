@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Zap, Play, CheckCircle2, Loader2, Settings, Layers, Database, Sparkles, Target } from 'lucide-react';
-import { CategoryResult, AppSettings } from '../types';
+import { CategoryResult, AppSettings, AgentTask } from '../types';
+import { NeuralPipeline } from './NeuralPipeline';
 
 interface PipelineTabProps {
   results: CategoryResult[];
   settings: AppSettings;
   onRunPipeline: (steps: string[]) => void;
   isPipelineRunning: boolean;
+  tasks: AgentTask[];
 }
 
 const PIPELINE_STEPS = [
@@ -18,7 +20,7 @@ const PIPELINE_STEPS = [
   { id: 'metadata', label: 'Adobe Stock Metadata', icon: Layers, description: 'Title & Keyword Optimization' },
 ];
 
-export default function PipelineTab({ results, settings, onRunPipeline, isPipelineRunning }: PipelineTabProps) {
+export default function PipelineTab({ results, settings, onRunPipeline, isPipelineRunning, tasks }: PipelineTabProps) {
   const [selectedSteps, setSelectedSteps] = useState<string[]>(PIPELINE_STEPS.map(s => s.id));
 
   const toggleStep = (stepId: string) => {
@@ -37,6 +39,8 @@ export default function PipelineTab({ results, settings, onRunPipeline, isPipeli
           Define and execute complex asset generation workflows.
         </p>
       </div>
+
+      <NeuralPipeline tasks={tasks} isRunning={isPipelineRunning} />
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}

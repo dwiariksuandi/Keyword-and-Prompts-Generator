@@ -12,7 +12,7 @@ export const feedbackService = {
     };
     
     // If prompt already exists, update it (e.g., increment selection count or update rating)
-    const existingIndex = currentFeedback.findIndex(f => f.prompt === feedback.prompt);
+    const existingIndex = currentFeedback.findIndex(f => f.promptId === feedback.promptId);
     if (existingIndex > -1) {
       currentFeedback[existingIndex] = {
         ...currentFeedback[existingIndex],

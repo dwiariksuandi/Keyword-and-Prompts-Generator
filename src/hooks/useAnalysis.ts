@@ -26,9 +26,9 @@ export const useAnalysis = () => {
     try {
       let analysis;
       if (referenceFile) {
-        analysis = await analyzeAestheticReference(referenceFile, settings, contentType);
+        analysis = await analyzeAestheticReference(referenceFile, contentType, settings);
       } else {
-        analysis = await analyzeUrlAesthetic(referenceUrl, settings, contentType);
+        analysis = await analyzeUrlAesthetic(referenceUrl, contentType, settings);
       }
       setAestheticAnalysis(analysis);
       setToast({ show: true, message: 'Analisis estetika berhasil!' });

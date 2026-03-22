@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Navbar } from './Navbar';
-import { Tab } from '../store/useAppStore';
+import { Tab } from '../types';
 
 interface MainLayoutProps {
   children: React.ReactNode;
