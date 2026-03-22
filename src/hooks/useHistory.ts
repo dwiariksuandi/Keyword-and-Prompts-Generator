@@ -1,4 +1,5 @@
 import { useAppStore } from '../store/useAppStore';
+import { useUIStore } from '../store/useUIStore';
 import { CategoryResult, HistoryItem } from '../types';
 
 export const useHistory = () => {
@@ -6,9 +7,10 @@ export const useHistory = () => {
     results, setResults,
     history, setHistory,
     sortBy,
-    filterCompetition,
-    setToast
+    filterCompetition
   } = useAppStore();
+
+  const { setToast } = useUIStore();
 
   const handleToggleStar = (id: string) => {
     setResults(prev => prev.map(r => r.id === id ? { ...r, isStarred: !r.isStarred } : r));

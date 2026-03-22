@@ -1,28 +1,24 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { useUIStore } from '../store/useUIStore';
 import { useSession } from './useSession';
 import { useAnalysis } from './useAnalysis';
 import { usePromptGeneration } from './usePromptGeneration';
 import { useHistory } from './useHistory';
 import { useMarketIntelligence } from './useMarketIntelligence';
-import { HistoryItem, AgentTask, CategoryResult } from '../types';
+import { HistoryItem, AgentTask } from '../types';
 
 export const useAppLogic = () => {
   const {
-    activeTab, setActiveTab,
     selectedPromptCategoryId, setSelectedPromptCategoryId,
     settings, setSettings,
     history, setHistory,
     results, setResults,
-    errorModal, setErrorModal,
-    toast, setToast,
-    prefsSaved, setPrefsSaved,
-    prefsValidationMessage, setPrefsValidationMessage,
     sortBy, setSortBy,
     filterCompetition, setFilterCompetition,
     isPipelineRunning, setIsPipelineRunning,
     pipelineTasks, setPipelineTasks,
-    progress, setProgress,
+    promptsCount, setPromptsCount,
     isAnalyzingCompetitor, setIsAnalyzingCompetitor,
     isMonitoring, setIsMonitoring,
     forecasts, setForecasts,
@@ -30,6 +26,15 @@ export const useAppLogic = () => {
     salesRecords, setSalesRecords,
     isParsingSalesCSV, setIsParsingSalesCSV
   } = useAppStore();
+
+  const {
+    activeTab, setActiveTab,
+    errorModal, setErrorModal,
+    toast, setToast,
+    prefsSaved, setPrefsSaved,
+    prefsValidationMessage, setPrefsValidationMessage,
+    progress, setProgress
+  } = useUIStore();
 
   const session = useSession();
   const analysis = useAnalysis();
@@ -101,7 +106,6 @@ export const useAppLogic = () => {
         try {
           const parsed = JSON.parse(savedPrefs);
           Object.assign(newSettings, parsed);
-          // ... (logika migrasi templateId tetap sama)
         } catch (e) {
           console.error("Failed to parse saved preferences");
         }

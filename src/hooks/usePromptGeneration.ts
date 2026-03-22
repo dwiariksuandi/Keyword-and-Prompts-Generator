@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CategoryResult } from '../types';
 import { generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, scorePrompts, handleGeminiError, generateAdobeStockMetadata } from '../services/gemini';
 import { useAppStore } from '../store/useAppStore';
+import { useUIStore } from '../store/useUIStore';
 
 export const usePromptGeneration = () => {
   const {
@@ -12,10 +13,13 @@ export const usePromptGeneration = () => {
     settings,
     results, setResults,
     setHistory,
-    setErrorModal,
-    setToast,
     setIsAnalyzing
   } = useAppStore();
+
+  const {
+    setErrorModal,
+    setToast
+  } = useUIStore();
 
   const handleQuickGenerate = async () => {
     if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) return;

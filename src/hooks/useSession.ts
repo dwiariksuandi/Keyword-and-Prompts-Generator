@@ -2,15 +2,19 @@ import { useState, useEffect } from 'react';
 import React from 'react';
 import { validateApiKey } from '../services/gemini';
 import { useAppStore } from '../store/useAppStore';
+import { useUIStore } from '../store/useUIStore';
 
 export const useSession = () => {
   const {
-    isSessionActive, setIsSessionActive,
     tempApiKey, setTempApiKey,
-    isValidating, setIsValidating,
-    validationError, setValidationError,
     setSettings
   } = useAppStore();
+
+  const {
+    isSessionActive, setIsSessionActive,
+    isValidating, setIsValidating,
+    validationError, setValidationError
+  } = useUIStore();
 
   const handleStartSession = async (e?: React.FormEvent) => {
     e?.preventDefault();

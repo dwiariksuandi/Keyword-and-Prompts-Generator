@@ -2,11 +2,7 @@ import { create } from 'zustand';
 import { CategoryResult, AppSettings, HistoryItem, ReferenceFile, AestheticAnalysis, Tab, TrendForecast, SalesRecord, AgentTask } from '../types';
 
 interface AppState {
-  isSessionActive: boolean;
   tempApiKey: string;
-  isValidating: boolean;
-  validationError: string | null;
-  activeTab: Tab;
   selectedPromptCategoryId: string | null;
   keyword: string;
   contentType: string;
@@ -18,15 +14,10 @@ interface AppState {
   results: CategoryResult[];
   history: HistoryItem[];
   settings: AppSettings;
-  prefsSaved: boolean;
-  prefsValidationMessage: { type: 'success' | 'error'; text: string } | null;
   sortBy: string;
   filterCompetition: string;
-  errorModal: { show: boolean; title: string; message: string };
-  toast: { show: boolean; message: string };
   isPipelineRunning: boolean;
   pipelineTasks: AgentTask[];
-  progress: { current: number; total: number; message: string } | null;
   promptsCount: number;
   isAnalyzingCompetitor: boolean;
   isMonitoring: boolean;
@@ -36,11 +27,7 @@ interface AppState {
   isParsingSalesCSV: boolean;
 
   // Actions
-  setIsSessionActive: (active: boolean) => void;
   setTempApiKey: (key: string) => void;
-  setIsValidating: (validating: boolean) => void;
-  setValidationError: (error: string | null) => void;
-  setActiveTab: (tab: Tab) => void;
   setSelectedPromptCategoryId: (id: string | null) => void;
   setKeyword: (keyword: string) => void;
   setContentType: (type: string) => void;
@@ -52,15 +39,10 @@ interface AppState {
   setResults: (results: CategoryResult[] | ((prev: CategoryResult[]) => CategoryResult[])) => void;
   setHistory: (history: HistoryItem[] | ((prev: HistoryItem[]) => HistoryItem[])) => void;
   setSettings: (settings: AppSettings | ((prev: AppSettings) => AppSettings)) => void;
-  setPrefsSaved: (saved: boolean) => void;
-  setPrefsValidationMessage: (message: { type: 'success' | 'error'; text: string } | null) => void;
   setSortBy: (sortBy: string) => void;
   setFilterCompetition: (filter: string) => void;
-  setErrorModal: (modal: { show: boolean; title: string; message: string }) => void;
-  setToast: (toast: { show: boolean; message: string }) => void;
   setIsPipelineRunning: (running: boolean) => void;
   setPipelineTasks: (tasks: AgentTask[] | ((prev: AgentTask[]) => AgentTask[])) => void;
-  setProgress: (progress: { current: number; total: number; message: string } | null) => void;
   setPromptsCount: (count: number) => void;
   setIsAnalyzingCompetitor: (analyzing: boolean) => void;
   setIsMonitoring: (monitoring: boolean) => void;
@@ -71,11 +53,7 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  isSessionActive: false,
   tempApiKey: '',
-  isValidating: false,
-  validationError: null,
-  activeTab: 'top',
   selectedPromptCategoryId: null,
   keyword: '',
   contentType: 'Photo',
@@ -105,15 +83,10 @@ export const useAppStore = create<AppState>((set) => ({
     autoSave: true,
     variationLevel: 'Medium'
   },
-  prefsSaved: false,
-  prefsValidationMessage: null,
   sortBy: 'opportunity',
   filterCompetition: 'all',
-  errorModal: { show: false, title: '', message: '' },
-  toast: { show: false, message: '' },
   isPipelineRunning: false,
   pipelineTasks: [],
-  progress: null,
   promptsCount: 100,
   isAnalyzingCompetitor: false,
   isMonitoring: false,
@@ -122,11 +95,7 @@ export const useAppStore = create<AppState>((set) => ({
   salesRecords: [],
   isParsingSalesCSV: false,
 
-  setIsSessionActive: (active) => set({ isSessionActive: active }),
   setTempApiKey: (key) => set({ tempApiKey: key }),
-  setIsValidating: (validating) => set({ isValidating: validating }),
-  setValidationError: (error) => set({ validationError: error }),
-  setActiveTab: (tab) => set({ activeTab: tab }),
   setSelectedPromptCategoryId: (id) => set({ selectedPromptCategoryId: id }),
   setKeyword: (keyword) => set({ keyword }),
   setContentType: (type) => set({ contentType: type }),
@@ -138,15 +107,10 @@ export const useAppStore = create<AppState>((set) => ({
   setResults: (results) => set((state) => ({ results: typeof results === 'function' ? results(state.results) : results })),
   setHistory: (history) => set((state) => ({ history: typeof history === 'function' ? history(state.history) : history })),
   setSettings: (settings) => set((state) => ({ settings: typeof settings === 'function' ? settings(state.settings) : settings })),
-  setPrefsSaved: (saved) => set({ prefsSaved: saved }),
-  setPrefsValidationMessage: (message) => set({ prefsValidationMessage: message }),
   setSortBy: (sortBy) => set({ sortBy }),
   setFilterCompetition: (filter) => set({ filterCompetition: filter }),
-  setErrorModal: (modal) => set({ errorModal: modal }),
-  setToast: (toast) => set({ toast }),
   setIsPipelineRunning: (running) => set({ isPipelineRunning: running }),
   setPipelineTasks: (tasks) => set((state) => ({ pipelineTasks: typeof tasks === 'function' ? tasks(state.pipelineTasks) : tasks })),
-  setProgress: (progress) => set({ progress }),
   setPromptsCount: (count) => set({ promptsCount: count }),
   setIsAnalyzingCompetitor: (analyzing) => set({ isAnalyzingCompetitor: analyzing }),
   setIsMonitoring: (monitoring) => set({ isMonitoring: monitoring }),

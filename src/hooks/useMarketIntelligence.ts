@@ -1,4 +1,5 @@
 import { useAppStore } from '../store/useAppStore';
+import { useUIStore } from '../store/useUIStore';
 import { analyzeCompetitorIntel, predictSalesPotential } from '../services/marketService';
 import { getTrendForecast } from '../services/trendService';
 import { CategoryResult } from '../types';
@@ -8,8 +9,6 @@ export const useMarketIntelligence = () => {
     settings,
     keyword,
     results, setResults,
-    setToast,
-    setErrorModal,
     isAnalyzingCompetitor, setIsAnalyzingCompetitor,
     isMonitoring, setIsMonitoring,
     forecasts, setForecasts,
@@ -17,6 +16,11 @@ export const useMarketIntelligence = () => {
     salesRecords,
     isParsingSalesCSV, setIsParsingSalesCSV
   } = useAppStore();
+
+  const {
+    setToast,
+    setErrorModal
+  } = useUIStore();
 
   const handleAnalyzeCompetitor = async (category: CategoryResult) => {
     setIsAnalyzingCompetitor(true);
