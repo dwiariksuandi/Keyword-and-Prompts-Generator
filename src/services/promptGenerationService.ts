@@ -153,39 +153,30 @@ async function generatePromptsBatch(
   ${PROMPTING_GUIDELINES.commercialMicrostockRules.map(r => `- ${r}`).join('\n  ')}
   
   CRITICAL DIVERSITY INSTRUCTIONS:
-  - Do NOT repeat concepts. Every subject and action must be distinctly different.
-  - Explore different sub-niches, lighting setups, and emotional tones within the category.
+  - Do NOT repeat concepts. Every base concept must be distinctly different.
+  - Explore different sub-niches and emotional tones within the category.
   - Ensure the components can be mixed and matched to create coherent, commercially viable stock assets.
   
-  Provide 15-20 highly unique options for EACH component of the formula:
+  Provide highly unique, extremely detailed options for the components:
+  1. baseConcepts: 30-50 highly unique, coherent, and VERY DETAILED scenarios. Each MUST include a highly descriptive Subject, a specific Action, and a complex Context that make logical sense together. Do not use simple phrases. Use rich, descriptive language. (e.g., "A diverse female precision machinist in a high-tech workshop touching a semi-transparent holographic AI interface that displays real-time diagnostic data over a robotic milling machine"). DO NOT separate them; write them as one cohesive, highly descriptive phrase.
   ${isVideo ? `
-  1. cinematography: Camera movements and angles.
-  2. subjects: Main focal points.
-  3. actions: What the subject is doing.
-  4. contexts: Environments and backgrounds.
-  5. styles: Lighting, color grading, and ambiance.
+  2. cinematographies: 20-30 Detailed camera movements and angles (e.g., "Mid-shot at a low-angle to emphasize authority, featuring a shallow depth of field").
+  3. styles: 20-30 Detailed lighting, color grading, and ambiance (e.g., "Industrial studio lighting with cool blue accents and sharp highlights on metallic surfaces, cinematic color grading with muted teal and orange tones").
   ` : `
-  1. subjects: Main focal points.
-  2. actions: What the subject is doing.
-  3. contexts: Locations and environments.
-  4. compositions: Camera angles, framing, and lenses.
-  5. styles: Lighting, color grading, and materiality.
+  2. compositions: 20-30 Detailed camera angles, framing, and lenses (e.g., "Mid-shot at a low-angle to emphasize authority, featuring a shallow depth of field, shot on a 50mm f/1.8 lens").
+  3. styles: 20-30 Detailed lighting, color grading, and materiality (e.g., "Industrial studio lighting with cool blue accents and sharp highlights on metallic surfaces, cinematic color grading with muted teal and orange tones").
   `}
   
   Respond strictly with a JSON object:
   ${isVideo ? `
   {
-    "cinematography": string[],
-    "subjects": string[],
-    "actions": string[],
-    "contexts": string[],
+    "baseConcepts": string[],
+    "cinematographies": string[],
     "styles": string[]
   }
   ` : `
   {
-    "subjects": string[],
-    "actions": string[],
-    "contexts": string[],
+    "baseConcepts": string[],
     "compositions": string[],
     "styles": string[]
   }
@@ -215,27 +206,23 @@ async function generatePromptsBatch(
       let prompt = '';
       
       if (isVideo) {
-        const c = components.cinematography[Math.floor(Math.random() * components.cinematography.length)];
-        const s = components.subjects[Math.floor(Math.random() * components.subjects.length)];
-        const a = components.actions[Math.floor(Math.random() * components.actions.length)];
-        const ctx = components.contexts[Math.floor(Math.random() * components.contexts.length)];
+        const concept = components.baseConcepts[Math.floor(Math.random() * components.baseConcepts.length)];
+        const c = components.cinematographies[Math.floor(Math.random() * components.cinematographies.length)];
         const style = components.styles[Math.floor(Math.random() * components.styles.length)];
-        prompt = `${c}, ${s} ${a}, ${ctx}, ${style}, 4k resolution, professional stock video`;
+        prompt = `${c}, ${concept}, ${style}, 4k resolution, professional stock video`;
       } else {
-        const s = components.subjects[Math.floor(Math.random() * components.subjects.length)];
-        const a = components.actions[Math.floor(Math.random() * components.actions.length)];
-        const ctx = components.contexts[Math.floor(Math.random() * components.contexts.length)];
+        const concept = components.baseConcepts[Math.floor(Math.random() * components.baseConcepts.length)];
         const comp = components.compositions[Math.floor(Math.random() * components.compositions.length)];
         const style = components.styles[Math.floor(Math.random() * components.styles.length)];
         
         if (contentType === 'Photo') {
-          prompt = `${s} ${a}, ${ctx}, ${comp}, ${style}, 8k resolution, highly detailed, commercial stock photography`;
+          prompt = `${concept}, ${comp}, ${style}, 8k resolution, highly detailed, commercial stock photography`;
         } else if (contentType === 'Illustration' || contentType === 'Vector') {
-          prompt = `${s} ${a}, ${ctx}, ${comp}, ${style}, clean lines, vibrant colors, commercial vector art`;
+          prompt = `${concept}, ${comp}, ${style}, clean lines, vibrant colors, commercial vector art`;
         } else if (contentType === '3D Render') {
-          prompt = `${s} ${a}, ${ctx}, ${comp}, ${style}, octane render, unreal engine 5, ray tracing, highly detailed`;
+          prompt = `${concept}, ${comp}, ${style}, octane render, unreal engine 5, ray tracing, highly detailed`;
         } else {
-          prompt = `${s} ${a}, ${ctx}, ${comp}, ${style}, high quality, professional stock style`;
+          prompt = `${concept}, ${comp}, ${style}, high quality, professional stock style`;
         }
       }
 
