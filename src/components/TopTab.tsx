@@ -116,7 +116,7 @@ export default function TopTab({
   };
 
   useEffect(() => {
-    if (keyword.trim().length > 0) {
+    if ((keyword || '').trim().length > 0) {
       const lowerKeyword = keyword.toLowerCase();
       const filtered = suggestionKeywords
         .filter(k => k.toLowerCase().includes(lowerKeyword))
@@ -263,7 +263,7 @@ export default function TopTab({
             label="Primary Concept / Keywords"
             icon={<Type size={14} />}
             description="Describe your creative concept or enter neural keywords to generate prompts."
-            error={!keyword.trim() && !referenceFile && !referenceUrl.trim() ? "Please provide a keyword, reference file, or URL to begin analysis." : undefined}
+            error={!(keyword || '').trim() && !referenceFile && !(referenceUrl || '').trim() ? "Please provide a keyword, reference file, or URL to begin analysis." : undefined}
           >
             <div className="relative group mt-2">
               <div className="absolute -inset-1 bg-gradient-to-r from-accent/20 to-blue-500/20 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
@@ -284,7 +284,7 @@ export default function TopTab({
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     className="absolute top-full left-0 right-0 mt-4 glass-panel rounded-[2.5rem] shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar border-white/10 backdrop-blur-2xl"
                   >
-                    {!keyword.trim() && (
+                    {!(keyword || '').trim() && (
                       <div className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3 border-b border-white/5 bg-white/5">
                         <TrendingUp size={14} className="text-accent" /> Trending Neural Patterns
                       </div>
@@ -442,7 +442,7 @@ export default function TopTab({
               whileHover={{ scale: 1.01, y: -1 }}
               whileTap={{ scale: 0.99 }}
               onClick={onQuickGenerate}
-              disabled={isAnalyzing || (!keyword.trim() && !referenceFile && !referenceUrl.trim())}
+              disabled={isAnalyzing || (!(keyword || '').trim() && !referenceFile && !(referenceUrl || '').trim())}
               className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-2xl text-[9px] font-bold uppercase tracking-[0.3em] transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 shadow-xl"
             >
               {isAnalyzing ? (
@@ -458,7 +458,7 @@ export default function TopTab({
               whileHover={{ scale: 1.01, y: -1 }}
               whileTap={{ scale: 0.99 }}
               onClick={onAnalyze}
-              disabled={isAnalyzing || (!keyword.trim() && !referenceFile && !referenceUrl.trim())}
+              disabled={isAnalyzing || (!(keyword || '').trim() && !referenceFile && !(referenceUrl || '').trim())}
               className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white text-black px-10 py-4 rounded-2xl text-[9px] font-bold uppercase tracking-[0.3em] transition-all disabled:opacity-50 disabled:cursor-not-allowed futuristic-glow hover:bg-slate-200 shadow-2xl shadow-white/10"
             >
               {isAnalyzing ? (
@@ -579,7 +579,7 @@ export default function TopTab({
                             <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Chromatic Profile</span>
                           </div>
                           <div className="flex flex-wrap gap-2 bg-white/5 p-4 rounded-2xl border border-white/5">
-                            {aestheticAnalysis.colorPalette.map((color, i) => (
+                            {aestheticAnalysis.colorPalette?.map((color, i) => (
                               <span key={i} className="px-3 py-1.5 bg-black/40 rounded-xl text-[10px] text-slate-300 border border-white/10 font-mono uppercase tracking-wider">
                                 {color}
                               </span>
@@ -594,7 +594,7 @@ export default function TopTab({
                             <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Strategic Neural Insights (Click to Add)</span>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {aestheticAnalysis.suggestions.map((suggestion, i) => (
+                            {aestheticAnalysis.suggestions?.map((suggestion, i) => (
                               <motion.button 
                                 key={i} 
                                 whileHover={{ scale: 1.02, backgroundColor: 'rgba(0,255,255,0.08)' }}

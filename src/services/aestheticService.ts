@@ -19,13 +19,12 @@ export async function analyzeAestheticReference(file: ReferenceFile, contentType
   
   Respond strictly with a JSON object:
   {
-    "aestheticDNA": string (concise summary),
     "colorPalette": string[],
     "lighting": string,
     "mood": string,
-    "style": string,
+    "artisticStyle": string,
     "composition": string,
-    "promptSuggestions": string[]
+    "suggestions": string[]
   }
   
   ${getContentTypeInstructions(contentType)}
@@ -67,16 +66,21 @@ export async function analyzeUrlAesthetic(url: string, contentType: string, sett
   Target Content Type: ${contentType}
   
   Using Google Search, identify:
-  1. Visual Style: Dominant aesthetic trends.
-  2. Commercial Utility: How this style is used in the market.
-  3. Aesthetic DNA: A concise summary of the visual identity.
+  1. Artistic Style: Dominant aesthetic trends and visual style.
+  2. Lighting: Typical lighting setups used in this style.
+  3. Mood: The emotional tone conveyed.
+  4. Composition: Typical framing and perspective.
+  5. Color Palette: Extract 3-5 dominant colors (e.g., ["#1A1A1A", "Muted Teal", "Neon Pink"]).
+  6. Suggestions: 3-5 prompt suggestions to replicate this aesthetic.
   
   Respond strictly with a JSON object:
   {
-    "aestheticDNA": string,
-    "visualStyle": string,
-    "commercialUtility": string,
-    "marketTrends": string[]
+    "colorPalette": string[],
+    "lighting": string,
+    "mood": string,
+    "artisticStyle": string,
+    "composition": string,
+    "suggestions": string[]
   }
   
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;

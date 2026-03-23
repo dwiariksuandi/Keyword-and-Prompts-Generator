@@ -26,7 +26,7 @@ export const usePromptGeneration = () => {
   } = useUIStore();
 
   const handleQuickGenerate = async () => {
-    if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) return;
+    if (!(keyword || '').trim() && !referenceFile && !(referenceUrl || '').trim()) return;
     setIsAnalyzing(true);
     try {
       const actualCountToGenerate = Math.min(settings.promptCount, 5000);

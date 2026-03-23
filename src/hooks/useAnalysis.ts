@@ -56,7 +56,7 @@ export const useAnalysis = () => {
   };
 
   const handleAnalyze = async () => {
-    if (!keyword.trim() && !referenceFile && !referenceUrl.trim()) return;
+    if (!(keyword || '').trim() && !referenceFile && !(referenceUrl || '').trim()) return;
     setIsAnalyzing(true);
     try {
       const data = await analyzeMarketNiches(keyword, contentType, settings, referenceFile || undefined, referenceUrl || undefined);
