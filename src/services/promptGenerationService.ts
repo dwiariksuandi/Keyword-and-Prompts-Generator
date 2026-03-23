@@ -53,30 +53,37 @@ export async function generatePromptsDirectly(
 ): Promise<string[]> {
   const ai = getAI(settings.apiKey);
   
-  const formula = contentType === 'Video' ? PROMPTING_GUIDELINES.videoFormula : PROMPTING_GUIDELINES.imageFormula;
+  const isVideo = contentType === 'Video';
+  const formula = isVideo ? PROMPTING_GUIDELINES.videoFormula : PROMPTING_GUIDELINES.imageFormula;
   
-  const promptText = `Generate ${count} unique, high-end AI prompts for the category: '${categoryName}'.
+  const promptText = `Generate ${count} unique, high-end AI prompts for the specific niche/keyword: '${categoryName}'.
   Target Content Type: ${contentType}
+  
+  CRITICAL REQUIREMENT: The generated prompts MUST strictly align with the niche/keyword '${categoryName}' and be designed specifically for commercial microstock platforms.
   
   USE THIS PROMPTING FORMULA (CRITICAL):
   ${formula}
   
   CREATIVE DIRECTOR CONTROLS:
-  - Lighting: ${PROMPTING_GUIDELINES.creativeDirectorTips.lighting}
-  - Camera/Lens: ${PROMPTING_GUIDELINES.creativeDirectorTips.camera}
-  - Materiality: ${PROMPTING_GUIDELINES.creativeDirectorTips.materiality}
+  ${isVideo ? `
+  - Cinematography: ${PROMPTING_GUIDELINES.veoTips.cinematography}
+  - Soundstage: ${PROMPTING_GUIDELINES.veoTips.soundstage}
+  ` : `
+  - Core: ${PROMPTING_GUIDELINES.nanoBananaTips.core}
+  - Lighting: ${PROMPTING_GUIDELINES.nanoBananaTips.lighting}
+  - Camera/Lens: ${PROMPTING_GUIDELINES.nanoBananaTips.camera}
+  - Color/Film: ${PROMPTING_GUIDELINES.nanoBananaTips.color}
+  - Materiality: ${PROMPTING_GUIDELINES.nanoBananaTips.materiality}
+  `}
   
-  ADOBE STOCK COMPLIANCE (CRITICAL):
-  - No "similar content": Each prompt must be distinct.
-  - Commercial utility: Focus on concepts that buyers actually need.
-  - AI Transparency: Do not use real artist names or copyrighted brands.
-  - Quality: Use technical keywords appropriate for ${contentType}.
+  COMMERCIAL MICROSTOCK COMPLIANCE (CRITICAL):
+  ${PROMPTING_GUIDELINES.commercialMicrostockRules.map(r => `- ${r}`).join('\n  ')}
   
   ${buildPromptContext(settings, referenceFile, referenceUrl)}
   ${getContentTypeInstructions(contentType)}
   ${getVariationInstructions(settings.variationLevel || 'Medium')}
   
-  Respond strictly with a JSON array of strings. Each string is a complete, ready-to-use AI prompt.`;
+  Respond strictly with a JSON array of strings. Each string is a complete, ready-to-use AI prompt following the formula.`;
 
   const contents: any[] = [{ text: promptText }];
   if (referenceFile) {
@@ -92,7 +99,7 @@ export async function generatePromptsDirectly(
     model: settings.model || 'gemini-3-flash-preview',
     contents,
     config: {
-      systemInstruction: "You are an elite AI Prompt Engineer specializing in Adobe Stock optimization. You generate commercially lucrative, technically superior, and unique prompts. Respond ONLY with valid JSON.",
+      systemInstruction: "You are an elite AI Prompt Engineer specializing in Adobe Stock optimization. You generate commercially lucrative, technically superior, and unique prompts that strictly follow the provided formulas and guidelines. Respond ONLY with valid JSON.",
       thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
     },
   });
@@ -118,34 +125,77 @@ async function generatePromptsBatch(
 ): Promise<string[]> {
   const ai = getAI(settings.apiKey);
   
-  const promptText = `Generate a highly diverse, combinatorial set of prompt components for the category: '${categoryName}'.
+  const isVideo = contentType === 'Video';
+  const formula = isVideo ? PROMPTING_GUIDELINES.videoFormula : PROMPTING_GUIDELINES.imageFormula;
+  
+  const promptText = `Generate a highly diverse, combinatorial set of prompt components for the specific niche/keyword: '${categoryName}'.
   Target Content Type: ${contentType}
   Total Prompts Needed: ${count}
+  
+  CRITICAL REQUIREMENT: The components MUST strictly align with the niche/keyword '${categoryName}' and be designed specifically for commercial microstock platforms.
+  
+  USE THIS PROMPTING FORMULA (CRITICAL):
+  ${formula}
+  
+  CREATIVE DIRECTOR CONTROLS:
+  ${isVideo ? `
+  - Cinematography: ${PROMPTING_GUIDELINES.veoTips.cinematography}
+  - Soundstage: ${PROMPTING_GUIDELINES.veoTips.soundstage}
+  ` : `
+  - Core: ${PROMPTING_GUIDELINES.nanoBananaTips.core}
+  - Lighting: ${PROMPTING_GUIDELINES.nanoBananaTips.lighting}
+  - Camera/Lens: ${PROMPTING_GUIDELINES.nanoBananaTips.camera}
+  - Color/Film: ${PROMPTING_GUIDELINES.nanoBananaTips.color}
+  - Materiality: ${PROMPTING_GUIDELINES.nanoBananaTips.materiality}
+  `}
+  
+  COMMERCIAL MICROSTOCK COMPLIANCE (CRITICAL):
+  ${PROMPTING_GUIDELINES.commercialMicrostockRules.map(r => `- ${r}`).join('\n  ')}
   
   CRITICAL DIVERSITY INSTRUCTIONS:
   - Do NOT repeat concepts. Every subject and action must be distinctly different.
   - Explore different sub-niches, lighting setups, and emotional tones within the category.
   - Ensure the components can be mixed and matched to create coherent, commercially viable stock assets.
   
-  Provide:
-  1. Subjects: 15-20 highly unique and specific subjects (e.g., "A cyberpunk botanist", not just "A person").
-  2. Actions/Contexts: 15-20 unique, dynamic scenarios or environments.
-  3. Technical Modifiers: 15-20 specific camera angles, lighting setups, or rendering techniques for ${contentType}.
-  4. Aesthetic/Mood Modifiers: 15-20 distinct moods or color palettes based on ${settings.creatorProfile?.aestheticDNA || 'professional stock'}.
+  Provide 15-20 highly unique options for EACH component of the formula:
+  ${isVideo ? `
+  1. cinematography: Camera movements and angles.
+  2. subjects: Main focal points.
+  3. actions: What the subject is doing.
+  4. contexts: Environments and backgrounds.
+  5. styles: Lighting, color grading, and ambiance.
+  ` : `
+  1. subjects: Main focal points.
+  2. actions: What the subject is doing.
+  3. contexts: Locations and environments.
+  4. compositions: Camera angles, framing, and lenses.
+  5. styles: Lighting, color grading, and materiality.
+  `}
   
   Respond strictly with a JSON object:
+  ${isVideo ? `
+  {
+    "cinematography": string[],
+    "subjects": string[],
+    "actions": string[],
+    "contexts": string[],
+    "styles": string[]
+  }
+  ` : `
   {
     "subjects": string[],
     "actions": string[],
-    "technical": string[],
-    "aesthetic": string[]
-  }`;
+    "contexts": string[],
+    "compositions": string[],
+    "styles": string[]
+  }
+  `}`;
 
   const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3-flash-preview',
     contents: [{ text: promptText }],
     config: {
-      systemInstruction: "You are a Prompt Component Architect. You provide high-quality, extremely diverse building blocks for combinatorial prompt generation. Respond ONLY with valid JSON.",
+      systemInstruction: "You are a Prompt Component Architect. You provide high-quality, extremely diverse building blocks for combinatorial prompt generation that strictly follow the provided formulas and commercial guidelines. Respond ONLY with valid JSON.",
       temperature: 0.9, // Higher temperature for more diversity in batch generation
       thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
     },
@@ -162,22 +212,31 @@ async function generatePromptsBatch(
     const maxAttempts = count * 3;
 
     while (prompts.size < count && attempts < maxAttempts) {
-      const s = components.subjects[Math.floor(Math.random() * components.subjects.length)];
-      const a = components.actions[Math.floor(Math.random() * components.actions.length)];
-      const t = components.technical[Math.floor(Math.random() * components.technical.length)];
-      const aes = components.aesthetic[Math.floor(Math.random() * components.aesthetic.length)];
-      
       let prompt = '';
-      if (contentType === 'Photo') {
-        prompt = `A professional photograph of ${s} ${a}, ${aes}, ${t}, 8k resolution, highly detailed, commercial stock photography`;
-      } else if (contentType === 'Illustration' || contentType === 'Vector') {
-        prompt = `High quality ${contentType.toLowerCase()} of ${s} ${a}, ${aes}, ${t}, clean lines, vibrant colors, commercial vector art`;
-      } else if (contentType === 'Video') {
-        prompt = `Cinematic video shot of ${s} ${a}, ${aes}, ${t}, 4k resolution, smooth motion, professional color grading`;
-      } else if (contentType === '3D Render') {
-        prompt = `High-end 3D render of ${s} ${a}, ${aes}, ${t}, octane render, unreal engine 5, ray tracing, highly detailed`;
+      
+      if (isVideo) {
+        const c = components.cinematography[Math.floor(Math.random() * components.cinematography.length)];
+        const s = components.subjects[Math.floor(Math.random() * components.subjects.length)];
+        const a = components.actions[Math.floor(Math.random() * components.actions.length)];
+        const ctx = components.contexts[Math.floor(Math.random() * components.contexts.length)];
+        const style = components.styles[Math.floor(Math.random() * components.styles.length)];
+        prompt = `${c}, ${s} ${a}, ${ctx}, ${style}, 4k resolution, professional stock video`;
       } else {
-        prompt = `${s} ${a}, ${t}, ${aes}, high quality, professional stock style`;
+        const s = components.subjects[Math.floor(Math.random() * components.subjects.length)];
+        const a = components.actions[Math.floor(Math.random() * components.actions.length)];
+        const ctx = components.contexts[Math.floor(Math.random() * components.contexts.length)];
+        const comp = components.compositions[Math.floor(Math.random() * components.compositions.length)];
+        const style = components.styles[Math.floor(Math.random() * components.styles.length)];
+        
+        if (contentType === 'Photo') {
+          prompt = `${s} ${a}, ${ctx}, ${comp}, ${style}, 8k resolution, highly detailed, commercial stock photography`;
+        } else if (contentType === 'Illustration' || contentType === 'Vector') {
+          prompt = `${s} ${a}, ${ctx}, ${comp}, ${style}, clean lines, vibrant colors, commercial vector art`;
+        } else if (contentType === '3D Render') {
+          prompt = `${s} ${a}, ${ctx}, ${comp}, ${style}, octane render, unreal engine 5, ray tracing, highly detailed`;
+        } else {
+          prompt = `${s} ${a}, ${ctx}, ${comp}, ${style}, high quality, professional stock style`;
+        }
       }
 
       prompts.add(prompt);
@@ -193,12 +252,15 @@ async function generatePromptsBatch(
 export async function optimizePrompts(prompts: string[], settings: AppSettings): Promise<string[]> {
   const ai = getAI(settings.apiKey);
   
-  const promptText = `Optimize and refine these ${prompts.length} AI prompts for maximum quality and Adobe Stock compliance.
+  const promptText = `Optimize and refine these ${prompts.length} AI prompts for maximum quality and commercial microstock compliance.
   
-  TECHNICAL UPGRADE:
-  - Analyze each prompt and apply "Neural Enhancement Layers" (specific modifiers, lighting, quality signatures).
-  - Ensure prompts are optimized for the latest AI models (Midjourney v6, DALL-E 3, etc.).
+  TECHNICAL UPGRADE & COMPLIANCE:
+  - Analyze each prompt and apply specific modifiers, lighting, and quality signatures based on professional stock standards.
+  - Ensure prompts are optimized for the latest AI models (Veo 3.1 for video, Nano Banana for images).
   - Prioritize reference fidelity and Aesthetic DNA alignment if provided.
+  
+  COMMERCIAL MICROSTOCK COMPLIANCE (CRITICAL):
+  ${PROMPTING_GUIDELINES.commercialMicrostockRules.map(r => `- ${r}`).join('\n  ')}
   
   Prompts to optimize:
   ${prompts.map((p, i) => `${i + 1}. ${p}`).join('\n')}
@@ -209,7 +271,7 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings):
     model: settings.model || 'gemini-3-flash-preview',
     contents: [{ text: promptText }],
     config: {
-      systemInstruction: "You are a Prompt Optimization Specialist. You take raw prompts and elevate them to professional, commercially viable assets. Respond ONLY with valid JSON.",
+      systemInstruction: "You are a Prompt Optimization Specialist. You take raw prompts and elevate them to professional, commercially viable assets that strictly follow commercial microstock guidelines. Respond ONLY with valid JSON.",
       thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
     },
   });

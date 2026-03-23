@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CategoryResult } from '../types';
-import { generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, scorePrompts, handleGeminiError, generateAdobeStockMetadata } from '../services/gemini';
+import { generatePrompts, generateAllPromptsBatch, optimizePrompts, scorePrompts, handleGeminiError, generateAdobeStockMetadata } from '../services/gemini';
 import { usePromptStore } from '../store/usePromptStore';
 import { useMarketStore } from '../store/useMarketStore';
 import { useUIStore } from '../store/useUIStore';
@@ -30,7 +30,7 @@ export const usePromptGeneration = () => {
     setIsAnalyzing(true);
     try {
       const actualCountToGenerate = Math.min(settings.promptCount, 5000);
-      const prompts = await generatePromptsDirectly(
+      const prompts = await generatePrompts(
         keyword || (referenceFile ? referenceFile.name : 'Quick Generation'),
         contentType,
         settings,
