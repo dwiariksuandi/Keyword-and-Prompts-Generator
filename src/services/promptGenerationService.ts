@@ -52,21 +52,25 @@ export async function generatePrompts(
   } else {
     // Batch processing for large counts
     const numCalls = Math.ceil(count / MAX_PER_CALL);
-    const PARALLEL_LIMIT = 3;
+    const PARALLEL_LIMIT = 2; // Reduced parallel limit to avoid rate limiting
     
     for (let i = 0; i < numCalls; i += PARALLEL_LIMIT) {
       const chunkPromises = [];
-      for (let j = 0; j < PARALLEL_LIMIT && (i + j) * numCalls; j++) {
+      for (let j = 0; j < PARALLEL_LIMIT && (i + j) < numCalls; j++) {
         const currentCount = Math.min(MAX_PER_CALL, count - (i + j) * MAX_PER_CALL);
         const diversityHint = `Batch Part ${i + j + 1}: Focus on highly unique, diverse, and specific scenarios. Avoid repeating concepts.`;
         chunkPromises.push(generateWithQuality(currentCount, diversityHint));
       }
       
-      const results = await Promise.all(chunkPromises);
-      results.forEach(res => allPrompts.push(...res));
+      const results = await Promise.allSettled(chunkPromises);
+      results.forEach(res => {
+        if (res.status === 'fulfilled') {
+          allPrompts.push(...res.value);
+        }
+      });
       
       if (i + PARALLEL_LIMIT < numCalls) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Increased delay
       }
     }
   }
@@ -99,22 +103,31 @@ async function filterByDiversity(prompts: string[], apiKey: string): Promise<str
   const uniquePrompts: string[] = [];
   const embeddings: number[][] = [];
 
-  for (const prompt of prompts) {
-    const embedding = await getEmbedding(prompt, apiKey);
-    let isTooSimilar = false;
+  try {
+    // Get all embeddings in one batch call
+    const allEmbeddings = await getEmbedding(prompts, apiKey);
+    
+    for (let i = 0; i < prompts.length; i++) {
+      const prompt = prompts[i];
+      const embedding = allEmbeddings[i];
+      let isTooSimilar = false;
 
-    for (const existingEmbedding of embeddings) {
-      const similarity = cosineSimilarity(embedding, existingEmbedding);
-      if (similarity > SIMILARITY_THRESHOLD) {
-        isTooSimilar = true;
-        break;
+      for (const existingEmbedding of embeddings) {
+        const similarity = cosineSimilarity(embedding, existingEmbedding);
+        if (similarity > SIMILARITY_THRESHOLD) {
+          isTooSimilar = true;
+          break;
+        }
+      }
+
+      if (!isTooSimilar) {
+        uniquePrompts.push(prompt);
+        embeddings.push(embedding);
       }
     }
-
-    if (!isTooSimilar) {
-      uniquePrompts.push(prompt);
-      embeddings.push(embedding);
-    }
+  } catch (error) {
+    console.warn("Diversity filtering failed, falling back to original list:", error);
+    return prompts;
   }
 
   return uniquePrompts;
@@ -447,6 +460,47 @@ export async function generateAdobeStockMetadata(prompt: string, contentType: st
     return extractJSON(text);
   } catch (e) {
     throw new Error("Failed to generate metadata.");
+  }
+}
+
+export async function polishAdobeStockMetadata(metadata: { title: string; keywords: string[] }, settings: AppSettings) {
+  const ai = getAI(settings.apiKey);
+  
+  const promptText = `Polish and improve this Adobe Stock metadata for maximum SEO performance.
+  
+  CURRENT METADATA:
+  Title: "${metadata.title}"
+  Keywords: ${metadata.keywords.join(', ')}
+  
+  POLISHING RULES:
+  - Title: Make it more evocative and descriptive while remaining SEO-friendly. Ensure it flows naturally.
+  - Keywords: Remove redundant or low-value keywords. Add high-value, conceptually relevant keywords. Ensure the most important keywords are first.
+  - Commercial Appeal: Ensure the metadata sounds professional and appeals to high-end buyers.
+  
+  Respond strictly with a JSON object:
+  {
+    "title": string,
+    "keywords": string[]
+  }
+  
+  Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
+
+  const response = await generateContentWithRetryAndFallback(ai, {
+    model: settings.model || 'gemini-3-flash-preview',
+    contents: [{ text: promptText }],
+    config: {
+      systemInstruction: "You are an elite SEO and Metadata Optimizer for Adobe Stock. You refine titles and keywords to ensure they are both human-readable and algorithm-friendly. Respond ONLY with valid JSON.",
+      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+    },
+  });
+
+  const text = response.text;
+  if (!text) throw new Error('No response from Gemini');
+  
+  try {
+    return extractJSON(text);
+  } catch (e) {
+    throw new Error("Failed to polish metadata.");
   }
 }
 

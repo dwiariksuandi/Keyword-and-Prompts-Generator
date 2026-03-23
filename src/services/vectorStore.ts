@@ -1,4 +1,5 @@
 import { getEmbedding, cosineSimilarity } from './vectorService';
+import { AestheticAnalysis } from '../types';
 
 interface VectorEntry {
   analysis: any;
@@ -10,12 +11,18 @@ const vectorStore: VectorEntry[] = [];
 export const vectorStoreService = {
   add: async (analysis: any, apiKey: string) => {
     const textToEmbed = JSON.stringify(analysis);
-    const embedding = await getEmbedding(textToEmbed, apiKey);
-    vectorStore.push({ analysis, embedding });
+    const embeddings = await getEmbedding(textToEmbed, apiKey);
+    const embedding = embeddings[0];
+    if (embedding) {
+      vectorStore.push({ analysis, embedding });
+    }
   },
   
   findSimilar: async (query: string, apiKey: string, limit = 3) => {
-    const queryEmbedding = await getEmbedding(query, apiKey);
+    const queryEmbeddings = await getEmbedding(query, apiKey);
+    const queryEmbedding = queryEmbeddings[0];
+    if (!queryEmbedding) return [];
+    
     return vectorStore
       .map(entry => ({
         analysis: entry.analysis,

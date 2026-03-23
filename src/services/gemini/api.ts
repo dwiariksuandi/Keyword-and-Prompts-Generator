@@ -17,7 +17,7 @@ export async function validateApiKey(apiKey: string, retries = 3, delay = 1000):
   try {
     const ai = getAI(apiKey);
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-lite-preview',
+      model: 'gemini-3-flash-preview',
       contents: [{ text: 'Say "ok"' }]
     });
     return { isValid: !!response.text };
@@ -36,36 +36,46 @@ export async function validateApiKey(apiKey: string, retries = 3, delay = 1000):
 }
 
 export async function generateContentWithRetryAndFallback(ai: any, params: any, retries = 3, delay = 1000) {
+  if (!ai) {
+    throw new Error("AI instance is not initialized. Please check your API key.");
+  }
+  
   try {
     return await ai.models.generateContent(params);
   } catch (e: any) {
     const errorMessage = e.message || '';
     const isRateLimit = e.status === 429 || errorMessage.includes('RESOURCE_EXHAUSTED');
     const isTokenLimit = errorMessage.includes('max tokens limit');
+    const isInternalError = e.status >= 500 || errorMessage.includes('INTERNAL') || errorMessage.includes('UNAVAILABLE');
 
-    if (retries > 0 && isRateLimit) {
-      console.warn(`Rate limit hit, retrying in ${delay}ms... (${retries} retries left)`);
+    if (retries > 0 && (isRateLimit || isInternalError)) {
+      console.warn(`${isRateLimit ? 'Rate limit' : 'Internal error'} hit, retrying in ${delay}ms... (${retries} retries left)`);
       await sleep(delay);
       return generateContentWithRetryAndFallback(ai, params, retries - 1, delay * 2);
     }
     
     if (isTokenLimit) {
       console.warn("Token limit reached, attempting with reduced maxOutputTokens...");
-      // Coba dengan mengurangi maxOutputTokens jika tersedia di config
       const newParams = {
         ...params,
         config: {
           ...params.config,
-          maxOutputTokens: 8192 // Kurangi setengah dari limit default
+          maxOutputTokens: 4096 // More conservative reduction
         }
       };
+      // For token limit, we don't necessarily want to retry indefinitely, but one attempt with smaller limit is good
       return await ai.models.generateContent(newParams);
     }
 
-    console.warn("Primary model failed, falling back to flash lite:", e);
-    return await ai.models.generateContent({
-      ...params,
-      model: 'gemini-3.1-flash-lite-preview'
-    });
+    // If it's not a rate limit or internal error, or we're out of retries, try fallback
+    if (params.model !== 'gemini-3-flash-preview') {
+      console.warn("Primary model failed, falling back to flash:", e);
+      return await ai.models.generateContent({
+        ...params,
+        model: 'gemini-3-flash-preview'
+      });
+    }
+    
+    throw e;
   }
 }
