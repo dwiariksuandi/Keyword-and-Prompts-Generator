@@ -74,8 +74,26 @@ app.get("/api/analytics/stats", (req, res) => {
   res.json(stats);
 });
 
-app.get("/api/feature-flags", (req, res) => {
-  res.json(featureFlags);
-});
+    // Feature Flagging Endpoint
+    app.get("/api/feature-flags", (req, res) => {
+      res.json(featureFlags);
+    });
 
-export default app;
+    // Fine-tuning data export (Note: Persistent local file storage is not available on Vercel)
+    app.post("/api/finetuning/export", (req, res) => {
+      const { data } = req.body;
+      if (!data) {
+        return res.status(400).json({ error: "Data is required" });
+      }
+      
+      // In serverless, we can't easily append to a local file persistently.
+      // For now, we log it. In production, this should go to a database or cloud storage.
+      console.log(`[Fine-tuning Export]: ${data}`);
+      
+      res.json({ 
+        status: "ok", 
+        message: "Data received (Note: In serverless, this is logged rather than saved to a local file)" 
+      });
+    });
+
+    export default app;
