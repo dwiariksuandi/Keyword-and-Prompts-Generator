@@ -12,10 +12,48 @@ export async function generatePrompts(
   referenceFile?: ReferenceFile, 
   referenceUrl?: string
 ): Promise<string[]> {
-  if (count > 30) {
-    return generatePromptsBatch(categoryName, contentType, settings, count, referenceFile, referenceUrl);
+  const MAX_PER_CALL = 15;
+  
+  if (count <= MAX_PER_CALL) {
+    return generatePromptsDirectly(categoryName, contentType, settings, count, referenceFile, referenceUrl);
   }
-  return generatePromptsDirectly(categoryName, contentType, settings, count, referenceFile, referenceUrl);
+
+  // Batch processing for large counts to maintain individual prompt quality
+  // We use parallel chunks of direct generation to ensure each prompt is detailed and cohesive
+  const numCalls = Math.ceil(count / MAX_PER_CALL);
+  const allPrompts: string[] = [];
+  
+  // Process in chunks of parallel calls to avoid hitting rate limits too hard
+  const PARALLEL_LIMIT = 3;
+  
+  for (let i = 0; i < numCalls; i += PARALLEL_LIMIT) {
+    const chunkPromises = [];
+    for (let j = 0; j < PARALLEL_LIMIT && (i + j) < numCalls; j++) {
+      const currentCount = Math.min(MAX_PER_CALL, count - (i + j) * MAX_PER_CALL);
+      // Add a diversity hint to each call to ensure variety across the entire batch
+      const diversityHint = `Batch Part ${i + j + 1}: Focus on highly unique, diverse, and specific scenarios within the '${categoryName}' niche. Avoid repeating concepts from previous parts.`;
+      
+      chunkPromises.push(generatePromptsDirectly(
+        categoryName, 
+        contentType, 
+        settings, 
+        currentCount, 
+        referenceFile, 
+        referenceUrl,
+        diversityHint
+      ));
+    }
+    
+    const results = await Promise.all(chunkPromises);
+    results.forEach(res => allPrompts.push(...res));
+    
+    // Small delay between parallel chunks to be respectful of rate limits
+    if (i + PARALLEL_LIMIT < numCalls) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+  }
+  
+  return allPrompts.slice(0, count);
 }
 
 function buildPromptContext(
@@ -49,7 +87,8 @@ export async function generatePromptsDirectly(
   settings: AppSettings, 
   count: number = 10, 
   referenceFile?: ReferenceFile, 
-  referenceUrl?: string
+  referenceUrl?: string,
+  diversityHint?: string
 ): Promise<string[]> {
   const ai = getAI(settings.apiKey);
   
@@ -79,11 +118,12 @@ export async function generatePromptsDirectly(
   COMMERCIAL MICROSTOCK COMPLIANCE (CRITICAL):
   ${PROMPTING_GUIDELINES.commercialMicrostockRules.map(r => `- ${r}`).join('\n  ')}
   
+  ${diversityHint ? `DIVERSITY INSTRUCTION: ${diversityHint}\n` : ''}
   ${buildPromptContext(settings, referenceFile, referenceUrl)}
   ${getContentTypeInstructions(contentType)}
   ${getVariationInstructions(settings.variationLevel || 'Medium')}
   
-  Respond strictly with a JSON array of strings. Each string is a complete, ready-to-use AI prompt following the formula.`;
+  Respond strictly with a JSON array of strings. Each string is a complete, ready-to-use AI prompt following the formula. Each prompt must be extremely detailed, rich in technical components, and commercially viable.`;
 
   const contents: any[] = [{ text: promptText }];
   if (referenceFile) {
@@ -123,117 +163,10 @@ async function generatePromptsBatch(
   referenceFile?: ReferenceFile, 
   referenceUrl?: string
 ): Promise<string[]> {
-  const ai = getAI(settings.apiKey);
-  
-  const isVideo = contentType === 'Video';
-  const formula = isVideo ? PROMPTING_GUIDELINES.videoFormula : PROMPTING_GUIDELINES.imageFormula;
-  
-  const promptText = `Generate a highly diverse, combinatorial set of prompt components for the specific niche/keyword: '${categoryName}'.
-  Target Content Type: ${contentType}
-  Total Prompts Needed: ${count}
-  
-  CRITICAL REQUIREMENT: The components MUST strictly align with the niche/keyword '${categoryName}' and be designed specifically for commercial microstock platforms.
-  
-  USE THIS PROMPTING FORMULA (CRITICAL):
-  ${formula}
-  
-  CREATIVE DIRECTOR CONTROLS:
-  ${isVideo ? `
-  - Cinematography: ${PROMPTING_GUIDELINES.veoTips.cinematography}
-  - Soundstage: ${PROMPTING_GUIDELINES.veoTips.soundstage}
-  ` : `
-  - Core: ${PROMPTING_GUIDELINES.nanoBananaTips.core}
-  - Lighting: ${PROMPTING_GUIDELINES.nanoBananaTips.lighting}
-  - Camera/Lens: ${PROMPTING_GUIDELINES.nanoBananaTips.camera}
-  - Color/Film: ${PROMPTING_GUIDELINES.nanoBananaTips.color}
-  - Materiality: ${PROMPTING_GUIDELINES.nanoBananaTips.materiality}
-  `}
-  
-  COMMERCIAL MICROSTOCK COMPLIANCE (CRITICAL):
-  ${PROMPTING_GUIDELINES.commercialMicrostockRules.map(r => `- ${r}`).join('\n  ')}
-  
-  CRITICAL DIVERSITY INSTRUCTIONS:
-  - Do NOT repeat concepts. Every base concept must be distinctly different.
-  - Explore different sub-niches and emotional tones within the category.
-  - Ensure the components can be mixed and matched to create coherent, commercially viable stock assets.
-  
-  Provide highly unique, extremely detailed options for the components:
-  1. baseConcepts: 30-50 highly unique, coherent, and VERY DETAILED scenarios. Each MUST include a highly descriptive Subject, a specific Action, and a complex Context that make logical sense together. Do not use simple phrases. Use rich, descriptive language. (e.g., "A diverse female precision machinist in a high-tech workshop touching a semi-transparent holographic AI interface that displays real-time diagnostic data over a robotic milling machine"). DO NOT separate them; write them as one cohesive, highly descriptive phrase.
-  ${isVideo ? `
-  2. cinematographies: 20-30 Detailed camera movements and angles (e.g., "Mid-shot at a low-angle to emphasize authority, featuring a shallow depth of field").
-  3. styles: 20-30 Detailed lighting, color grading, and ambiance (e.g., "Industrial studio lighting with cool blue accents and sharp highlights on metallic surfaces, cinematic color grading with muted teal and orange tones").
-  ` : `
-  2. compositions: 20-30 Detailed camera angles, framing, and lenses (e.g., "Mid-shot at a low-angle to emphasize authority, featuring a shallow depth of field, shot on a 50mm f/1.8 lens").
-  3. styles: 20-30 Detailed lighting, color grading, and materiality (e.g., "Industrial studio lighting with cool blue accents and sharp highlights on metallic surfaces, cinematic color grading with muted teal and orange tones").
-  `}
-  
-  Respond strictly with a JSON object:
-  ${isVideo ? `
-  {
-    "baseConcepts": string[],
-    "cinematographies": string[],
-    "styles": string[]
-  }
-  ` : `
-  {
-    "baseConcepts": string[],
-    "compositions": string[],
-    "styles": string[]
-  }
-  `}`;
-
-  const response = await generateContentWithRetryAndFallback(ai, {
-    model: settings.model || 'gemini-3-flash-preview',
-    contents: [{ text: promptText }],
-    config: {
-      systemInstruction: "You are a Prompt Component Architect. You provide high-quality, extremely diverse building blocks for combinatorial prompt generation that strictly follow the provided formulas and commercial guidelines. Respond ONLY with valid JSON.",
-      temperature: 0.9, // Higher temperature for more diversity in batch generation
-      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
-    },
-  });
-
-  const text = response.text;
-  if (!text) throw new Error('No response from Gemini');
-  
-  try {
-    const components = extractJSON(text);
-    const prompts: Set<string> = new Set(); // Use Set to prevent exact duplicates
-    
-    let attempts = 0;
-    const maxAttempts = count * 3;
-
-    while (prompts.size < count && attempts < maxAttempts) {
-      let prompt = '';
-      
-      if (isVideo) {
-        const concept = components.baseConcepts[Math.floor(Math.random() * components.baseConcepts.length)];
-        const c = components.cinematographies[Math.floor(Math.random() * components.cinematographies.length)];
-        const style = components.styles[Math.floor(Math.random() * components.styles.length)];
-        prompt = `${c}, ${concept}, ${style}, 4k resolution, professional stock video`;
-      } else {
-        const concept = components.baseConcepts[Math.floor(Math.random() * components.baseConcepts.length)];
-        const comp = components.compositions[Math.floor(Math.random() * components.compositions.length)];
-        const style = components.styles[Math.floor(Math.random() * components.styles.length)];
-        
-        if (contentType === 'Photo') {
-          prompt = `${concept}, ${comp}, ${style}, 8k resolution, highly detailed, commercial stock photography`;
-        } else if (contentType === 'Illustration' || contentType === 'Vector') {
-          prompt = `${concept}, ${comp}, ${style}, clean lines, vibrant colors, commercial vector art`;
-        } else if (contentType === '3D Render') {
-          prompt = `${concept}, ${comp}, ${style}, octane render, unreal engine 5, ray tracing, highly detailed`;
-        } else {
-          prompt = `${concept}, ${comp}, ${style}, high quality, professional stock style`;
-        }
-      }
-
-      prompts.add(prompt);
-      attempts++;
-    }
-    
-    return Array.from(prompts);
-  } catch (e) {
-    throw new Error("Failed to generate batch prompts.");
-  }
+  // This function is deprecated in favor of chunked direct generation to maintain high quality.
+  // We keep the signature for now to avoid breaking any potential external references, 
+  // but redirect to the high-quality path.
+  return generatePrompts(categoryName, contentType, settings, count, referenceFile, referenceUrl);
 }
 
 export async function optimizePrompts(prompts: string[], settings: AppSettings): Promise<string[]> {

@@ -48,11 +48,11 @@ export async function analyzeMarketNiches(
     .replace('{language}', settings.language === 'id' ? 'Indonesian' : 'English');
 
   const response = await generateContentWithRetryAndFallback(ai, {
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [{ text: promptText }],
     config: {
       systemInstruction: "You are an elite Multi-Agent Microstock Market Analysis System. You synthesize real-time market data, creative trends, and commercial utility to uncover 'Blue Ocean' niches. Respond ONLY with valid JSON.",
-      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      thinkingConfig: (settings.model || 'gemini-3.1-flash-lite-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
     },
   });
 
@@ -65,7 +65,7 @@ export async function analyzeMarketNiches(
     return result;
   } catch (e) {
     console.error("Failed to parse JSON response:", text);
-    throw new Error("Failed to parse the response from the AI. Please try again.");
+    throw new Error("Failed to parse the response from the AI. Please try again.", { cause: e });
   }
 }
 
@@ -112,7 +112,7 @@ export async function analyzeCompetitorIntel(categoryName: string, contentType: 
   }`;
   
   const response = await generateContentWithRetryAndFallback(ai, {
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [{ text: prompt }],
     config: {
       tools: [{ googleSearch: {} }],
@@ -131,7 +131,7 @@ export async function predictSalesPotential(categoryName: string, contentType: s
   Respond with a JSON object containing estimatedMonthlySales (number), confidenceScore (number 0-100), and topSellingFactors (string[]).`;
   
   const response = await generateContentWithRetryAndFallback(ai, {
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [{ text: prompt }],
     config: {
       tools: [{ googleSearch: {} }],

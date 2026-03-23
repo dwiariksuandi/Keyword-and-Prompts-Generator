@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import React from 'react';
 import { validateApiKey } from '../services/gemini';
 import { usePromptStore } from '../store/usePromptStore';

@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Zap, Play, CheckCircle2, Loader2, Settings, Layers, Database, Sparkles, Target } from 'lucide-react';
-import { CategoryResult, AppSettings, AgentTask } from '../types';
+import { motion } from 'motion/react';
+import { Zap, Play, Loader2, Layers, Database, Sparkles, Target } from 'lucide-react';
+import { AgentTask } from '../types';
 import { NeuralPipeline } from './NeuralPipeline';
 
 interface PipelineTabProps {
-  results: CategoryResult[];
-  settings: AppSettings;
   onRunPipeline: (steps: string[]) => void;
   isPipelineRunning: boolean;
   tasks: AgentTask[];
@@ -20,7 +18,7 @@ const PIPELINE_STEPS = [
   { id: 'metadata', label: 'Adobe Stock Metadata', icon: Layers, description: 'Title & Keyword Optimization' },
 ];
 
-export default function PipelineTab({ results, settings, onRunPipeline, isPipelineRunning, tasks }: PipelineTabProps) {
+export default function PipelineTab({ onRunPipeline, isPipelineRunning, tasks }: PipelineTabProps) {
   const [selectedSteps, setSelectedSteps] = useState<string[]>(PIPELINE_STEPS.map(s => s.id));
 
   const toggleStep = (stepId: string) => {
@@ -58,7 +56,7 @@ export default function PipelineTab({ results, settings, onRunPipeline, isPipeli
         </div>
 
         <div className="space-y-4">
-          {PIPELINE_STEPS.map((step, index) => (
+          {PIPELINE_STEPS.map((step) => (
             <motion.div 
               key={step.id}
               whileHover={{ scale: 1.01 }}

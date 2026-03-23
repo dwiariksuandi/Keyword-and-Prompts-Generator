@@ -1,5 +1,3 @@
-import { abTestingService } from '../services/abTesting';
-
 export const healthCheckService = {
   runSuite: async (trackInteraction: (testId: string, event: string, metadata?: any) => void) => {
     console.log('--- Starting Neural UI Health Check ---');

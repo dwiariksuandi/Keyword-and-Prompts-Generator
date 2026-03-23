@@ -4,7 +4,6 @@ import {
   ShieldAlert, 
   Target, 
   Zap, 
-  TrendingUp, 
   Search, 
   BarChart3, 
   Eye, 
@@ -14,7 +13,7 @@ import {
   Info,
   RefreshCw
 } from 'lucide-react';
-import { CategoryResult, CompetitorAnalysis } from '../types';
+import { CategoryResult } from '../types';
 
 interface IntelligenceTabProps {
   results: CategoryResult[];

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, ChevronLeft, Sparkles, Target, Zap, CheckCircle2 } from 'lucide-react';
+import { motion } from 'motion/react';
+import { ChevronRight, ChevronLeft, Sparkles, CheckCircle2 } from 'lucide-react';
 import { AppSettings } from '../types';
 import { fetchTrendingKeywords, generateVeoPrompt, generateNanoBananaPrompt } from '../services/gemini';
 import TrendForecast from './TrendForecast';
@@ -41,7 +41,7 @@ export default function PromptWizard({
   });
 
   const handleFormulaGenerate = async () => {
-    let finalPrompt = '';
+    let finalPrompt: string;
     if (contentType === 'Video') {
       finalPrompt = await generateVeoPrompt(
         formulaData.cinematography,
@@ -75,7 +75,7 @@ export default function PromptWizard({
     }, 500); // 500ms debounce
 
     return () => clearTimeout(handler);
-  }, [keyword, settings]);
+  }, [keyword, settings, contentType]);
 
   const steps = [
     { id: 1, title: 'Input Niche', description: 'Define your creative concept' },

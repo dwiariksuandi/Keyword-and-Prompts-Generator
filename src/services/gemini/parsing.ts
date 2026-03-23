@@ -14,7 +14,7 @@ export function extractJSON(text: string) {
     } else if (startObj !== -1 && endObj !== -1) {
       return JSON.parse(text.substring(startObj, endObj + 1));
     }
-    throw new Error("Could not find valid JSON in response");
+    throw new Error("Could not find valid JSON in response", { cause: e });
   }
 }
 

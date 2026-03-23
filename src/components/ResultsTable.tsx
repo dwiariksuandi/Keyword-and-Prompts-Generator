@@ -5,21 +5,14 @@ import {
   TrendingUp, 
   TrendingDown, 
   Zap, 
-  ChevronRight, 
-  Download, 
-  Eye, 
   RefreshCw, 
   BarChart3, 
   ShieldCheck, 
-  ExternalLink, 
   Search, 
-  Info, 
-  Cpu, 
   Sparkles, 
-  CheckCircle2, 
   AlertCircle 
 } from 'lucide-react';
-import { CategoryResult, AppSettings } from '../types';
+import { CategoryResult } from '../types';
 
 interface ResultsTableProps {
   results: CategoryResult[];
@@ -30,7 +23,6 @@ interface ResultsTableProps {
   onToggleStar: (id: string) => void;
   onPredictSales: (category: CategoryResult) => void;
   onAnalyzeCompetitor: (category: CategoryResult) => void;
-  onGenerateMetadata: (id: string) => void;
   isAnalyzing: boolean;
 }
 
@@ -43,7 +35,6 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
   onToggleStar,
   onPredictSales,
   onAnalyzeCompetitor,
-  onGenerateMetadata,
   isAnalyzing
 }) => {
   const filteredResults = results
@@ -91,7 +82,6 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
                 onToggleStar={onToggleStar}
                 onPredictSales={onPredictSales}
                 onAnalyzeCompetitor={onAnalyzeCompetitor}
-                onGenerateMetadata={onGenerateMetadata}
                 isAnalyzing={isAnalyzing}
               />
             ))}
@@ -109,7 +99,6 @@ interface ResultRowProps {
   onToggleStar: (id: string) => void;
   onPredictSales: (category: CategoryResult) => void;
   onAnalyzeCompetitor: (category: CategoryResult) => void;
-  onGenerateMetadata: (id: string) => void;
   isAnalyzing: boolean;
 }
 
@@ -120,7 +109,6 @@ const ResultRow: React.FC<ResultRowProps> = ({
   onToggleStar, 
   onPredictSales, 
   onAnalyzeCompetitor,
-  onGenerateMetadata,
   isAnalyzing 
 }) => {
   return (

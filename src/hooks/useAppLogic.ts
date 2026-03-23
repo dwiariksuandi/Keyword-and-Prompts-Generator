@@ -14,11 +14,6 @@ export const useAppLogic = () => {
   const {
     selectedPromptCategoryId, setSelectedPromptCategoryId,
     settings, setSettings,
-    keyword, setKeyword,
-    contentType, setContentType,
-    referenceFile, setReferenceFile,
-    referenceUrl, setReferenceUrl,
-    promptsCount, setPromptsCount
   } = usePromptStore();
 
   const {
@@ -84,6 +79,7 @@ export const useAppLogic = () => {
       }
       setToast({ show: true, message: 'Pipeline selesai!' });
     } catch (error) {
+      console.error(error);
       setPipelineTasks(prev => prev.map(t => 
         t.status === 'running' ? { ...t, status: 'failed', message: 'Error occurred.' } : t
       ));
@@ -98,7 +94,7 @@ export const useAppLogic = () => {
       const timer = setTimeout(() => setToast({ ...toast, show: false }), 3000);
       return () => clearTimeout(timer);
     }
-  }, [toast.show, setToast]);
+  }, [toast.show, setToast, toast]);
 
   useEffect(() => {
     const savedPrefs = localStorage.getItem('app_preferences');
@@ -110,7 +106,7 @@ export const useAppLogic = () => {
           const parsed = JSON.parse(savedPrefs);
           Object.assign(newSettings, parsed);
         } catch (e) {
-          console.error("Failed to parse saved preferences");
+          console.error("Failed to parse saved preferences", e);
         }
       }
       return newSettings;
@@ -122,7 +118,7 @@ export const useAppLogic = () => {
       if (savedHistory) setHistory(JSON.parse(savedHistory));
       if (savedResults) setResults(JSON.parse(savedResults));
     } catch (e) {
-      console.error("Failed to load saved history/results");
+      console.error("Failed to load saved history/results", e);
     }
   }, [setSettings, setHistory, setResults]);
 

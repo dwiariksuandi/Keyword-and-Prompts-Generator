@@ -26,7 +26,7 @@ export async function fetchRealTimeMarketData(
   }`;
 
   const response = await generateContentWithRetryAndFallback(ai, {
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: prompt,
     config: {
       tools: [{ googleSearch: {} }],

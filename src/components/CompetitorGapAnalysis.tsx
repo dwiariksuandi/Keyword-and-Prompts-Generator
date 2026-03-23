@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { VisualGap, analyzeCompetitorGaps } from '../services/competitorService';
-import { Target, AlertTriangle } from 'lucide-react';
+import { Target } from 'lucide-react';
 
 export default function CompetitorGapAnalysis({ niche, onSelect, setQuotaWarning }: { niche: string, onSelect?: (niche: string) => void, setQuotaWarning?: (msg: string | null) => void }) {
   const [gaps, setGaps] = useState<VisualGap[]>([]);

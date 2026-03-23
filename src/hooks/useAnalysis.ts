@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { analyzeMarketNiches, analyzeAestheticReference, analyzeUrlAesthetic, handleGeminiError } from '../services/gemini';
 import { useMarketStore } from '../store/useMarketStore';
 import { usePromptStore } from '../store/usePromptStore';

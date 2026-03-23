@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { getTrendForecast, refineTrendForecast } from '../services/trendService';
-import { TrendingUp, Calendar, Zap, MessageSquare, AlertCircle, Globe, Info } from 'lucide-react';
+import { TrendingUp, Zap, AlertCircle, Globe, Info } from 'lucide-react';
 import { AppSettings, TrendForecast } from '../types';
 import RefineButton from './RefineButton';
 import { motion, AnimatePresence } from 'motion/react';

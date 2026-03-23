@@ -44,7 +44,7 @@ export async function getTrendForecast(niche: string | undefined, settings: AppS
 
   try {
     const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-3-flash-preview',
+      model: settings.model || 'gemini-3.1-flash-lite-preview',
       contents: [{ text: promptText }],
       config: {
         tools: [{ googleSearch: {} }],
@@ -71,7 +71,7 @@ export async function refineTrendForecast(previousTrends: TrendForecast[], feedb
 
   try {
     const response = await ai.models.generateContent({
-      model: settings.model || 'gemini-3-flash-preview',
+      model: settings.model || 'gemini-3.1-flash-lite-preview',
       contents: [{ text: promptText }],
       config: {
         tools: [{ googleSearch: {} }],

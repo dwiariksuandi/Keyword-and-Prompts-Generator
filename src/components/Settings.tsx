@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Key, Save, Check, AlertCircle, LogOut, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe, UserCircle, Loader2, Trash2, FileUp, Sparkles } from 'lucide-react';
-import { AppSettings, PromptTemplate, CategoryResult } from '../types';
+import { Key, Save, Check, AlertCircle, LogOut, Cpu, Settings as SettingsIcon, Layout, Sliders, Database, Globe, UserCircle, Loader2, Trash2 } from 'lucide-react';
+import { AppSettings, CategoryResult } from '../types';
 import { promptTemplates, analyzePortfolioAesthetic } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
 import FineTuningSection from './FineTuningSection';
@@ -171,7 +171,6 @@ export default function Settings({
             {[
               { id: "gemini-3.1-flash-lite-preview", name: "Gemini 3.1 Flash Lite", desc: "High Velocity (Default)" },
               { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", desc: "Maximum Reasoning" },
-              { id: "gemini-3-flash-preview", name: "Gemini 3 Flash", desc: "Next-Gen Flash" },
             ].map((model) => (
               <motion.button
                 key={model.id}

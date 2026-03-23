@@ -231,7 +231,6 @@ const ResultCard: React.FC<ResultCardProps> = ({
   onToggleStar, 
   onAnalyzeCompetitor,
   onPredictSales,
-  onGenerateMetadata,
   isAnalyzing 
 }) => {
   return (

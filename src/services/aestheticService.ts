@@ -32,7 +32,7 @@ export async function analyzeAestheticReference(file: ReferenceFile, contentType
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
   const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [
       {
         inlineData: {
@@ -44,7 +44,7 @@ export async function analyzeAestheticReference(file: ReferenceFile, contentType
     ],
     config: {
       systemInstruction: "You are an elite Aesthetic Analysis Agent. You extract the visual DNA from references to inform high-end prompt engineering. Respond ONLY with valid JSON.",
-      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      thinkingConfig: (settings.model || 'gemini-3.1-flash-lite-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
     },
   });
 
@@ -55,7 +55,7 @@ export async function analyzeAestheticReference(file: ReferenceFile, contentType
     return extractJSON(text);
   } catch (e) {
     console.error("Failed to parse JSON response:", text);
-    throw new Error("Failed to parse the response from the AI. Please try again.");
+    throw new Error("Failed to parse the response from the AI. Please try again.", { cause: e });
   }
 }
 
@@ -86,12 +86,12 @@ export async function analyzeUrlAesthetic(url: string, contentType: string, sett
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
   const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [{ text: promptText }],
     config: {
       systemInstruction: "You are an elite Visual Trend & Market Analysis Agent. You use web data to extract aesthetic DNA and commercial insights. Respond ONLY with valid JSON.",
       tools: [{ googleSearch: {} }],
-      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      thinkingConfig: (settings.model || 'gemini-3.1-flash-lite-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
     },
   });
 
@@ -102,7 +102,7 @@ export async function analyzeUrlAesthetic(url: string, contentType: string, sett
     return extractJSON(text);
   } catch (e) {
     console.error("Failed to parse JSON response:", text);
-    throw new Error("Failed to parse the response from the AI. Please try again.");
+    throw new Error("Failed to parse the response from the AI. Please try again.", { cause: e });
   }
 }
 
@@ -129,12 +129,12 @@ export async function analyzePortfolioAesthetic(portfolioUrl: string, settings: 
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
   const response = await ai.models.generateContent({
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [{ text: promptText }],
     config: {
       systemInstruction: "You are an elite Portfolio Analysis Agent. You extract a creator's unique visual DNA to ensure AI-generated content remains authentic to their style. Respond ONLY with valid JSON.",
       tools: [{ googleSearch: {} }],
-      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      thinkingConfig: (settings.model || 'gemini-3.1-flash-lite-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
     },
   });
 
@@ -145,6 +145,6 @@ export async function analyzePortfolioAesthetic(portfolioUrl: string, settings: 
     return extractJSON(text);
   } catch (e) {
     console.error("Failed to parse JSON response:", text);
-    throw new Error("Failed to parse the response from the AI. Please try again.");
+    throw new Error("Failed to parse the response from the AI. Please try again.", { cause: e });
   }
 }

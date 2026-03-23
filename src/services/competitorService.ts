@@ -31,7 +31,7 @@ export async function analyzeCompetitorGaps(niche: string): Promise<VisualGap[]>
 
   try {
     const response = await generateContentWithRetryAndFallback(ai, {
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3.1-flash-lite-preview',
       contents: [{ text: prompt }],
       config: {
         systemInstruction: "You are an expert Microstock Visual Trend Analyst. Your job is to find 'Visual Gaps' in the market that contributors can exploit for high sales. Respond ONLY with valid JSON.",

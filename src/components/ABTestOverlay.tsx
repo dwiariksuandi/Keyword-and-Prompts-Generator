@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bug, X, CheckCircle2, AlertCircle, Activity, Settings as SettingsIcon, Database, Zap, PlayCircle, Loader2 } from 'lucide-react';
+import { Bug, X, Activity, Settings as SettingsIcon, Database, Zap, PlayCircle, Loader2 } from 'lucide-react';
 import { abTestingService } from '../services/abTesting';
 import { healthCheckService } from '../services/healthCheckService';
 import { ABTestLog } from '../types';

@@ -17,7 +17,7 @@ export async function validateApiKey(apiKey: string, retries = 3, delay = 1000):
   try {
     const ai = getAI(apiKey);
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3.1-flash-lite-preview',
       contents: [{ text: 'Say "ok"' }]
     });
     return { isValid: !!response.text };
@@ -62,10 +62,10 @@ export async function generateContentWithRetryAndFallback(ai: any, params: any, 
       return await ai.models.generateContent(newParams);
     }
 
-    console.warn("Primary model failed, falling back to flash:", e);
+    console.warn("Primary model failed, falling back to flash lite:", e);
     return await ai.models.generateContent({
       ...params,
-      model: 'gemini-3-flash-preview'
+      model: 'gemini-3.1-flash-lite-preview'
     });
   }
 }

@@ -1,11 +1,11 @@
 import React, { useRef } from 'react';
 import { motion } from 'motion/react';
-import { Upload, DollarSign, TrendingUp, BarChart3, FileSpreadsheet, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { Upload, DollarSign, TrendingUp, BarChart3, FileSpreadsheet, Loader2, Sparkles } from 'lucide-react';
 import { SalesRecord } from '../types';
 
 interface SalesTrackerTabProps {
   salesRecords: SalesRecord[];
-  onParseCSV: (file: File) => void;
+  onParseCSV: () => void;
   isParsing: boolean;
 }
 
@@ -19,7 +19,7 @@ export default function SalesTrackerTab({ salesRecords, onParseCSV, isParsing }:
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      onParseCSV(file);
+      onParseCSV();
     }
   };
 

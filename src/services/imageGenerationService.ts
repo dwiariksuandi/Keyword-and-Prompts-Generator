@@ -9,7 +9,7 @@ const ai = new GoogleGenAI({ apiKey: envApiKey || "" });
  */
 async function extractPromptVariables(userPrompt: string) {
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3.1-flash-lite-preview",
     contents: `Ekstrak komponen berikut dari prompt pengguna: "${userPrompt}". Jika tidak ada, isi dengan string kosong.`,
     config: {
       responseMimeType: "application/json",

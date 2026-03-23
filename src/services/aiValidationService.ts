@@ -5,7 +5,7 @@ export async function validatePromptAI(prompt: string, apiKey: string): Promise<
   const ai = new GoogleGenAI({ apiKey: apiKey || envApiKey || "" });
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.1-flash-lite-preview",
       contents: `Evaluate the following prompt for quality, clarity, and safety. Return a JSON object with isValid (boolean), score (0-10), and reason (string).
       Prompt: "${prompt}"`,
       config: {

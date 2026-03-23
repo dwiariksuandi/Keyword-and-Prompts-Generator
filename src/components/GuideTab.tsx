@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
-import { BookOpen, Download, CheckCircle2, Info, Zap, Sparkles, Search, ShieldCheck, FileText, Compass } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { Download, CheckCircle2, Info, Zap, Sparkles, Search, ShieldCheck, FileText, Compass } from 'lucide-react';
+import { motion } from 'motion/react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 

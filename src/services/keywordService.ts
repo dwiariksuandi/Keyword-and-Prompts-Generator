@@ -1,12 +1,10 @@
-import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 import { KeywordAnalysisSchema } from '../schemas';
 import { z } from 'zod';
 
 type KeywordAnalysis = z.infer<typeof KeywordAnalysisSchema>;
 import { AppSettings, ReferenceFile } from '../types';
 import { logger } from './logger';
-import { getAI, handleGeminiError, extractJSON, zodToJsonSchemaNoSchema, generateContentWithRetryAndFallback, getContentTypeInstructions } from './gemini';
+import { getAI, extractJSON, zodToJsonSchemaNoSchema, generateContentWithRetryAndFallback, getContentTypeInstructions } from './gemini';
 
 export async function analyzeKeyword(
   keyword: string, 

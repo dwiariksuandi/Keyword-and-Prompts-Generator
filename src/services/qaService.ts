@@ -9,7 +9,7 @@ export interface QualityReport {
 }
 
 // Simulasi mesin Computer Vision untuk deteksi kualitas
-export async function analyzeAssetQuality(assetUrl: string): Promise<QualityReport> {
+export async function analyzeAssetQuality(_assetUrl: string): Promise<QualityReport> {
   // Dalam implementasi nyata, ini akan memanggil API Computer Vision (seperti CLIP atau model deteksi cacat)
   return new Promise((resolve) => {
     setTimeout(() => {

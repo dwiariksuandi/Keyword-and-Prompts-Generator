@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Settings as SettingsIcon, LogIn, LogOut, User as UserIcon } from 'lucide-react';
+import { Sparkles, Settings as SettingsIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Tab, WORKFLOW_STEPS } from '../types';
 

@@ -1,4 +1,4 @@
-import { ABTestConfig, ABTestVariant } from '../types';
+import { ABTestVariant } from '../types';
 
 const STORAGE_KEY = 'app_ab_tests';
 
@@ -8,12 +8,12 @@ export const abTestingService = {
     if (!stored) return {};
     try {
       return JSON.parse(stored);
-    } catch (e) {
+    } catch {
       return {};
     }
   },
 
-  getVariant: (testId: string, defaultVariant: ABTestVariant = 'A'): ABTestVariant => {
+  getVariant: (testId: string): ABTestVariant => {
     const assignments = abTestingService.getAssignments();
     if (assignments[testId]) return assignments[testId];
     

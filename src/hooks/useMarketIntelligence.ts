@@ -35,6 +35,7 @@ export const useMarketIntelligence = () => {
       ));
       setToast({ show: true, message: 'Competitor analysis complete!' });
     } catch (error) {
+      console.error(error);
       setErrorModal({ show: true, title: 'Analysis Failed', message: 'Could not analyze competitor.' });
     } finally {
       setIsAnalyzingCompetitor(false);
@@ -49,6 +50,7 @@ export const useMarketIntelligence = () => {
       ));
       setToast({ show: true, message: 'Sales potential predicted!' });
     } catch (error) {
+      console.error(error);
       setErrorModal({ show: true, title: 'Prediction Failed', message: 'Could not predict sales potential.' });
     }
   };
@@ -62,13 +64,14 @@ export const useMarketIntelligence = () => {
       setForecasts(newForecasts);
       setToast({ show: true, message: 'Trend forecasts updated!' });
     } catch (error) {
+      console.error(error);
       setErrorModal({ show: true, title: 'Refresh Failed', message: 'Could not update trend forecasts.' });
     } finally {
       setIsRefreshingForecasts(false);
     }
   };
 
-  const handleParseSalesCSV = async (file: File) => {
+  const handleParseSalesCSV = async () => {
     setIsParsingSalesCSV(true);
     try {
       // Logic for parsing CSV

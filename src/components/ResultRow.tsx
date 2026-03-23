@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, TrendingUp, TrendingDown, Minus, Sparkles, FileText, Zap, DollarSign, Users, Share2, Loader2 } from 'lucide-react';
+import { Star, TrendingUp, TrendingDown, Minus, FileText, Zap, DollarSign, Share2 } from 'lucide-react';
 import { CategoryResult } from '../types';
 import { motion } from 'motion/react';
 

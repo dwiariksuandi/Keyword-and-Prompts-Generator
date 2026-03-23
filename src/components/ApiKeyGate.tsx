@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Key, ShieldCheck, AlertCircle, ArrowRight, Sparkles, Cpu, Zap, Loader2, CheckCircle2, Plus, Trash2, Layers } from 'lucide-react';
+import { Key, ShieldCheck, ArrowRight, Sparkles, Cpu, Zap, Loader2, CheckCircle2, Plus, Trash2, Layers, AlertCircle } from 'lucide-react';
 import { useApiStore } from '../store/useApiStore';
 import { validateApiKey } from '../services/gemini';
 
@@ -49,7 +49,7 @@ export const ApiKeyGate: React.FC<ApiKeyGateProps> = ({ onKeySubmit }) => {
         setError(result.error || 'API Key tidak valid');
         setIsValidating(false);
       }
-    } catch (err) {
+    } catch {
       setError('Gagal memvalidasi API Key. Periksa koneksi internet Anda.');
       setIsValidating(false);
     }

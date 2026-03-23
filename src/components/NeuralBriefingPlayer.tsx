@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { Play, Pause, Volume2, X, Loader2, Sparkles } from 'lucide-react';
 
 interface NeuralBriefingPlayerProps {
@@ -16,6 +16,10 @@ export const NeuralBriefingPlayer: React.FC<NeuralBriefingPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const [visualizerDurations] = React.useState(() => {
+    return [...Array(20)].map(() => 0.5 + Math.random());
+  });
 
   useEffect(() => {
     if (audioBase64) {
@@ -116,7 +120,7 @@ export const NeuralBriefingPlayer: React.FC<NeuralBriefingPlayerProps> = ({
       
       {/* Visualizer effect */}
       <div className="h-1 w-full flex gap-0.5 items-end px-4 pb-1 opacity-20">
-        {[...Array(20)].map((_, i) => (
+        {visualizerDurations.map((duration, i) => (
           <motion.div
             key={i}
             className="flex-1 bg-emerald-500"
@@ -125,7 +129,7 @@ export const NeuralBriefingPlayer: React.FC<NeuralBriefingPlayerProps> = ({
             }}
             transition={{ 
               repeat: Infinity, 
-              duration: 0.5 + Math.random(),
+              duration: duration,
               ease: "easeInOut"
             }}
           />

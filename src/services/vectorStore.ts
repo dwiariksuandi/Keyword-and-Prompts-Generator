@@ -1,5 +1,4 @@
 import { getEmbedding, cosineSimilarity } from './vectorService';
-import { AestheticAnalysis } from '../types';
 
 interface VectorEntry {
   analysis: any;

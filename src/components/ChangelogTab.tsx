@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { History, Star, Zap, ShieldCheck, Milestone, ChevronDown, ChevronUp } from 'lucide-react';
+import { Star, Zap, ShieldCheck, Milestone, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function ChangelogTab() {

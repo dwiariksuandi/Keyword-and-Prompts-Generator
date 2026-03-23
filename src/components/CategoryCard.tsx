@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Download, Copy, Wand2, Sparkles, RefreshCw, Zap } from 'lucide-react';
 import { CategoryResult } from '../types';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { PromptCard } from './PromptCard';
 
 interface CategoryCardProps {

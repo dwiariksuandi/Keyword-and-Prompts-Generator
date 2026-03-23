@@ -1,6 +1,5 @@
 import React from 'react';
 import { CategoryResult } from '../types';
-import { motion } from 'motion/react';
 import { AlertCircle, CheckCircle, BarChart2 } from 'lucide-react';
 
 interface Props {

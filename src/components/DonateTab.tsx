@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Coffee, CreditCard, Gift, Star, ExternalLink, Lightbulb, Zap, Globe, Sparkles } from 'lucide-react';
+import { Heart, Coffee, CreditCard, Star, ExternalLink, Lightbulb, Globe, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function DonateTab() {

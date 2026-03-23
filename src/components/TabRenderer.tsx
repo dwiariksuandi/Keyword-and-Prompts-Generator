@@ -41,9 +41,9 @@ export function TabRenderer({ activeTab, logic }: { activeTab: string, logic: an
     forecasts, handleRefreshForecasts,
     isRefreshingForecasts, salesRecords,
     handleParseSalesCSV, isParsingSalesCSV,
-    selectedPromptCategoryId, setSelectedPromptCategoryId,
+    selectedPromptCategoryId,
     handleVisualizePrompt, handleRatePrompt,
-    handleOptimizePrompt, progress,
+    progress,
     sortedResults
   } = logic;
 
@@ -174,8 +174,6 @@ export function TabRenderer({ activeTab, logic }: { activeTab: string, logic: an
     case 'pipeline':
       return (
         <PipelineTab 
-          results={results}
-          settings={settings}
           onRunPipeline={handleRunPipeline}
           isPipelineRunning={isPipelineRunning}
           tasks={pipelineTasks}
