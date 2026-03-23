@@ -156,11 +156,6 @@ export interface AgentTask {
   progress: number;
   message: string;
 }
-export interface PromptOptimizationRequest { 
-  originalPrompt: string; 
-  desiredOutcome: string;
-  targetAudience: string;
-}
 export interface TrendForecast {
   id: string;
   trend: string;

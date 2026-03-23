@@ -3,7 +3,6 @@ import { useUIStore } from '../store/useUIStore';
 import { useMarketStore } from '../store/useMarketStore';
 import { usePromptStore } from '../store/usePromptStore';
 import { usePipelineStore } from '../store/usePipelineStore';
-import { useSessionStore } from '../store/useSessionStore';
 import { useSession } from './useSession';
 import { useAnalysis } from './useAnalysis';
 import { usePromptGeneration } from './usePromptGeneration';
@@ -23,18 +22,8 @@ export const useAppLogic = () => {
   } = usePromptStore();
 
   const {
-    tempApiKey, setTempApiKey
-  } = useSessionStore();
-
-  const {
     results, setResults,
     history, setHistory,
-    forecasts, setForecasts,
-    salesRecords, setSalesRecords,
-    isAnalyzingCompetitor, setIsAnalyzingCompetitor,
-    isMonitoring, setIsMonitoring,
-    isRefreshingForecasts, setIsRefreshingForecasts,
-    isParsingSalesCSV, setIsParsingSalesCSV,
     sortBy, setSortBy,
     filterCompetition, setFilterCompetition
   } = useMarketStore();
@@ -58,9 +47,6 @@ export const useAppLogic = () => {
   const promptGen = usePromptGeneration();
   const historyLogic = useHistory();
   const marketIntel = useMarketIntelligence();
-
-  // Additional Logic
-  const handleToggleMonitor = () => setIsMonitoring(!isMonitoring);
 
   const handleRunPipeline = async (steps: string[]) => {
     setIsPipelineRunning(true);

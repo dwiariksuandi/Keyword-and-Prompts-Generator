@@ -14,7 +14,6 @@ import IntelligenceTab from './components/IntelligenceTab';
 import PipelineTab from './components/PipelineTab';
 import TrendForecastTab from './components/TrendForecastTab';
 import SalesTrackerTab from './components/SalesTrackerTab';
-import { ImageGenerator } from './components/ImageGenerator';
 import { ResultRow } from './components/ResultRow';
 import { MainLayout } from './components/MainLayout';
 
@@ -67,15 +66,12 @@ export default function App() {
     handleGenerateMetadata,
     handleGenerateAllPrompts,
     handleToggleStar,
-    handleDownloadPrompts,
-    handleCopyAllPrompts,
     handleClearHistory,
     handleLoadHistory,
     handleViewPrompts,
     handlePolishMetadata,
     handleVisualizePrompt,
     handleRatePrompt,
-    handleOptimizePrompt,
     handleAnalyzeCompetitor,
     handlePredictSales,
     isAnalyzingCompetitor,

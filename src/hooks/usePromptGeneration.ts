@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CategoryResult, PromptOptimizationRequest } from '../types';
+import { CategoryResult } from '../types';
 import { generatePrompts, generatePromptsDirectly, generateAllPromptsBatch, optimizePrompts, scorePrompts, handleGeminiError, generateAdobeStockMetadata } from '../services/gemini';
 import { usePromptStore } from '../store/usePromptStore';
 import { useMarketStore } from '../store/useMarketStore';
@@ -294,31 +294,6 @@ export const usePromptGeneration = () => {
         }
         return c;
       }));
-    },
-    handleOptimizePrompt: async (categoryId: string, promptIndex: number, request: PromptOptimizationRequest) => {
-      setToast({ show: true, message: 'Optimizing prompt...' });
-      try {
-        const promptToOptimize = `Original Prompt: "${request.originalPrompt}"\nDesired Outcome: "${request.desiredOutcome}"\nTarget Audience: "${request.targetAudience}"`;
-        const optimized = await optimizePrompts([promptToOptimize], settings);
-        
-        setResults(prev => prev.map(c => {
-          if (c.id === categoryId && c.generatedPrompts) {
-            const newPrompts = [...c.generatedPrompts];
-            newPrompts[promptIndex] = optimized[0];
-            return { ...c, generatedPrompts: newPrompts };
-          }
-          return c;
-        }));
-        
-        setToast({ show: true, message: 'Prompt optimized!' });
-      } catch (error) {
-        console.error("Prompt optimization failed:", error);
-        setErrorModal({
-          show: true,
-          title: 'Optimasi Gagal',
-          message: handleGeminiError(error)
-        });
-      }
     }
   };
 };
