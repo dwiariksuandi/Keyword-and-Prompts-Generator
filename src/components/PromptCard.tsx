@@ -1,7 +1,7 @@
 import React from 'react';
-import { Copy, Wand2, Eye, Star, Globe } from 'lucide-react';
+import { Copy, Eye, Star, Globe } from 'lucide-react';
 import { motion } from 'motion/react';
-import { CategoryResult, PromptOptimizationRequest } from '../types';
+import { CategoryResult } from '../types';
 
 interface PromptCardProps {
   category: CategoryResult;
@@ -10,7 +10,6 @@ interface PromptCardProps {
   onCopy: (text: string) => void;
   onVisualize: (prompt: string) => void | Promise<void>;
   onRatePrompt: (categoryId: string, promptIndex: number, rating: number) => void;
-  onOptimizeClick: (catId: string, index: number, prompt: string) => void;
 }
 
 export const PromptCard: React.FC<PromptCardProps> = ({
@@ -19,8 +18,7 @@ export const PromptCard: React.FC<PromptCardProps> = ({
   index,
   onCopy,
   onVisualize,
-  onRatePrompt,
-  onOptimizeClick
+  onRatePrompt
 }) => {
   const scoreData = category.promptScores?.[index];
 
@@ -58,14 +56,6 @@ export const PromptCard: React.FC<PromptCardProps> = ({
                 </button>
               ))}
             </div>
-            <div className="w-px h-4 bg-white/5" />
-            <button
-              onClick={() => onOptimizeClick(category.id, index, prompt)}
-              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-all"
-            >
-              <Wand2 size={12} />
-              Optimize
-            </button>
           </div>
         </div>
         <div className="flex-shrink-0 flex justify-end gap-3">

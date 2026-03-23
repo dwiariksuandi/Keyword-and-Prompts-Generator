@@ -17,7 +17,6 @@ interface PromptTabProps {
   onPolishMetadata: (id: string) => void | Promise<void>;
   onVisualize: (prompt: string) => void | Promise<void>;
   onRatePrompt: (categoryId: string, promptIndex: number, rating: number) => void;
-  onOptimizePrompt: (categoryId: string, promptIndex: number, request: PromptOptimizationRequest) => Promise<void>;
   promptsCount: number;
   setPromptsCount: React.Dispatch<React.SetStateAction<number>>;
   onShowToast: (message: string) => void;
@@ -34,17 +33,12 @@ export default function PromptTab({
   onPolishMetadata,
   onVisualize,
   onRatePrompt,
-  onOptimizePrompt,
   promptsCount,
   setPromptsCount,
   onShowToast,
   progress
 }: PromptTabProps) {
   const selectedCategory = results.find(r => r.id === selectedCategoryId);
-  const [optimizingPrompt, setOptimizingPrompt] = useState<{ catId: string, index: number, prompt: string } | null>(null);
-  const [outcome, setOutcome] = useState('');
-  const [audience, setAudience] = useState('');
-  const [isOptimizing, setIsOptimizing] = useState(false);
   
   const displayCategories = selectedCategory 
     ? [selectedCategory] 
@@ -325,7 +319,7 @@ export default function PromptTab({
                           className="flex-1 sm:flex-none flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white px-6 py-4 rounded-2xl font-black border border-white/10 transition-all disabled:opacity-50 text-[10px] uppercase tracking-widest"
                         >
                           <Wand2 size={16} />
-                          <span>DNA Upgrade</span>
+                          <span>Optimize All</span>
                         </motion.button>
                         <div className="w-px h-10 bg-white/5 hidden sm:block mx-2" />
                         {(!category.metadata || category.metadata.length === 0) ? (
@@ -396,7 +390,6 @@ export default function PromptTab({
                         onCopy={handleCopy}
                         onVisualize={onVisualize}
                         onRatePrompt={onRatePrompt}
-                        onOptimizeClick={(catId, idx, p) => setOptimizingPrompt({ catId, index: idx, prompt: p })}
                       />
                     ))}
                   </div>
@@ -406,93 +399,6 @@ export default function PromptTab({
           ))}
         </AnimatePresence>
       </div>
-
-      <AnimatePresence>
-        {optimizingPrompt && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 backdrop-blur-2xl p-6"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              className="bg-[#0A0A0A] p-12 max-w-2xl w-full rounded-[3rem] border border-white/10 shadow-2xl relative"
-            >
-              <button 
-                onClick={() => setOptimizingPrompt(null)}
-                className="absolute top-8 right-8 text-white/20 hover:text-white transition-all"
-              >
-                <ArrowLeft className="rotate-90" size={24} />
-              </button>
-
-              <div className="flex items-center gap-6 mb-12">
-                <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-xl">
-                  <Wand2 className="text-white" size={28} />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Neural Optimization</h2>
-                  <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] mt-1">Refine prompt for specific outcomes</p>
-                </div>
-              </div>
-
-              <div className="space-y-8">
-                <div className="p-6 bg-white/[0.02] rounded-2xl border border-white/5">
-                  <span className="text-[9px] font-black text-white/20 uppercase tracking-widest block mb-3">Original Prompt</span>
-                  <p className="text-white/60 text-sm italic leading-relaxed">"{optimizingPrompt.prompt}"</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block">Desired Outcome</label>
-                    <textarea
-                      value={outcome}
-                      onChange={(e) => setOutcome(e.target.value)}
-                      placeholder="e.g., More cinematic, higher commercial appeal, specific mood..."
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-2xl text-white p-6 outline-none focus:border-white/30 transition-all font-medium text-sm h-32 resize-none"
-                    />
-                  </div>
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block">Target Audience</label>
-                    <textarea
-                      value={audience}
-                      onChange={(e) => setAudience(e.target.value)}
-                      placeholder="e.g., Luxury travel agencies, tech startups, editorial magazines..."
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-2xl text-white p-6 outline-none focus:border-white/30 transition-all font-medium text-sm h-32 resize-none"
-                    />
-                  </div>
-                </div>
-
-                <motion.button 
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  disabled={isOptimizing || !outcome || !audience}
-                  onClick={async () => {
-                    setIsOptimizing(true);
-                    try {
-                      await onOptimizePrompt(optimizingPrompt.catId, optimizingPrompt.index, {
-                        originalPrompt: optimizingPrompt.prompt,
-                        desiredOutcome: outcome,
-                        targetAudience: audience
-                      });
-                      setOptimizingPrompt(null);
-                      setOutcome('');
-                      setAudience('');
-                    } finally {
-                      setIsOptimizing(false);
-                    }
-                  }}
-                  className="w-full flex items-center justify-center gap-3 bg-white text-black px-8 py-5 rounded-2xl font-black transition-all disabled:opacity-50 shadow-xl shadow-white/5 text-[10px] uppercase tracking-widest"
-                >
-                  {isOptimizing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                  <span>{isOptimizing ? 'Synthesizing...' : 'Execute Optimization'}</span>
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

@@ -219,7 +219,6 @@ export function TabRenderer({ activeTab, logic }: { activeTab: string, logic: an
           onPolishMetadata={handlePolishMetadata}
           onVisualize={handleVisualizePrompt}
           onRatePrompt={handleRatePrompt}
-          onOptimizePrompt={handleOptimizePrompt}
           promptsCount={settings.promptCount}
           setPromptsCount={(count) => setSettings((s: any) => ({ ...s, promptCount: typeof count === 'function' ? count(s.promptCount) : count }))}
           onShowToast={(msg: string) => logic.setToast({ show: true, message: msg })}
