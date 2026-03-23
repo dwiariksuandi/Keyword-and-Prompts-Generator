@@ -1,5 +1,5 @@
 import { AppSettings, ReferenceFile } from '../types';
-import { getAI, extractJSON, getContentTypeInstructions } from './gemini';
+import { getAI, extractJSON, getContentTypeInstructions, generateContentWithRetryAndFallback } from './gemini';
 import { ThinkingLevel } from '@google/genai';
 import { fetchRealTimeMarketData } from './ragService';
 import { cacheService } from './cacheService';
@@ -47,7 +47,7 @@ export async function analyzeMarketNiches(
     .replace('{referenceUrlContext}', referenceUrl ? `Reference URL: ${referenceUrl}` : '')
     .replace('{language}', settings.language === 'id' ? 'Indonesian' : 'English');
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3-flash-preview',
     contents: [{ text: promptText }],
     config: {
@@ -111,7 +111,7 @@ export async function analyzeCompetitorIntel(categoryName: string, contentType: 
     }
   }`;
   
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3-flash-preview',
     contents: [{ text: prompt }],
     config: {
@@ -130,7 +130,7 @@ export async function predictSalesPotential(categoryName: string, contentType: s
   Use the provided sales history as context: ${JSON.stringify(salesRecords.slice(0, 10))}.
   Respond with a JSON object containing estimatedMonthlySales (number), confidenceScore (number 0-100), and topSellingFactors (string[]).`;
   
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3-flash-preview',
     contents: [{ text: prompt }],
     config: {

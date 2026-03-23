@@ -1,4 +1,4 @@
-import { getAI } from './gemini';
+import { getAI, generateContentWithRetryAndFallback } from './gemini';
 import { AppSettings } from '../types';
 
 export interface MarketData {
@@ -25,7 +25,7 @@ export async function fetchRealTimeMarketData(
     "marketGaps": ["gap1", "gap2", ...]
   }`;
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3-flash-preview',
     contents: prompt,
     config: {

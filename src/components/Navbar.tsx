@@ -24,7 +24,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, setSele
             { id: 'pipeline', label: 'PIPELINE' },
             { id: 'results', label: 'HISTORY' },
             { id: 'prompt', label: 'PROMPTS' },
-            { id: 'settings', label: 'SALES' },
+            { id: 'sales', label: 'SALES' },
+            { id: 'settings', label: 'SETTINGS' },
             { id: 'guide', label: 'GUIDE' }
           ].map((tab) => (
             <button 

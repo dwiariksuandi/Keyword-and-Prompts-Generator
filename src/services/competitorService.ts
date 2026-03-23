@@ -1,4 +1,4 @@
-import { getAI, extractJSON, generateContentWithFallback } from './gemini';
+import { getAI, extractJSON, generateContentWithRetryAndFallback } from './gemini';
 import { ThinkingLevel } from '@google/genai';
 
 export interface VisualGap {
@@ -30,7 +30,7 @@ export async function analyzeCompetitorGaps(niche: string): Promise<VisualGap[]>
   Respond ONLY with a JSON array of objects following the VisualGap interface.`;
 
   try {
-    const response = await generateContentWithFallback(ai, {
+    const response = await generateContentWithRetryAndFallback(ai, {
       model: 'gemini-3-flash-preview',
       contents: [{ text: prompt }],
       config: {

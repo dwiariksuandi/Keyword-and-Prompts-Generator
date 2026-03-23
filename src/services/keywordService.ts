@@ -6,7 +6,7 @@ import { z } from 'zod';
 type KeywordAnalysis = z.infer<typeof KeywordAnalysisSchema>;
 import { AppSettings, ReferenceFile } from '../types';
 import { logger } from './logger';
-import { getAI, handleGeminiError, extractJSON, zodToJsonSchemaNoSchema, generateContentWithFallback, getContentTypeInstructions } from './gemini';
+import { getAI, handleGeminiError, extractJSON, zodToJsonSchemaNoSchema, generateContentWithRetryAndFallback, getContentTypeInstructions } from './gemini';
 
 export async function analyzeKeyword(
   keyword: string, 
@@ -97,7 +97,7 @@ For each niche, you MUST provide realistic, data-backed market metrics based on 
 6. trend & trendPercent: Current market trajectory based on real-world news/seasons.`;
 
   try {
-    const response = await generateContentWithFallback(ai, {
+    const response = await generateContentWithRetryAndFallback(ai, {
       model: referenceFile ? 'gemini-3.1-flash-image-preview' : (settings.model || 'gemini-3.1-pro-preview'),
       contents: referenceFile ? [
         { text: promptText },

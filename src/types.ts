@@ -1,4 +1,4 @@
-export type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "visual" | "intelligence" | "pipeline";
+export type Tab = "top" | "analysis" | "results" | "settings" | "donate" | "prompt" | "changelog" | "guide" | "visual" | "intelligence" | "pipeline" | "sales";
 
 export interface ReferenceFile {
   data: string; // base64

@@ -353,7 +353,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'settings' && (
+          {activeTab === 'sales' && (
             <SalesTrackerTab 
               salesRecords={salesRecords}
               onParseCSV={handleParseSalesCSV}
