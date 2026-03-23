@@ -3,6 +3,9 @@ import { ThinkingLevel } from '@google/genai';
 import { getAI, extractJSON, getContentTypeInstructions, getVariationInstructions, generateContentWithRetryAndFallback } from './gemini';
 import { PROMPT_TEMPLATES } from '../constants/promptTemplates';
 import { PROMPTING_GUIDELINES } from '../constants/promptingGuidelines';
+import { getTrendForecast } from './trendService';
+import { getEmbedding, cosineSimilarity } from './vectorService';
+import { validatePromptAI } from './aiValidationService';
 
 export async function generatePrompts(
   categoryName: string, 
@@ -14,46 +17,135 @@ export async function generatePrompts(
 ): Promise<string[]> {
   const MAX_PER_CALL = 15;
   
-  if (count <= MAX_PER_CALL) {
-    return generatePromptsDirectly(categoryName, contentType, settings, count, referenceFile, referenceUrl);
+  // 1. DYNAMIC CONTEXT INJECTION: Fetch trends for the category
+  let trendContext = '';
+  try {
+    const trends = await getTrendForecast(categoryName, settings);
+    if (trends && trends.length > 0) {
+      trendContext = `
+      CURRENT MARKET TRENDS FOR '${categoryName}':
+      ${trends.slice(0, 3).map(t => `- ${t.trend}: ${t.forecast} (Visual Style: ${t.visualStyle})`).join('\n')}
+      (CRITICAL: Incorporate these trends to maximize commercial utility.)
+      `;
+    }
+  } catch (error) {
+    console.warn("Failed to fetch trends for context injection:", error);
   }
 
-  // Batch processing for large counts to maintain individual prompt quality
-  // We use parallel chunks of direct generation to ensure each prompt is detailed and cohesive
-  const numCalls = Math.ceil(count / MAX_PER_CALL);
-  const allPrompts: string[] = [];
-  
-  // Process in chunks of parallel calls to avoid hitting rate limits too hard
-  const PARALLEL_LIMIT = 3;
-  
-  for (let i = 0; i < numCalls; i += PARALLEL_LIMIT) {
-    const chunkPromises = [];
-    for (let j = 0; j < PARALLEL_LIMIT && (i + j) < numCalls; j++) {
-      const currentCount = Math.min(MAX_PER_CALL, count - (i + j) * MAX_PER_CALL);
-      // Add a diversity hint to each call to ensure variety across the entire batch
-      const diversityHint = `Batch Part ${i + j + 1}: Focus on highly unique, diverse, and specific scenarios within the '${categoryName}' niche. Avoid repeating concepts from previous parts.`;
+  const generateWithQuality = async (targetCount: number, hint?: string) => {
+    return generatePromptsDirectly(
+      categoryName, 
+      contentType, 
+      settings, 
+      targetCount, 
+      referenceFile, 
+      referenceUrl,
+      hint,
+      trendContext
+    );
+  };
+
+  let allPrompts: string[] = [];
+
+  if (count <= MAX_PER_CALL) {
+    allPrompts = await generateWithQuality(count);
+  } else {
+    // Batch processing for large counts
+    const numCalls = Math.ceil(count / MAX_PER_CALL);
+    const PARALLEL_LIMIT = 3;
+    
+    for (let i = 0; i < numCalls; i += PARALLEL_LIMIT) {
+      const chunkPromises = [];
+      for (let j = 0; j < PARALLEL_LIMIT && (i + j) * numCalls; j++) {
+        const currentCount = Math.min(MAX_PER_CALL, count - (i + j) * MAX_PER_CALL);
+        const diversityHint = `Batch Part ${i + j + 1}: Focus on highly unique, diverse, and specific scenarios. Avoid repeating concepts.`;
+        chunkPromises.push(generateWithQuality(currentCount, diversityHint));
+      }
       
-      chunkPromises.push(generatePromptsDirectly(
-        categoryName, 
-        contentType, 
-        settings, 
-        currentCount, 
-        referenceFile, 
-        referenceUrl,
-        diversityHint
-      ));
-    }
-    
-    const results = await Promise.all(chunkPromises);
-    results.forEach(res => allPrompts.push(...res));
-    
-    // Small delay between parallel chunks to be respectful of rate limits
-    if (i + PARALLEL_LIMIT < numCalls) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const results = await Promise.all(chunkPromises);
+      results.forEach(res => allPrompts.push(...res));
+      
+      if (i + PARALLEL_LIMIT < numCalls) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
     }
   }
-  
-  return allPrompts.slice(0, count);
+
+  // 2. VECTOR EMBEDDING FOR DIVERSITY: Filter out redundant prompts
+  if (allPrompts.length > 1) {
+    try {
+      allPrompts = await filterByDiversity(allPrompts, settings.apiKey);
+      
+      // If we filtered too many, try to refill a bit (one attempt)
+      if (allPrompts.length < count * 0.8 && allPrompts.length > 0) {
+        const refillCount = Math.min(MAX_PER_CALL, count - allPrompts.length);
+        const refill = await generateWithQuality(refillCount, "REFILL: Focus on entirely new, unexplored angles to ensure maximum diversity.");
+        allPrompts.push(...refill);
+      }
+    } catch (error) {
+      console.warn("Diversity filtering failed:", error);
+    }
+  }
+
+  // 3. AI-DRIVEN POST-PROCESSING: Final audit for quality
+  const finalPrompts = allPrompts.slice(0, count);
+  const auditedPrompts = await auditPrompts(finalPrompts, settings);
+
+  return auditedPrompts;
+}
+
+async function filterByDiversity(prompts: string[], apiKey: string): Promise<string[]> {
+  const SIMILARITY_THRESHOLD = 0.85;
+  const uniquePrompts: string[] = [];
+  const embeddings: number[][] = [];
+
+  for (const prompt of prompts) {
+    const embedding = await getEmbedding(prompt, apiKey);
+    let isTooSimilar = false;
+
+    for (const existingEmbedding of embeddings) {
+      const similarity = cosineSimilarity(embedding, existingEmbedding);
+      if (similarity > SIMILARITY_THRESHOLD) {
+        isTooSimilar = true;
+        break;
+      }
+    }
+
+    if (!isTooSimilar) {
+      uniquePrompts.push(prompt);
+      embeddings.push(embedding);
+    }
+  }
+
+  return uniquePrompts;
+}
+
+async function auditPrompts(prompts: string[], settings: AppSettings): Promise<string[]> {
+  // Audit in small batches to avoid long waits
+  const audited: string[] = [];
+  const BATCH_SIZE = 5;
+
+  for (let i = 0; i < prompts.length; i += BATCH_SIZE) {
+    const chunk = prompts.slice(i, i + BATCH_SIZE);
+    const auditPromises = chunk.map(async (p) => {
+      const validation = await validatePromptAI(p, settings.apiKey);
+      if (validation.score >= 6) {
+        return p;
+      }
+      // If low quality, try one quick optimization
+      try {
+        const optimized = await optimizePrompts([p], settings);
+        return optimized[0] || p;
+      } catch {
+        return p;
+      }
+    });
+
+    const results = await Promise.all(auditPromises);
+    audited.push(...results);
+  }
+
+  return audited;
 }
 
 function buildPromptContext(
@@ -88,7 +180,8 @@ export async function generatePromptsDirectly(
   count: number = 10, 
   referenceFile?: ReferenceFile, 
   referenceUrl?: string,
-  diversityHint?: string
+  diversityHint?: string,
+  trendContext?: string
 ): Promise<string[]> {
   const ai = getAI(settings.apiKey);
   
@@ -119,6 +212,7 @@ export async function generatePromptsDirectly(
   ${PROMPTING_GUIDELINES.commercialMicrostockRules.map(r => `- ${r}`).join('\n  ')}
   
   ${diversityHint ? `DIVERSITY INSTRUCTION: ${diversityHint}\n` : ''}
+  ${trendContext ? `TREND CONTEXT: ${trendContext}\n` : ''}
   ${buildPromptContext(settings, referenceFile, referenceUrl)}
   ${getContentTypeInstructions(contentType)}
   ${getVariationInstructions(settings.variationLevel || 'Medium')}
