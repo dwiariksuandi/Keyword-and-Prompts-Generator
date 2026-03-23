@@ -1,6 +1,6 @@
 import { AppSettings, ReferenceFile } from '../types';
 import { ThinkingLevel } from '@google/genai';
-import { getAI, extractJSON, getContentTypeInstructions, getVariationInstructions } from './gemini';
+import { getAI, extractJSON, getContentTypeInstructions, getVariationInstructions, generateContentWithRetryAndFallback } from './gemini';
 import { PROMPT_TEMPLATES } from '../constants/promptTemplates';
 import { PROMPTING_GUIDELINES } from '../constants/promptingGuidelines';
 
@@ -88,7 +88,7 @@ export async function generatePromptsDirectly(
     });
   }
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3-flash-preview',
     contents,
     config: {
@@ -141,7 +141,7 @@ async function generatePromptsBatch(
     "aesthetic": string[]
   }`;
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3-flash-preview',
     contents: [{ text: promptText }],
     config: {
@@ -205,7 +205,7 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings):
   
   Respond strictly with a JSON array of strings (the optimized prompts).`;
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3-flash-preview',
     contents: [{ text: promptText }],
     config: {
@@ -313,7 +313,7 @@ export async function scorePrompts(prompts: string[], settings: AppSettings) {
     "feedback": string (concise improvement advice)
   }`;
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3-flash-preview',
     contents: [{ text: promptText }],
     config: {
@@ -353,7 +353,7 @@ export async function generateAdobeStockMetadata(prompt: string, contentType: st
   
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3-flash-preview',
     contents: [{ text: promptText }],
     config: {
