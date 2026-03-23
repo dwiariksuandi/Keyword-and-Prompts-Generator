@@ -15,7 +15,7 @@ export async function generatePrompts(
   referenceFile?: ReferenceFile, 
   referenceUrl?: string
 ): Promise<string[]> {
-  const MAX_PER_CALL = 15;
+  const MAX_PER_CALL = 5; // Reduced from 15 to force higher focus and detail per prompt
   
   // 1. DYNAMIC CONTEXT INJECTION: Fetch trends for the category
   let trendContext = '';
@@ -193,7 +193,9 @@ export async function generatePromptsDirectly(
   
   CRITICAL REQUIREMENT: The generated prompts MUST strictly align with the niche/keyword '${categoryName}' and be designed specifically for commercial microstock platforms.
   
-  USE THIS PROMPTING FORMULA (CRITICAL):
+  QUALITY MANDATE: Each individual prompt in this list MUST be extremely detailed, rich in technical components, and commercially viable. Do NOT generalize. Treat each prompt as if it were the only one being generated. Every prompt must be at least 60-100 words long.
+  
+  USE THIS PROMPTING FORMULA (CRITICAL - EVERY COMPONENT MUST BE PRESENT IN EVERY PROMPT):
   ${formula}
   
   CREATIVE DIRECTOR CONTROLS:
@@ -217,7 +219,7 @@ export async function generatePromptsDirectly(
   ${getContentTypeInstructions(contentType)}
   ${getVariationInstructions(settings.variationLevel || 'Medium')}
   
-  Respond strictly with a JSON array of strings. Each string is a complete, ready-to-use AI prompt following the formula. Each prompt must be extremely detailed, rich in technical components, and commercially viable.`;
+  Respond strictly with a JSON array of strings. Each string is a complete, ready-to-use AI prompt following the formula. Each prompt must be a masterpiece of technical detail, sensory richness, and commercial appeal.`;
 
   const contents: any[] = [{ text: promptText }];
   if (referenceFile) {
@@ -233,8 +235,8 @@ export async function generatePromptsDirectly(
     model: settings.model || 'gemini-3-flash-preview',
     contents,
     config: {
-      systemInstruction: "You are an elite AI Prompt Engineer specializing in Adobe Stock optimization. You generate commercially lucrative, technically superior, and unique prompts that strictly follow the provided formulas and guidelines. Respond ONLY with valid JSON.",
-      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      systemInstruction: "You are an elite AI Prompt Engineer specializing in Adobe Stock optimization. You generate commercially lucrative, technically superior, and unique prompts that strictly follow the provided formulas and guidelines. You never sacrifice detail for quantity. Respond ONLY with valid JSON.",
+      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
     },
   });
 
