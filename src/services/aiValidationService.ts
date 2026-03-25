@@ -1,10 +1,10 @@
 import { Type } from "@google/genai";
-import { getAI, extractJSON } from "./gemini";
+import { getAI, extractJSON, generateContentWithRetryAndFallback } from "./gemini";
 
 export async function validatePromptAI(prompt: string, apiKey: string): Promise<{ isValid: boolean; score: number; reason: string }> {
   try {
     const ai = getAI(apiKey);
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetryAndFallback(ai, {
       model: "gemini-3.1-flash-lite-preview",
       contents: `Evaluate the following prompt for quality, clarity, and safety. Return a JSON object with isValid (boolean), score (0-10), and reason (string).
       Prompt: "${prompt}"`,

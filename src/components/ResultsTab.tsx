@@ -309,7 +309,7 @@ export default function ResultsTab({
                     className="border-t border-white/5 p-8 bg-white/[0.01]"
                   >
                     <div className="max-h-[500px] overflow-y-auto space-y-4 pr-4 custom-scrollbar">
-                      {category.generatedPrompts.map((prompt, idx) => (
+                      {category.generatedPrompts.slice(0, 1).map((prompt, idx) => (
                         <motion.div
                           key={`${category.id}-prompt-${idx}`}
                           initial={{ opacity: 0, y: 10 }}
@@ -328,6 +328,26 @@ export default function ResultsTab({
                           </div>
                         </motion.div>
                       ))}
+                      {category.generatedPrompts.length > 1 && (
+                        <div className="mt-4 p-6 bg-accent/5 border border-accent/20 rounded-2xl flex flex-col items-center justify-center text-center">
+                          <p className="text-accent font-bold mb-2">
+                            +{category.generatedPrompts.length - 1} prompt lainnya disembunyikan.
+                          </p>
+                          <p className="text-xs text-white/50 mb-4 max-w-sm">
+                            Unduh file TXT untuk melihat seluruh prompt yang dihasilkan.
+                          </p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadPrompts(category);
+                            }}
+                            className="flex items-center gap-2 px-6 py-3 bg-accent text-slate-900 font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-accent/90 transition-all shadow-lg shadow-accent/20"
+                          >
+                            <Download size={16} />
+                            Unduh Semua Prompt (.txt)
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}

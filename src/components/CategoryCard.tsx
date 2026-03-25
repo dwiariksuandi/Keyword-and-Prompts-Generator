@@ -181,7 +181,7 @@ export function CategoryCard({
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6">
-            {category.generatedPrompts.map((prompt, index) => (
+            {category.generatedPrompts.slice(0, 1).map((prompt, index) => (
               <PromptCard
                 key={`${category.id}-prompt-${index}`}
                 category={category}
@@ -192,6 +192,23 @@ export function CategoryCard({
                 onRatePrompt={onRatePrompt}
               />
             ))}
+            {category.generatedPrompts.length > 1 && (
+              <div className="mt-6 p-8 bg-accent/5 border border-accent/20 rounded-3xl flex flex-col items-center justify-center text-center">
+                <p className="text-accent font-bold text-lg mb-2">
+                  +{category.generatedPrompts.length - 1} prompt lainnya telah berhasil di-generate.
+                </p>
+                <p className="text-sm text-white/50 mb-6 max-w-md">
+                  Prompt disembunyikan dari layar untuk menjaga performa aplikasi. Silakan unduh file TXT untuk melihat seluruh prompt yang dihasilkan.
+                </p>
+                <button
+                  onClick={handleDownload}
+                  className="flex items-center gap-2 px-8 py-4 bg-accent text-slate-900 font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-accent/90 transition-all shadow-lg shadow-accent/20"
+                >
+                  <Download size={18} />
+                  Unduh Semua Prompt (.txt)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

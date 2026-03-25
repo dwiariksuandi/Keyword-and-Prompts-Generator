@@ -1,5 +1,5 @@
 import { AppSettings, ReferenceFile } from '../types';
-import { getAI, extractJSON, getContentTypeInstructions } from './gemini';
+import { getAI, extractJSON, getContentTypeInstructions, generateContentWithRetryAndFallback } from './gemini';
 import { ThinkingLevel } from '@google/genai';
 
 export async function analyzeAestheticReference(file: ReferenceFile, contentType: string, settings: AppSettings) {
@@ -31,7 +31,7 @@ export async function analyzeAestheticReference(file: ReferenceFile, contentType
   
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [
       {
@@ -85,7 +85,7 @@ export async function analyzeUrlAesthetic(url: string, contentType: string, sett
   
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [{ text: promptText }],
     config: {
@@ -128,7 +128,7 @@ export async function analyzePortfolioAesthetic(portfolioUrl: string, settings: 
   
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryAndFallback(ai, {
     model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [{ text: promptText }],
     config: {

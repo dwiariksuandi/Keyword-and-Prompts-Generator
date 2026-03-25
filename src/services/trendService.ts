@@ -1,7 +1,7 @@
 import { AppSettings, TrendForecast } from '../types';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { z } from 'zod';
-import { getAI } from './gemini';
+import { getAI, generateContentWithRetryAndFallback } from './gemini';
 import { ThinkingLevel } from '@google/genai';
 import { TREND_ANALYSIS_PROMPT_V1, TREND_REFINEMENT_PROMPT_V1 } from '../prompts/trendPrompts';
 
@@ -43,7 +43,7 @@ export async function getTrendForecast(niche: string | undefined, settings: AppS
   const promptText = TREND_ANALYSIS_PROMPT_V1.replace('{{niche}}', niche || 'general microstock');
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetryAndFallback(ai, {
       model: settings.model || 'gemini-3.1-flash-lite-preview',
       contents: [{ text: promptText }],
       config: {
@@ -70,7 +70,7 @@ export async function refineTrendForecast(previousTrends: TrendForecast[], feedb
     .replace('{{feedback}}', feedback);
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetryAndFallback(ai, {
       model: settings.model || 'gemini-3.1-flash-lite-preview',
       contents: [{ text: promptText }],
       config: {

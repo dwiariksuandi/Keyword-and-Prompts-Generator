@@ -22,11 +22,14 @@ export async function validateApiKey(apiKey: string, retries = 3, delay = 1000):
     });
     return { isValid: !!response.text };
   } catch (e: any) {
-    if (retries > 0 && (e.status === 429 || e.message?.includes('RESOURCE_EXHAUSTED'))) {
-      console.warn(`Rate limit hit during validation, retrying in ${delay}ms...`);
-      await sleep(delay);
-      return validateApiKey(apiKey, retries - 1, delay * 2);
+    const isRateLimit = e.status === 429 || e.message?.includes('RESOURCE_EXHAUSTED');
+    
+    // If it's a quota/rate limit error, the key is actually valid (authentication succeeded)
+    if (isRateLimit) {
+      console.warn("API Key is valid but hit rate limit/quota during validation:", e);
+      return { isValid: true };
     }
+
     console.error("API Key validation failed:", e);
     return { 
       isValid: false, 
@@ -35,7 +38,7 @@ export async function validateApiKey(apiKey: string, retries = 3, delay = 1000):
   }
 }
 
-export async function generateContentWithRetryAndFallback(ai: any, params: any, retries = 3, delay = 1000) {
+export async function generateContentWithRetryAndFallback(ai: any, params: any, retries = 5, delay = 2000) {
   if (!ai) {
     throw new Error("AI instance is not initialized. Please check your API key.");
   }
@@ -45,12 +48,14 @@ export async function generateContentWithRetryAndFallback(ai: any, params: any, 
   } catch (e: any) {
     const errorMessage = e.message || '';
     const isRateLimit = e.status === 429 || errorMessage.includes('RESOURCE_EXHAUSTED');
+    const isHardQuota = errorMessage.includes('exceeded your current quota');
     const isTokenLimit = errorMessage.includes('max tokens limit');
     const isInternalError = e.status >= 500 || errorMessage.includes('INTERNAL') || errorMessage.includes('UNAVAILABLE');
 
-    if (retries > 0 && (isRateLimit || isInternalError)) {
+    if (retries > 0 && (isRateLimit || isInternalError) && !isHardQuota) {
       console.warn(`${isRateLimit ? 'Rate limit' : 'Internal error'} hit, retrying in ${delay}ms... (${retries} retries left)`);
       await sleep(delay);
+      // Exponential backoff: 2s, 4s, 8s, 16s, 32s
       return generateContentWithRetryAndFallback(ai, params, retries - 1, delay * 2);
     }
     
@@ -68,7 +73,8 @@ export async function generateContentWithRetryAndFallback(ai: any, params: any, 
     }
 
     // If it's not a rate limit or internal error, or we're out of retries, try fallback
-    if (params.model !== 'gemini-3.1-flash-lite-preview') {
+    const isImageModel = params.model && params.model.includes('image');
+    if (!isImageModel && params.model !== 'gemini-3.1-flash-lite-preview' && !isHardQuota) {
       console.warn("Primary model failed, falling back to flash-lite:", e);
       return await ai.models.generateContent({
         ...params,

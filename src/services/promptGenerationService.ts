@@ -134,31 +134,10 @@ async function filterByDiversity(prompts: string[], apiKey: string): Promise<str
 }
 
 async function auditPrompts(prompts: string[], settings: AppSettings): Promise<string[]> {
-  // Audit in small batches to avoid long waits
-  const audited: string[] = [];
-  const BATCH_SIZE = 5;
-
-  for (let i = 0; i < prompts.length; i += BATCH_SIZE) {
-    const chunk = prompts.slice(i, i + BATCH_SIZE);
-    const auditPromises = chunk.map(async (p) => {
-      const validation = await validatePromptAI(p, settings.apiKey);
-      if (validation.score >= 6) {
-        return p;
-      }
-      // If low quality, try one quick optimization
-      try {
-        const optimized = await optimizePrompts([p], settings);
-        return optimized[0] || p;
-      } catch {
-        return p;
-      }
-    });
-
-    const results = await Promise.all(auditPromises);
-    audited.push(...results);
-  }
-
-  return audited;
+  // Bypassing individual prompt validation to prevent 429 Resource Exhausted errors.
+  // The generation phase already enforces extreme quality and detail.
+  // This saves 1 API call per generated prompt, drastically reducing quota usage.
+  return prompts;
 }
 
 function buildPromptContext(
@@ -206,7 +185,12 @@ export async function generatePromptsDirectly(
   
   CRITICAL REQUIREMENT: The generated prompts MUST strictly align with the niche/keyword '${categoryName}' and be designed specifically for commercial microstock platforms.
   
-  QUALITY MANDATE: Each individual prompt in this list MUST be extremely detailed, rich in technical components, and commercially viable. Do NOT generalize. Treat each prompt as if it were the only one being generated. Every prompt must be at least 60-100 words long.
+  QUALITY MANDATE (EXTREME DETAIL ENFORCEMENT): 
+  - You are generating a batch of ${count} prompts, but you MUST treat EVERY SINGLE PROMPT as if it were a standalone, single-prompt request.
+  - DO NOT degrade quality, shorten descriptions, or become lazy just because you are generating multiple prompts.
+  - Every single prompt MUST be extremely detailed (minimum 4-5 sentences, 60-100 words).
+  - Every single prompt MUST explicitly include precise specifications for: Subject appearance, Environment/Background, Lighting setup (e.g., volumetric, cinematic, studio), Camera/Lens details (e.g., 35mm, macro, depth of field), and Visual Style/Aesthetic.
+  - If you fail to include lighting or camera details in even one prompt, the entire batch is invalid.
   
   USE THIS PROMPTING FORMULA (CRITICAL - EVERY COMPONENT MUST BE PRESENT IN EVERY PROMPT):
   ${formula}
@@ -248,7 +232,7 @@ export async function generatePromptsDirectly(
     model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents,
     config: {
-      systemInstruction: "You are an elite AI Prompt Engineer specializing in Adobe Stock optimization. You generate commercially lucrative, technically superior, and unique prompts that strictly follow the provided formulas and guidelines. You never sacrifice detail for quantity. Respond ONLY with valid JSON.",
+      systemInstruction: "You are an elite AI Prompt Engineer specializing in Adobe Stock optimization. You generate commercially lucrative, technically superior, and unique prompts. CRITICAL: You NEVER sacrifice detail for quantity. Even when generating multiple prompts, EVERY SINGLE PROMPT must be as detailed as a standalone 100-word masterpiece. Respond ONLY with valid JSON.",
       thinkingConfig: (settings.model || 'gemini-3.1-flash-lite-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.MINIMAL } : undefined
     },
   });
