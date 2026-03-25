@@ -274,6 +274,19 @@ export const usePromptGeneration = () => {
     handleUpgradePrompts,
   handleGenerateMetadata,
     handleGenerateAllPrompts,
+    handleGenerateAllMetadata: async () => {
+      if (results.length === 0) return;
+      setIsAnalyzing(true);
+      try {
+        for (const result of results) {
+          if (result.generatedPrompts.length > 0 && !result.metadata) {
+            await handleGenerateMetadata(result.id);
+          }
+        }
+      } finally {
+        setIsAnalyzing(false);
+      }
+    },
     handlePolishMetadata: async (categoryId: string) => {
       const category = results.find(c => c.id === categoryId);
       if (!category || !category.metadata) return;

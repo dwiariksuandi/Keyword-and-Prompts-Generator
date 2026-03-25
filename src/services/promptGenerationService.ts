@@ -245,11 +245,11 @@ export async function generatePromptsDirectly(
   }
 
   const response = await generateContentWithRetryAndFallback(ai, {
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents,
     config: {
       systemInstruction: "You are an elite AI Prompt Engineer specializing in Adobe Stock optimization. You generate commercially lucrative, technically superior, and unique prompts that strictly follow the provided formulas and guidelines. You never sacrifice detail for quantity. Respond ONLY with valid JSON.",
-      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
+      thinkingConfig: (settings.model || 'gemini-3.1-flash-lite-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.MINIMAL } : undefined
     },
   });
 
@@ -297,11 +297,11 @@ export async function optimizePrompts(prompts: string[], settings: AppSettings):
   Respond strictly with a JSON array of strings (the optimized prompts).`;
 
   const response = await generateContentWithRetryAndFallback(ai, {
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [{ text: promptText }],
     config: {
       systemInstruction: "You are a Prompt Optimization Specialist. You take raw prompts and elevate them to professional, commercially viable assets that strictly follow commercial microstock guidelines. Respond ONLY with valid JSON.",
-      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      thinkingConfig: (settings.model || 'gemini-3.1-flash-lite-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.MINIMAL } : undefined
     },
   });
 
@@ -392,24 +392,24 @@ export async function scorePrompts(prompts: string[], settings: AppSettings) {
   Respond strictly with a JSON array of objects:
   {
     "promptIndex": number,
-    "totalScore": number (0-100),
-    "criteriaScores": {
-      "keywordDensity": number,
-      "clarity": number,
-      "specificity": number,
-      "compliance": number,
-      "marketAlignment": number,
-      "aestheticAlignment": number
-    },
-    "feedback": string (concise improvement advice)
+    "score": number (0-100),
+    "density": number (0-100),
+    "clarity": number (0-100),
+    "specificity": number (0-100),
+    "adherence": number (0-100),
+    "feedback": string (concise improvement advice),
+    "keywordFeedback": string,
+    "clarityFeedback": string,
+    "specificityFeedback": string,
+    "adherenceFeedback": string
   }`;
 
   const response = await generateContentWithRetryAndFallback(ai, {
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [{ text: promptText }],
     config: {
       systemInstruction: "You are an elite Prompt Auditor. You provide objective, data-driven scores for AI prompts based on commercial and technical excellence. Respond ONLY with valid JSON.",
-      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      thinkingConfig: (settings.model || 'gemini-3.1-flash-lite-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.MINIMAL } : undefined
     },
   });
 
@@ -417,7 +417,20 @@ export async function scorePrompts(prompts: string[], settings: AppSettings) {
   if (!text) throw new Error('No response from Gemini');
   
   try {
-    return extractJSON(text);
+    const rawScores = extractJSON(text);
+    return rawScores.map((s: any, i: number) => ({
+      prompt: prompts[s.promptIndex || i],
+      score: s.score || s.totalScore || 0,
+      density: s.density || s.criteriaScores?.keywordDensity || 0,
+      clarity: s.clarity || s.criteriaScores?.clarity || 0,
+      specificity: s.specificity || s.criteriaScores?.specificity || 0,
+      adherence: s.adherence || s.criteriaScores?.compliance || 0,
+      feedback: s.feedback || "",
+      keywordFeedback: s.keywordFeedback || "",
+      clarityFeedback: s.clarityFeedback || "",
+      specificityFeedback: s.specificityFeedback || "",
+      adherenceFeedback: s.adherenceFeedback || ""
+    }));
   } catch (e) {
     throw new Error("Failed to score prompts.");
   }
@@ -445,11 +458,11 @@ export async function generateAdobeStockMetadata(prompt: string, contentType: st
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
   const response = await generateContentWithRetryAndFallback(ai, {
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [{ text: promptText }],
     config: {
       systemInstruction: "You are an elite Adobe Stock Metadata Specialist. You generate SEO-optimized titles and keywords that maximize discoverability and sales. Respond ONLY with valid JSON.",
-      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      thinkingConfig: (settings.model || 'gemini-3.1-flash-lite-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.MINIMAL } : undefined
     },
   });
 
@@ -486,11 +499,11 @@ export async function polishAdobeStockMetadata(metadata: { title: string; keywor
   Respond strictly in ${settings.language === 'id' ? 'Indonesian' : 'English'}.`;
 
   const response = await generateContentWithRetryAndFallback(ai, {
-    model: settings.model || 'gemini-3-flash-preview',
+    model: settings.model || 'gemini-3.1-flash-lite-preview',
     contents: [{ text: promptText }],
     config: {
       systemInstruction: "You are an elite SEO and Metadata Optimizer for Adobe Stock. You refine titles and keywords to ensure they are both human-readable and algorithm-friendly. Respond ONLY with valid JSON.",
-      thinkingConfig: (settings.model || 'gemini-3-flash-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      thinkingConfig: (settings.model || 'gemini-3.1-flash-lite-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.MINIMAL } : undefined
     },
   });
 

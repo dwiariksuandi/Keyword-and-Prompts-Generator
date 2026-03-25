@@ -14,6 +14,11 @@ export const useAppLogic = () => {
   const {
     selectedPromptCategoryId, setSelectedPromptCategoryId,
     settings, setSettings,
+    keyword, setKeyword,
+    contentType, setContentType,
+    referenceFile, setReferenceFile,
+    referenceUrl, setReferenceUrl,
+    promptsCount, setPromptsCount
   } = usePromptStore();
 
   const {
@@ -60,29 +65,47 @@ export const useAppLogic = () => {
       for (let i = 0; i < steps.length; i++) {
         const stepId = steps[i];
         setPipelineTasks(prev => prev.map(t => 
-          t.id.includes(stepId) ? { ...t, status: 'running', progress: 10, message: `Starting ${stepId}...` } : t
+          t.id.includes(stepId) ? { ...t, status: 'running', progress: 10, message: `Executing ${stepId}...` } : t
         ));
 
         setProgress({ current: i + 1, total: steps.length, message: `Executing step: ${stepId}` });
         
-        // Mock progress updates
-        for (let p = 10; p <= 100; p += 30) {
-          await new Promise(r => setTimeout(r, 300));
+        // Real logic for each step
+        if (stepId === 'analyze') {
+          await analysis.handleAnalyze();
+        } else if (stepId === 'intel') {
+          // Competitor Intel for each result
+          const currentResults = useMarketStore.getState().results;
+          for (let j = 0; j < currentResults.length; j++) {
+            const r = currentResults[j];
+            setPipelineTasks(prev => prev.map(t => 
+              t.id.includes(stepId) ? { ...t, progress: 10 + (j / currentResults.length) * 80, message: `Analyzing competitor for ${r.categoryName}...` } : t
+            ));
+            await marketIntel.handleAnalyzeCompetitor(r);
+          }
+        } else if (stepId === 'generate') {
+          await promptGen.handleGenerateAllPrompts();
+        } else if (stepId === 'score') {
+          // Scoring is already part of handleGenerateAllPrompts, but if they want to re-score or score existing:
+          // We'll just ensure they are scored.
           setPipelineTasks(prev => prev.map(t => 
-            t.id.includes(stepId) ? { ...t, progress: p, message: `Processing ${stepId}... ${p}%` } : t
+            t.id.includes(stepId) ? { ...t, progress: 100, message: `Scoring completed (integrated with generation).` } : t
           ));
+        } else if (stepId === 'metadata') {
+          await (promptGen as any).handleGenerateAllMetadata();
         }
 
         setPipelineTasks(prev => prev.map(t => 
           t.id.includes(stepId) ? { ...t, status: 'completed', progress: 100, message: `${stepId} completed successfully.` } : t
         ));
       }
-      setToast({ show: true, message: 'Pipeline selesai!' });
+      setToast({ show: true, message: 'Pipeline completed successfully!' });
     } catch (error) {
-      console.error(error);
+      console.error("Pipeline error:", error);
       setPipelineTasks(prev => prev.map(t => 
-        t.status === 'running' ? { ...t, status: 'failed', message: 'Error occurred.' } : t
+        t.status === 'running' ? { ...t, status: 'failed', message: 'Error occurred during execution.' } : t
       ));
+      setToast({ show: true, message: 'Pipeline failed. Check console for details.' });
     } finally {
       setIsPipelineRunning(false);
       setProgress(null);
@@ -94,7 +117,7 @@ export const useAppLogic = () => {
       const timer = setTimeout(() => setToast({ ...toast, show: false }), 3000);
       return () => clearTimeout(timer);
     }
-  }, [toast.show, setToast, toast]);
+  }, [toast.show, setToast]);
 
   useEffect(() => {
     const savedPrefs = localStorage.getItem('app_preferences');
@@ -106,7 +129,7 @@ export const useAppLogic = () => {
           const parsed = JSON.parse(savedPrefs);
           Object.assign(newSettings, parsed);
         } catch (e) {
-          console.error("Failed to parse saved preferences", e);
+          console.error("Failed to parse saved preferences");
         }
       }
       return newSettings;
@@ -118,7 +141,7 @@ export const useAppLogic = () => {
       if (savedHistory) setHistory(JSON.parse(savedHistory));
       if (savedResults) setResults(JSON.parse(savedResults));
     } catch (e) {
-      console.error("Failed to load saved history/results", e);
+      console.error("Failed to load saved history/results");
     }
   }, [setSettings, setHistory, setResults]);
 

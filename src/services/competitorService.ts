@@ -36,7 +36,7 @@ export async function analyzeCompetitorGaps(niche: string): Promise<VisualGap[]>
       config: {
         systemInstruction: "You are an expert Microstock Visual Trend Analyst. Your job is to find 'Visual Gaps' in the market that contributors can exploit for high sales. Respond ONLY with valid JSON.",
         responseMimeType: "application/json",
-        thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
       }
     });
 

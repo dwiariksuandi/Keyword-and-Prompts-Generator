@@ -52,7 +52,7 @@ export async function analyzeMarketNiches(
     contents: [{ text: promptText }],
     config: {
       systemInstruction: "You are an elite Multi-Agent Microstock Market Analysis System. You synthesize real-time market data, creative trends, and commercial utility to uncover 'Blue Ocean' niches. Respond ONLY with valid JSON.",
-      thinkingConfig: (settings.model || 'gemini-3.1-flash-lite-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.LOW } : undefined
+      thinkingConfig: (settings.model || 'gemini-3.1-flash-lite-preview').startsWith('gemini-3') ? { thinkingLevel: ThinkingLevel.MINIMAL } : undefined
     },
   });
 
@@ -116,7 +116,7 @@ export async function analyzeCompetitorIntel(categoryName: string, contentType: 
     contents: [{ text: prompt }],
     config: {
       tools: [{ googleSearch: {} }],
-      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
+      thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
     }
   });
   
@@ -135,7 +135,7 @@ export async function predictSalesPotential(categoryName: string, contentType: s
     contents: [{ text: prompt }],
     config: {
       tools: [{ googleSearch: {} }],
-      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
+      thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
     }
   });
   

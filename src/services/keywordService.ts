@@ -96,7 +96,7 @@ For each niche, you MUST provide realistic, data-backed market metrics based on 
 
   try {
     const response = await generateContentWithRetryAndFallback(ai, {
-      model: referenceFile ? 'gemini-3.1-flash-image-preview' : (settings.model || 'gemini-3.1-pro-preview'),
+      model: referenceFile ? 'gemini-3.1-flash-image-preview' : (settings.model || 'gemini-3.1-flash-lite-preview'),
       contents: referenceFile ? [
         { text: promptText },
         {

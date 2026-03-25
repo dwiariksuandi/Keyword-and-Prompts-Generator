@@ -50,7 +50,7 @@ export async function getTrendForecast(niche: string | undefined, settings: AppS
         tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: zodToJsonSchemaNoSchema(TrendListSchema as any) as any,
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
       }
     });
 
@@ -77,7 +77,7 @@ export async function refineTrendForecast(previousTrends: TrendForecast[], feedb
         tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: zodToJsonSchemaNoSchema(TrendListSchema as any) as any,
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
       }
     });
 

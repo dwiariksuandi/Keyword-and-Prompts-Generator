@@ -57,6 +57,25 @@ export const PromptCard: React.FC<PromptCardProps> = ({
               ))}
             </div>
           </div>
+
+          {category.metadata?.[index] && (
+            <div className="mt-6 p-6 bg-white/[0.02] border border-white/10 rounded-3xl space-y-4">
+              <div>
+                <span className="text-[9px] font-black text-white/40 uppercase tracking-widest block mb-2">Adobe Stock Title</span>
+                <p className="text-white/90 text-sm font-bold leading-tight">{category.metadata[index].title}</p>
+              </div>
+              <div>
+                <span className="text-[9px] font-black text-white/40 uppercase tracking-widest block mb-2">Keywords ({category.metadata[index].keywords.length})</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {category.metadata[index].keywords.map((kw, i) => (
+                    <span key={i} className="px-2 py-1 bg-white/5 rounded-md text-[10px] text-white/60 border border-white/5">
+                      {kw}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         <div className="flex-shrink-0 flex justify-end gap-3">
           <motion.button 
